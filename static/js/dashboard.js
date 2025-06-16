@@ -1172,6 +1172,13 @@ window.updateDashboard = function() {
                 window.updateSensitivityAnalysis();
             }
         }, 500);
+        
+        // Actualizar métricas clave automáticamente
+        setTimeout(() => {
+            if (typeof updateMetricsDisplay === 'function') {
+                updateMetricsDisplay();
+            }
+        }, 300);
     }
 };
 

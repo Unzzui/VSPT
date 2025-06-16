@@ -214,6 +214,12 @@ function updateCalculations() {
             trackChanges();
         }
         
+        // 9.1. Actualizar métricas clave automáticamente
+        if (typeof updateMetricsDisplay === 'function') {
+            updateMetricsDisplay();
+            console.log('✅ Métricas clave actualizadas automáticamente');
+        }
+        
         // 10. Actualizar Dashboard (dashboard.js)
         if (typeof updateDashboard === 'function') {
             updateDashboard();

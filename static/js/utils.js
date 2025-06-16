@@ -753,15 +753,55 @@ function createMetricsSheet() {
         ['RESULTADOS PROYECTADOS', ''],
     ];
     
-    // Agregar métricas del modelo si están disponibles
+    // Agregar métricas económicas del modelo si están disponibles
     if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
-        data.push(['VAN Proyecto', modelData.economicCashFlow.metrics.projectNPV || 0]);
-        data.push(['TIR Proyecto (%)', modelData.economicCashFlow.metrics.projectIRR ? 
-                   (modelData.economicCashFlow.metrics.projectIRR * 100).toFixed(1) : 0]);
+        const economicMetrics = modelData.economicCashFlow.metrics;
+        data.push(['VAN Económico', economicMetrics.npv || 0]);
+        data.push(['TIR Económica (%)', economicMetrics.irr ? 
+                   (economicMetrics.irr * 100).toFixed(1) : 0]);
+    } else {
+        data.push(['VAN Económico', 'No calculado']);
+        data.push(['TIR Económica (%)', 'No calculado']);
     }
     
+    // Agregar métricas financieras del modelo si están disponibles
     if (modelData.financialCashFlow && modelData.financialCashFlow.metrics) {
-        data.push(['VAN Equity', modelData.financialCashFlow.metrics.equityNPV || 0]);
+        const financialMetrics = modelData.financialCashFlow.metrics;
+        data.push(['VAN Equity', financialMetrics.equityNPV || 0]);
+        data.push(['TIR Proyecto (%)', financialMetrics.projectIRR ? 
+                   (financialMetrics.projectIRR * 100).toFixed(1) : 0]);
+    } else {
+        data.push(['VAN Equity', 'No calculado']);
+        data.push(['TIR Proyecto (%)', 'No calculado']);
+    }
+    
+    // Agregar métricas de ingresos si están disponibles
+    if (modelData.revenues) {
+        data.push(['', '']);
+        data.push(['INGRESOS PROYECTADOS', '']);
+        
+        // Revenue 2025 (solo Chile, 6 meses)
+        const revenue2025 = modelData.revenues[2025] ? 
+            Object.values(modelData.revenues[2025]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+        
+        // Revenue 2030 (todos los mercados)
+        const revenue2030 = modelData.revenues[2030] ? 
+            Object.values(modelData.revenues[2030]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+        
+        data.push(['Revenue 2025 (Chile 6m)', revenue2025]);
+        data.push(['Revenue 2030 (Total)', revenue2030]);
+        
+        // CAGR desde 2025 a 2030
+        if (revenue2025 > 0 && revenue2030 > 0) {
+            const cagr = (Math.pow(revenue2030 / revenue2025, 1/5) - 1) * 100;
+            data.push(['CAGR 2025-2030 (%)', cagr.toFixed(1)]);
+        }
+        
+        // Órdenes 2030
+        if (modelData.revenues[2030]) {
+            const orders2030 = Object.values(modelData.revenues[2030]).reduce((sum, market) => sum + (market.orders || 0), 0);
+            data.push(['Órdenes Totales 2030', Math.round(orders2030)]);
+        }
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -841,4 +881,149 @@ function createSensitivitySheet() {
     });
     
     return XLSX.utils.aoa_to_sheet(data);
+}
+
+// ============================================================================
+// FUNCIÓN DE ACTUALIZACIÓN AUTOMÁTICA DE MÉTRICAS
+// ============================================================================
+
+// Función para actualizar métricas automáticamente en la interfaz
+function updateMetricsDisplay() {
+    console.log('📊 Actualizando métricas clave en tiempo real...');
+    
+    try {
+        // Crear los datos de métricas usando la misma lógica que createMetricsSheet
+        const metricsData = {
+            investment: {
+                capexTotal: 800000,
+                debt: 280000,
+                equity: 520000
+            },
+            economic: {},
+            financial: {},
+            revenues: {}
+        };
+        
+        // Métricas económicas
+        if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
+            const economicMetrics = modelData.economicCashFlow.metrics;
+            metricsData.economic = {
+                npv: economicMetrics.npv || 0,
+                irr: economicMetrics.irr ? (economicMetrics.irr * 100).toFixed(1) : 0,
+                available: true
+            };
+        } else {
+            metricsData.economic = {
+                npv: 'No calculado',
+                irr: 'No calculado',
+                available: false
+            };
+        }
+        
+        // Métricas financieras
+        if (modelData.financialCashFlow && modelData.financialCashFlow.metrics) {
+            const financialMetrics = modelData.financialCashFlow.metrics;
+            metricsData.financial = {
+                equityNPV: financialMetrics.equityNPV || 0,
+                projectIRR: financialMetrics.projectIRR ? (financialMetrics.projectIRR * 100).toFixed(1) : 0,
+                available: true
+            };
+        } else {
+            metricsData.financial = {
+                equityNPV: 'No calculado',
+                projectIRR: 'No calculado',
+                available: false
+            };
+        }
+        
+        // Métricas de ingresos
+        if (modelData.revenues) {
+            const revenue2025 = modelData.revenues[2025] ? 
+                Object.values(modelData.revenues[2025]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+            
+            const revenue2030 = modelData.revenues[2030] ? 
+                Object.values(modelData.revenues[2030]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+            
+            const cagr = revenue2025 > 0 && revenue2030 > 0 ? 
+                (Math.pow(revenue2030 / revenue2025, 1/5) - 1) * 100 : 0;
+            
+            const orders2030 = modelData.revenues[2030] ? 
+                Object.values(modelData.revenues[2030]).reduce((sum, market) => sum + (market.orders || 0), 0) : 0;
+            
+            metricsData.revenues = {
+                revenue2025,
+                revenue2030,
+                cagr: cagr.toFixed(1),
+                orders2030: Math.round(orders2030),
+                available: true
+            };
+        } else {
+            metricsData.revenues = {
+                revenue2025: 'No calculado',
+                revenue2030: 'No calculado',
+                cagr: 'No calculado',
+                orders2030: 'No calculado',
+                available: false
+            };
+        }
+        
+        // Actualizar elementos en la interfaz si existen
+        updateMetricsElements(metricsData);
+        
+        // Guardar métricas en modelData para uso posterior
+        modelData.keyMetrics = metricsData;
+        
+        console.log('✅ Métricas clave actualizadas:', metricsData);
+        
+    } catch (error) {
+        console.error('❌ Error actualizando métricas:', error);
+    }
+}
+
+// Función auxiliar para actualizar elementos específicos en la interfaz
+function updateMetricsElements(metricsData) {
+    // Elementos de métricas económicas
+    const elements = {
+        // Métricas económicas
+        'keyMetricEconomicNPV': metricsData.economic.available ? 
+            `$${(metricsData.economic.npv/1000000).toFixed(1)}M` : metricsData.economic.npv,
+        'keyMetricEconomicIRR': metricsData.economic.available ? 
+            `${metricsData.economic.irr}%` : metricsData.economic.irr,
+        
+        // Métricas financieras
+        'keyMetricFinancialNPV': metricsData.financial.available ? 
+            `$${(metricsData.financial.equityNPV/1000000).toFixed(1)}M` : metricsData.financial.equityNPV,
+        'keyMetricFinancialIRR': metricsData.financial.available ? 
+            `${metricsData.financial.projectIRR}%` : metricsData.financial.projectIRR,
+        
+        // Métricas de ingresos
+        'keyMetricRevenue2025': metricsData.revenues.available ? 
+            `$${(metricsData.revenues.revenue2025/1000).toFixed(0)}K` : metricsData.revenues.revenue2025,
+        'keyMetricRevenue2030': metricsData.revenues.available ? 
+            `$${(metricsData.revenues.revenue2030/1000000).toFixed(1)}M` : metricsData.revenues.revenue2030,
+        'keyMetricCAGR': metricsData.revenues.available ? 
+            `${metricsData.revenues.cagr}%` : metricsData.revenues.cagr,
+        'keyMetricOrders2030': metricsData.revenues.available ? 
+            metricsData.revenues.orders2030.toLocaleString() : metricsData.revenues.orders2030,
+        
+        // Métricas de inversión
+        'keyMetricCapexTotal': `$${(metricsData.investment.capexTotal/1000).toFixed(0)}K`,
+        'keyMetricDebt': `$${(metricsData.investment.debt/1000).toFixed(0)}K`,
+        'keyMetricEquity': `$${(metricsData.investment.equity/1000).toFixed(0)}K`
+    };
+    
+    // Actualizar elementos si existen en el DOM
+    Object.keys(elements).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = elements[id];
+            
+            // Agregar clases de estado
+            if (id.includes('Economic') || id.includes('Financial')) {
+                const isAvailable = id.includes('Economic') ? 
+                    metricsData.economic.available : metricsData.financial.available;
+                element.className = isAvailable ? 'metric-value available' : 'metric-value unavailable';
+            }
+        }
+    });
 }
