@@ -1,0 +1,202 @@
+/* VSPT Digital 360 - Estilos Minimalistas con Tailwind CSS */
+
+/* Variables CSS personalizadas para colores VSPT */
+:root {
+    --vspt-primary: #311333;
+    --vspt-primary-light: #4a2a4d;
+    --vspt-primary-dark: #25102a;
+    --vspt-accent: #9a2849;
+    --vspt-accent-light: #c13a60;
+    --vspt-light: #f8f7fa;
+}
+
+/* Font base */
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Animaciones del menú hamburguesa */
+.menu-toggle.active .hamburger-line-1 {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.menu-toggle.active .hamburger-line-2 {
+    opacity: 0;
+}
+
+.menu-toggle.active .hamburger-line-3 {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.hamburger-line-1,
+.hamburger-line-2,
+.hamburger-line-3 {
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+/* Menú desplegable en móviles - actualizado para Tailwind */
+.tabs-menu {
+    transition: max-height 0.3s ease-in-out;
+}
+
+.tabs-menu.active {
+    max-height: 600px !important;
+}
+
+/* Mejorar el botón hamburguesa */
+.menu-toggle {
+    transition: all 0.2s ease;
+}
+
+.menu-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-toggle.active:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Tab activo con indicador */
+.tab.active {
+    color: #311333 !important;
+    font-weight: 600;
+    position: relative;
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #9a2849;
+}
+
+/* En móvil, indicador a la izquierda */
+@media (max-width: 768px) {
+    .tab.active::after {
+        width: 4px;
+        height: 100%;
+        left: 0;
+        top: 0;
+        bottom: auto;
+    }
+    
+    .tab.active {
+        background-color: rgba(49, 19, 51, 0.1) !important;
+    }
+}
+
+/* Efectos hover para tabs */
+.tab:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Tablas responsive - scroll horizontal suave */
+.table-container {
+    scrollbar-width: thin;
+    scrollbar-color: #9a2849 #f1f1f1;
+}
+
+.table-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #9a2849;
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #311333;
+}
+
+/* Hints para scroll en móvil */
+.scroll-hint {
+    animation: fadeInOut 2s infinite;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Headers sticky para tablas */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Animaciones suaves */
+.fade-in {
+    animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Efectos de hover para cards */
+.hover-lift:hover {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+/* Sombras personalizadas */
+.shadow-vspt {
+    box-shadow: 0 10px 30px rgba(49, 19, 51, 0.15);
+}
+
+.shadow-vspt-lg {
+    box-shadow: 0 15px 35px rgba(49, 19, 51, 0.2);
+}
+
+/* Gradientes personalizados */
+.bg-gradient-vspt {
+    background: linear-gradient(135deg, #311333 0%, #4a2a4d 100%);
+}
+
+.bg-gradient-vspt-accent {
+    background: linear-gradient(135deg, #9a2849 0%, #c13a60 100%);
+}
+
+/* Texto responsive */
+.text-responsive {
+    font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+}
+
+/* Utilities adicionales para componentes específicos */
+.metric-card-icon {
+    background: linear-gradient(135deg, #311333, #4a2a4d);
+}
+
+.btn-vspt {
+    background: linear-gradient(135deg, #311333 0%, #4a2a4d 100%);
+    transition: all 0.4s ease;
+}
+
+.btn-vspt:hover {
+    background: linear-gradient(135deg, #4a2a4d 0%, #25102a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(49, 19, 51, 0.3);
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, #9a2849 0%, #c13a60 100%);
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #c13a60 0%, #9a2849 100%);
+}

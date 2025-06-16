@@ -19,8 +19,8 @@ function calculateWorkingCapital() {
             }
         };
 
-        // Solo calcular WC a partir de 2026 cuando empiecen las ventas
-        if (year >= 2026 && modelData.revenues && modelData.revenues[year]) {
+        // Solo calcular WC cuando hay ingresos (desde 2025)
+        if (year >= 2025 && modelData.revenues && modelData.revenues[year]) {
             Object.keys(marketDistribution).forEach(market => {
                 const marketData = marketDistribution[market];
                 const revenueData = modelData.revenues[year][market];
@@ -126,7 +126,7 @@ function updateWorkingCapitalTable(wc) {
         }
         
         // Detalle de componentes (solo para países principales)
-        if (market === 'mexico' || market === 'brasil') {
+        if (market === 'chile' || market === 'mexico') {
             // Cuentas por cobrar
             const arRow = tbody.insertRow();
             arRow.className = 'subcategory';

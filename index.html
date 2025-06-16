@@ -9,6 +9,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vspt-primary': '#311333',
+                        'vspt-primary-light': '#4a2a4d',
+                        'vspt-primary-dark': '#25102a',
+                        'vspt-accent': '#9a2849',
+                        'vspt-accent-light': '#c13a60',
+                        'vspt-light': '#f8f7fa',
+                    }
+                }
+            }
+        }
+    </script>
+    
     <!-- Cargar módulos JS en orden -->
     <script src="static/js/config.js"></script>
     <script src="static/js/utils.js"></script>
@@ -24,40 +43,182 @@
     <script src="static/js/scripts.js"></script>
     
     <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="stylesheet" href="static/css/styles-tailwind.css">
     <!-- Agregar Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-content">
-                <img src="static/img/vspt.png" alt="VSPT Logo" class="header-logo">
-                <div class="header-text">
-                    <h1>VSPT Digital 360</h1>
-                    <p>Modelo Financiero 2025-2030 | México • Brasil • Canadá • Estados Unidos</p>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Container principal con máximo ancho -->
+        <div class="container max-w-8xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="header">
+                <div class="header-content">
+                    <img src="static/img/vspt.png" alt="VSPT Logo" class="header-logo">
+                    <div class="header-text">
+                        <h1>VSPT Digital 360</h1>
+                        <p>Modelo Financiero 2025-2030 | México • Brasil • Canadá • Estados Unidos</p>
+                    </div>
                 </div>
             </div>
-        </div>
         
+        <!-- Navigation con clases CSS originales -->
         <div class="tabs">
-            <button class="tab active" onclick="showTab('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-            <button class="tab" onclick="showTab('inversiones')"><i class="fas fa-chart-line"></i> CAPEX & Financing</button>
-            <button class="tab" onclick="showTab('ingresos')"><i class="fas fa-money-bill-wave"></i> Ingresos</button>
-            <button class="tab" onclick="showTab('costos')"><i class="fas fa-file-invoice-dollar"></i> Costos</button>
-            <button class="tab" onclick="showTab('workingCapital')"><i class="fas fa-wallet"></i> Working Capital</button>
-            <button class="tab" onclick="showTab('debtSchedule')"><i class="fas fa-landmark"></i> Deuda</button>
-            <button class="tab" onclick="showTab('depreciaciones')"><i class="fas fa-percentage"></i> Depreciaciones</button>
-            <button class="tab" onclick="showTab('economicFlow')"><i class="fas fa-chart-bar"></i> F. Económico</button>
-            <button class="tab" onclick="showTab('financialFlow')"><i class="fas fa-chart-pie"></i> F. Financiero</button>
-            <button class="tab" onclick="showTab('sensibilidad')"><i class="fas fa-balance-scale"></i> Sensibilidad</button>
+            <!-- Botón hamburguesa para móviles -->
+            <button 
+                class="mobile-menu-toggle lg:hidden"
+                onclick="toggleMobileMenu()"
+                aria-label="Abrir menú"
+                id="mobile-menu-button"
+                style="display: none;"
+            >
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- Pestañas de navegación -->
+            <button class="tab active" onclick="showTab('dashboard')">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button class="tab" onclick="showTab('inversiones')">
+                <i class="fas fa-chart-line"></i> CAPEX & Financing
+            </button>
+            <button class="tab" onclick="showTab('ingresos')">
+                <i class="fas fa-money-bill-wave"></i> Ingresos
+            </button>
+            <button class="tab" onclick="showTab('costos')">
+                <i class="fas fa-file-invoice-dollar"></i> Costos
+            </button>
+            <button class="tab" onclick="showTab('workingCapital')">
+                <i class="fas fa-wallet"></i> Working Capital
+            </button>
+            <button class="tab" onclick="showTab('debtSchedule')">
+                <i class="fas fa-landmark"></i> Deuda
+            </button>
+            <button class="tab" onclick="showTab('depreciaciones')">
+                <i class="fas fa-percentage"></i> Depreciaciones
+            </button>
+            <button class="tab" onclick="showTab('economicFlow')">
+                <i class="fas fa-chart-bar"></i> F. Económico
+            </button>
+            <button class="tab" onclick="showTab('financialFlow')">
+                <i class="fas fa-chart-pie"></i> F. Financiero
+            </button>
+            <button class="tab" onclick="showTab('sensibilidad')">
+                <i class="fas fa-balance-scale"></i> Sensibilidad
+            </button>
         </div>
         
         <!-- Tab 0: Dashboard -->
-        <div id="dashboard" class="content">
-            <h2>Dashboard Ejecutivo - VSPT Digital 360</h2>
-            
+        <div id="dashboard" class="content px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Dashboard Ejecutivo - VSPT Digital 360</h2>
+              <!-- Evaluación de Viabilidad del Proyecto - SECCIÓN PRINCIPAL -->
+              <div class="project-viability mb-12">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-check-circle"></i> Evaluación de Viabilidad del Proyecto</h3>
+                
+                <div class="viability-cards grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Viabilidad Económica -->
+                    <div class="viability-card economic">
+                        <div class="viability-header">
+                            <div class="viability-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="viability-title">
+                                <h4>Viabilidad Económica</h4>
+                                <p>Análisis sin estructura financiera</p>
+                            </div>
+                        </div>
+                        
+                        <div class="viability-metrics">
+                            <div class="metric-comparison">
+                                <div class="metric-item">
+                                    <span class="metric-label">TIR Económica:</span>
+                                    <span class="metric-value-dashboard" id="economicIRRValue">0%</span>
+                                </div>
+                                <div class="vs-indicator">vs</div>
+                                <div class="metric-item">
+                                    <span class="metric-label">WACC:</span>
+                                    <span class="metric-value-dashboard" id="waccValue">8.0%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="viability-result" id="economicViabilityResult">
+                                <div class="result-icon">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="result-text">
+                                    <span class="result-status">Calculando...</span>
+                                    <span class="result-description">Evaluando viabilidad económica</span>
+                                </div>
+                            </div>
+                            
+                            <div class="additional-metrics">
+                                <div class="additional-metric">
+                                    <span class="label">VAN Económico:</span>
+                                    <span class="value" id="economicNPVValue">$0M</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Viabilidad Financiera -->
+                    <div class="viability-card financial">
+                        <div class="viability-header">
+                            <div class="viability-icon">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <div class="viability-title">
+                                <h4>Viabilidad Financiera</h4>
+                                <p>Análisis con estructura de financiamiento</p>
+                            </div>
+                        </div>
+                        
+                        <div class="viability-metrics">
+                            <div class="metric-comparison">
+                                <div class="metric-item">
+                                    <span class="metric-label">TIR Financiera:</span>
+                                    <span class="metric-value-dashboard" id="financialIRRValue">0%</span>
+                                </div>
+                                <div class="vs-indicator">vs</div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Ke (Costo Equity):</span>
+                                    <span class="metric-value-dashboard" id="keValue">12.0%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="viability-result" id="financialViabilityResult">
+                                <div class="result-icon">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="result-text">
+                                    <span class="result-status">Calculando...</span>
+                                    <span class="result-description">Evaluando viabilidad financiera</span>
+                                </div>
+                            </div>
+                            
+                            <div class="additional-metrics">
+                                <div class="additional-metric">
+                                    <span class="label">VAN Financiero:</span>
+                                    <span class="value" id="financialNPVValue">$0M</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Conclusión General -->
+                <div class="project-conclusion mt-6">
+                    <div class="conclusion-card" id="projectConclusionCard">
+                        <div class="conclusion-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="conclusion-content">
+                            <h4>Conclusión del Proyecto</h4>
+                            <p id="projectConclusionText">Evaluando la viabilidad general del proyecto...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- KPI Cards principales -->
-            <div class="dashboard-kpis">
+            <div class="dashboard-kpis grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 <div class="kpi-card primary">
                     <div class="kpi-icon">
                         <i class="fas fa-dollar-sign"></i>
@@ -110,6 +271,19 @@
                     </div>
                 </div>
 
+                <div class="kpi-card secondary">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashEconomicIRR">24%</div>
+                        <div class="kpi-label">TIR Económica</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i> Viable
+                        </div>
+                    </div>
+                </div>
+
                 <div class="kpi-card primary">
                     <div class="kpi-icon">
                         <i class="fas fa-chart-bar"></i>
@@ -137,8 +311,10 @@
                 </div>
             </div>
             
+      
+            
             <!-- Sección de gráficos -->
-            <div class="dashboard-charts">
+            <div class="dashboard-charts grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                 <div class="chart-section">
                     <h3><i class="fas fa-chart-bar"></i> Evolución de Flujos de Caja</h3>
                     <div class="chart-placeholder">
@@ -155,26 +331,31 @@
                 <div class="chart-section">
                     <h3><i class="fas fa-chart-pie"></i> Distribución por Mercado 2030</h3>
                     <div class="chart-placeholder">
-                        <div class="market-distribution">
-                            <div class="market-item">
-                                <span class="market-flag">🇺🇸</span>
-                                <span class="market-name">Estados Unidos</span>
-                                <span class="market-percentage">40%</span>
+                        <div class="market-distribution grid grid-cols-1 gap-3">
+                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
+                                <span class="market-flag">🇨🇱</span>
+                                <span class="market-name font-medium">Chile</span>
+                                <span class="market-percentage font-bold text-red-600">40%</span>
                             </div>
-                            <div class="market-item">
-                                <span class="market-flag">🇧🇷</span>
-                                <span class="market-name">Brasil</span>
-                                <span class="market-percentage">25%</span>
-                            </div>
-                            <div class="market-item">
+                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
                                 <span class="market-flag">🇲🇽</span>
-                                <span class="market-name">México</span>
-                                <span class="market-percentage">20%</span>
+                                <span class="market-name font-medium">México</span>
+                                <span class="market-percentage font-bold text-green-600">25%</span>
                             </div>
-                            <div class="market-item">
+                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
+                                <span class="market-flag">🇧🇷</span>
+                                <span class="market-name font-medium">Brasil</span>
+                                <span class="market-percentage font-bold text-blue-600">15%</span>
+                            </div>
+                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
                                 <span class="market-flag">🇨🇦</span>
-                                <span class="market-name">Canadá</span>
-                                <span class="market-percentage">15%</span>
+                                <span class="market-name font-medium">Canadá</span>
+                                <span class="market-percentage font-bold text-purple-600">10%</span>
+                            </div>
+                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
+                                <span class="market-flag">🇺🇸</span>
+                                <span class="market-name font-medium">Estados Unidos</span>
+                                <span class="market-percentage font-bold text-orange-600">10%</span>
                             </div>
                         </div>
                     </div>
@@ -182,99 +363,217 @@
             </div>
             
             <!-- Métricas por mercado -->
-            <div class="market-metrics">
-                <h3><i class="fas fa-flag"></i> Métricas por Mercado 2030</h3>
-                <div class="market-cards">
-                    <div class="market-card usa">
-                        <div class="market-header">
-                            <span class="market-flag-large">🇺🇸</span>
-                            <h4>Estados Unidos</h4>
-                        </div>
-                        <div class="market-stats">
-                            <div class="stat">
-                                <span class="stat-value">$5.0M</span>
-                                <span class="stat-label">Revenue</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">83K</span>
-                                <span class="stat-label">Órdenes</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">$60</span>
-                                <span class="stat-label">AOV</span>
-                            </div>
-                        </div>
+            <div class="market-metrics mb-12">
+                <h3 class="text-xl font-semibold mb-8"><i class="fas fa-flag"></i> Métricas por Mercado 2030</h3>
+                
+                <!-- Tabla de métricas más ordenada -->
+                <div class="market-table-container bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-white-700 border-b border-gray-200">
+                                        <i class="fas fa-flag mr-2"></i>País
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-sm font-semibold text-white-700 border-b border-gray-200">
+                                        <i class="fas fa-dollar-sign mr-2"></i>Revenue Total
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-sm font-semibold text-white-700 border-b border-gray-200">
+                                        <i class="fas fa-shopping-cart mr-2"></i>Órdenes
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-sm font-semibold text-white-700 border-b border-gray-200">
+                                        <i class="fas fa-chart-line mr-2"></i>AOV
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-sm font-semibold text-white-700 border-b border-gray-200">
+                                        <i class="fas fa-percentage mr-2"></i>Participación
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="hover:bg-blue-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">🇨🇱</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Chile</div>
+                                                <div class="text-sm text-gray-500">Mercado base</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-blue-600">$5.0M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-gray-700">125K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-green-600">$40</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                            42.4%
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-red-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">🇲🇽</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">México</div>
+                                                <div class="text-sm text-gray-500">Crecimiento alto</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-red-600">$3.1M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-gray-700">71K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-green-600">$44</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                            26.3%
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-green-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">🇧🇷</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Brasil</div>
+                                                <div class="text-sm text-gray-500">Potencial medio</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-green-600">$1.9M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-gray-700">39K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-green-600">$48</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            16.1%
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-red-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">🇨🇦</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Canadá</div>
+                                                <div class="text-sm text-gray-500">Premium market</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-purple-600">$1.3M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-gray-700">25K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-green-600">$52</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                            11.0%
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+                                <tr class="hover:bg-blue-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">🇺🇸</span>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Estados Unidos</div>
+                                                <div class="text-sm text-gray-500">Alto valor</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-indigo-600">$1.3M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-gray-700">23K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-semibold text-green-600">$56</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                                            11.0%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td class="px-6 py-4 font-bold text-gray-900">
+                                        <i class="fas fa-globe mr-2"></i>TOTAL
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-xl font-bold text-purple-600">$12.6M</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-gray-700">283K</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-lg font-bold text-green-600">$44.5</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-white-800">
+                                            100%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Resumen visual adicional -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
+                        <h4 class="font-semibold text-blue-800 mb-2">
+                            <i class="fas fa-trophy mr-2"></i>Mercado Líder
+                        </h4>
+                        <p class="text-blue-700">Chile representa el <strong>42.4%</strong> del revenue total</p>
                     </div>
                     
-                    <div class="market-card brazil">
-                        <div class="market-header">
-                            <span class="market-flag-large">🇧🇷</span>
-                            <h4>Brasil</h4>
-                        </div>
-                        <div class="market-stats">
-                            <div class="stat">
-                                <span class="stat-value">$3.1M</span>
-                                <span class="stat-label">Revenue</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">78K</span>
-                                <span class="stat-label">Órdenes</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">$40</span>
-                                <span class="stat-label">AOV</span>
-                            </div>
-                        </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+                        <h4 class="font-semibold text-green-800 mb-2">
+                            <i class="fas fa-chart-line mr-2"></i>Mayor AOV
+                        </h4>
+                        <p class="text-green-700">Estados Unidos con <strong>$56</strong> de ticket promedio</p>
                     </div>
                     
-                    <div class="market-card mexico">
-                        <div class="market-header">
-                            <span class="market-flag-large">🇲🇽</span>
-                            <h4>México</h4>
-                        </div>
-                        <div class="market-stats">
-                            <div class="stat">
-                                <span class="stat-value">$2.5M</span>
-                                <span class="stat-label">Revenue</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">62K</span>
-                                <span class="stat-label">Órdenes</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">$40</span>
-                                <span class="stat-label">AOV</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="market-card canada">
-                        <div class="market-header">
-                            <span class="market-flag-large">🇨🇦</span>
-                            <h4>Canadá</h4>
-                        </div>
-                        <div class="market-stats">
-                            <div class="stat">
-                                <span class="stat-value">$1.9M</span>
-                                <span class="stat-label">Revenue</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">38K</span>
-                                <span class="stat-label">Órdenes</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value">$50</span>
-                                <span class="stat-label">AOV</span>
-                            </div>
-                        </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
+                        <h4 class="font-semibold text-purple-800 mb-2">
+                            <i class="fas fa-shopping-cart mr-2"></i>Mayor Volumen
+                        </h4>
+                        <p class="text-purple-700">Chile con <strong>125K</strong> órdenes anuales</p>
                     </div>
                 </div>
             </div>
             
             <!-- Resumen de Cashflow -->
             <div class="cashflow-summary">
-                <h3><i class="fas fa-money-bill-trend-up"></i> Resumen Financiero</h3>
-                <div class="cashflow-cards">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-money-bill-trend-up"></i> Resumen Financiero</h3>
+                <div class="cashflow-cards grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     <div class="cashflow-card positive">
                         <div class="cashflow-icon">
                             <i class="fas fa-arrow-trend-up"></i>
@@ -323,57 +622,54 @@
         </div>
         
         <!-- Tab 1: CAPEX & Financing -->
-        <div id="inversiones" class="content hidden">
-            <h2>CAPEX Progresivo 2025-2028 & Estructura de Financiamiento</h2>
+        <div id="inversiones" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">CAPEX Progresivo 2025-2028 & Estructura de Financiamiento</h2>
             
             <div class="controls">
                 <div class="control-group">
                     <label>Botellas por Contenedor:</label>
-                    <input type="number" id="bottlesPerContainer" value="12000" onchange="updateCalculations()">
+                    <input type="number" id="bottlesPerContainer" value="12000" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
                     <label>Costo Contenedor (USD):</label>
-                    <input type="number" id="containerCost" value="5000" onchange="updateCalculations()">
+                    <input type="number" id="containerCost" value="5000" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
                     <label>Stock Inicial (meses):</label>
-                    <input type="number" id="initialStock" value="3" onchange="updateCalculations()">
+                    <input type="number" id="initialStock" value="3" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
                     <label>Proporción Deuda (%):</label>
-                    <input type="number" id="debtRatio" value="35" min="0" max="70" onchange="updateCalculations()">%
+                    <input type="number" id="debtRatio" value="35" min="0" max="70" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Tasa de Interés:</label>
-                    <input type="number" id="interestRate" value="6" step="0.5" min="3" max="15" onchange="updateCalculations()">%
+                    <input type="number" id="interestRate" value="6" step="0.5" min="3" max="15" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Plazo Deuda (años):</label>
-                    <input type="number" id="debtTerm" value="5" min="3" max="10" onchange="updateCalculations()">
+                    <input type="number" id="debtTerm" value="5" min="3" max="10" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
             </div>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalCapex">$800K</div>
                     <div class="metric-label">CAPEX Total</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalDebt">$280K</div>
                     <div class="metric-label">Financiamiento Deuda</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalEquity">$520K</div>
                     <div class="metric-label">Financiamiento Equity</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="inventoryInvestment">$0K</div>
-                    <div class="metric-label">Inversión Inventario</div>
-                </div>
+          
             </div>
             
-            <div class="table-container highlight">
-                <table id="inversionesTable" class="capex-table">
+            <div class="table-container overflow-x-auto">
+                <table id="inversionesTable" class="capex-table w-full">
                     <thead>
                         <tr>
                             <th style="text-align: left;">Concepto</th>
@@ -391,60 +687,58 @@
         </div>
         
         <!-- Tab 2: Ingresos -->
-        <div id="ingresos" class="content hidden">
-            <h2>Proyección de Ingresos 2026-2030</h2>
+        <div id="ingresos" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Proyección de Ingresos 2026-2030</h2>
             
             <div class="controls">
                 <div class="control-group">
                     <label>Tráfico Inicial (visitas/mes):</label>
-                    <input type="number" id="initialTraffic" value="9100" onchange="updateCalculations()">
+                    <input type="number" id="initialTraffic" value="9100" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
                     <label>Crecimiento Anual Tráfico:</label>
-                    <input type="number" id="trafficGrowth" value="60" step="5" onchange="updateCalculations()">%
+                    <input type="number" id="trafficGrowth" value="100" step="5" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Conversión Inicial:</label>
-                    <input type="number" id="initialConversion" value="2" step="0.1" onchange="updateCalculations()">%
+                    <input type="number" id="initialConversion" value="2" step="0.1" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Mejora Conversión Anual:</label>
-                    <input type="number" id="conversionGrowthRate" value="30" step="5" onchange="updateCalculations()">%
+                    <input type="number" id="conversionGrowthRate" value="40" step="5" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Ticket Promedio (USD):</label>
-                    <input type="number" id="avgTicket" value="50" onchange="updateCalculations()">
+                    <input type="number" id="avgTicket" value="50" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
             </div>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalRevenue2030">$0M</div>
                     <div class="metric-label">Revenue Total 2030</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalOrders2030">0</div>
                     <div class="metric-label">Órdenes Anuales 2030</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="avgGrowthRate">0%</div>
                     <div class="metric-label">CAGR Promedio</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="conversionEvolution">0%</div>
                     <div class="metric-label">Evolución Conversión</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-value" id="inventoryInvestment2">$0K</div>
-                    <div class="metric-label">Inversión Inventario</div>
-                </div>
+             
             </div>
             
-            <div class="table-container">
-                <table id="ingresosTable">
+            <div class="table-container overflow-x-auto">
+                <table id="ingresosTable" class="w-full">
                     <thead>
                         <tr>
                             <th style="text-align: left;">País/Métrica</th>
+                            <th>2025</th>
                             <th>2026</th>
                             <th>2027</th>
                             <th>2028</th>
@@ -459,21 +753,21 @@
         </div>
         
         <!-- Tab 3: Costos -->
-        <div id="costos" class="content hidden">
-            <h2>Costos Operativos Detallados</h2>
+        <div id="costos" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Costos Operativos Detallados</h2>
             
             <div class="controls">
                 <div class="control-group">
                     <label>Salario Comercial (USD/año):</label>
-                    <input type="number" id="salesSalary" value="120000" onchange="updateCalculations()">
+                    <input type="number" id="salesSalary" value="50000" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
                     <label>Marketing (% Revenue):</label>
-                    <input type="number" id="marketingPct" value="12" step="1" onchange="updateCalculations()">%
+                    <input type="number" id="marketingPct" value="12" step="1" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Inflación Anual:</label>
-                    <input type="number" id="inflation" value="3" step="0.5" onchange="updateCalculations()">%
+                    <input type="number" id="inflation" value="2" step="0.5" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
             </div>
             
@@ -497,8 +791,8 @@
         </div>
         
         <!-- Tab 4: Working Capital -->
-        <div id="workingCapital" class="content hidden">
-            <h2>Working Capital Detallado por País</h2>
+        <div id="workingCapital" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Working Capital Detallado por País</h2>
             
             <div class="controls">
                 <div class="control-group">
@@ -535,8 +829,8 @@
         </div>
 
         <!-- Tab 5: Cronograma Deuda -->
-        <div id="debtSchedule" class="content hidden">
-            <h2>Cronograma de Amortización de Deuda</h2>
+        <div id="debtSchedule" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Cronograma de Amortización de Deuda</h2>
             
             <div class="controls">
                 <div class="control-group">
@@ -558,19 +852,19 @@
             </div>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalDebtAmount">$280K</div>
                     <div class="metric-label">Monto Total Deuda</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="monthlyPaymentAmount">$0</div>
                     <div class="metric-label">Cuota Mensual</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalInterestPaid">$0K</div>
                     <div class="metric-label">Intereses Totales</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="debtServiceRatio">0%</div>
                     <div class="metric-label">Ratio Deuda/Equity</div>
                 </div>
@@ -596,20 +890,20 @@
         </div>
 
         <!-- Tab 6: Depreciaciones Detalladas -->
-        <div id="depreciaciones" class="content hidden">
-            <h2>Cronograma de Depreciaciones Detallado</h2>
+        <div id="depreciaciones" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Cronograma de Depreciaciones Detallado</h2>
             
             <div class="controls">
                 <div class="control-group">
                     <label>Método de Depreciación:</label>
-                    <select id="depreciationMethod" onchange="updateCalculations()">
+                    <select id="depreciationMethod" onchange="updateCalculations()" class="w-full lg:w-auto">
                         <option value="linear" selected>Línea Recta</option>
                         <option value="accelerated">Acelerada (Doble Saldo Decreciente)</option>
                     </select>
                 </div>
                 <div class="control-group">
                     <label>Valor Residual (%):</label>
-                    <input type="number" id="residualValue" value="10" min="0" max="50" onchange="updateCalculations()">%
+                    <input type="number" id="residualValue" value="10" min="0" max="50" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Año de Inicio:</label>
@@ -622,19 +916,19 @@
             </div>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="totalDepreciation">$0K</div>
                     <div class="metric-label">Depreciación Total</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="avgAnnualDepreciation">$0K</div>
                     <div class="metric-label">Depreciación Anual Promedio</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="depreciationPercent">0%</div>
                     <div class="metric-label">% del CAPEX Total</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="residualValueAmount">$0K</div>
                     <div class="metric-label">Valor Residual</div>
                 </div>
@@ -662,23 +956,23 @@
         </div>
 
         <!-- Tab 7: Flujo Económico -->
-        <div id="economicFlow" class="content hidden">
-            <h2>Flujo de Caja Económico</h2>
+        <div id="economicFlow" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Flujo de Caja Económico</h2>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="economicNPV">$0M</div>
                     <div class="metric-label">VAN Económico (WACC 12%)</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="economicIRR">0%</div>
                     <div class="metric-label">TIR Económico</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="economicPayback">0</div>
                     <div class="metric-label">Payback (años)</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="economicROI">0%</div>
                     <div class="metric-label">ROI Acumulado</div>
                 </div>
@@ -704,23 +998,23 @@
         </div>
 
         <!-- Tab 8: Flujo Financiero -->
-        <div id="financialFlow" class="content hidden">
-            <h2>Flujo de Caja Financiero</h2>
+        <div id="financialFlow" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Flujo de Caja Financiero</h2>
             
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="financialNPV">$0M</div>
                     <div class="metric-label">VAN Financiero (WACC 12%)</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="financialIRR">0%</div>
                     <div class="metric-label">TIR Financiero</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="financialPayback">0</div>
                     <div class="metric-label">Payback (años)</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="financialROE">0%</div>
                     <div class="metric-label">ROE Promedio</div>
                 </div>
@@ -745,9 +1039,270 @@
             </div>
         </div>
 
-        <!-- Tab 8: Análisis Sensibilidad -->
-        <div id="sensibilidad" class="content hidden">
-            <h2>Análisis de Sensibilidad</h2>
+        <!-- Tab 9: Análisis Sensibilidad -->
+        <div id="sensibilidad" class="content hidden px-6 py-8">
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Análisis de Sensibilidad Dinámico</h2>
+            
+            <!-- Panel de Parámetros Base -->
+            <div class="base-parameters mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-cog"></i> Parámetros Base del Modelo</h3>
+                <div class="parameters-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div class="parameter-card">
+                        <div class="parameter-label">Tráfico Web</div>
+                        <div class="parameter-value" id="baseTraffic">9,100</div>
+                        <div class="parameter-unit">visitantes/mes</div>
+                    </div>
+                    <div class="parameter-card">
+                        <div class="parameter-label">Conversión</div>
+                        <div class="parameter-value" id="baseConversion">1.5%</div>
+                        <div class="parameter-unit">tasa inicial</div>
+                    </div>
+                    <div class="parameter-card">
+                        <div class="parameter-label">Ticket Promedio</div>
+                        <div class="parameter-value" id="baseTicket">$45</div>
+                        <div class="parameter-unit">USD inicial</div>
+                    </div>
+                    <div class="parameter-card">
+                        <div class="parameter-label">WACC</div>
+                        <div class="parameter-value" id="baseWACC">8.0%</div>
+                        <div class="parameter-unit">tasa descuento</div>
+                    </div>
+                    <div class="parameter-card">
+                        <div class="parameter-label">Tipo Cambio CLP</div>
+                        <div class="parameter-value" id="baseExchangeRate">900</div>
+                        <div class="parameter-unit">CLP/USD</div>
+                    </div>
+                    <div class="parameter-card">
+                        <div class="parameter-label">Costos Operativos</div>
+                        <div class="parameter-value" id="baseCosts">52%</div>
+                        <div class="parameter-unit">% ingresos</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Factores Clave que Afectan los Flujos -->
+            <div class="sensitivity-factors mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-key"></i> Factores Clave que Impactan los Flujos de Caja</h3>
+                
+                <div class="factors-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Factor 1: Tráfico Web -->
+                    <div class="factor-card revenue-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Tráfico Web</h4>
+                                <span class="impact-level high">Impacto Alto</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±50% → ±$3.2M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Base del modelo de ingresos. Variaciones significativas impactan directamente el revenue y FCF.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">SEO/SEM</span>
+                                <span class="driver-tag">Marketing Digital</span>
+                                <span class="driver-tag">Expansión Geográfica</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 2: Tasa de Conversión -->
+                    <div class="factor-card revenue-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Tasa de Conversión</h4>
+                                <span class="impact-level high">Impacto Alto</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±40% → ±$2.8M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Eficiencia de conversión de visitantes a compradores. Crítico para la rentabilidad.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">UX/UI</span>
+                                <span class="driver-tag">Precio</span>
+                                <span class="driver-tag">Confianza</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 3: Ticket Promedio -->
+                    <div class="factor-card revenue-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Ticket Promedio</h4>
+                                <span class="impact-level medium">Impacto Medio</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±15% → ±$1.5M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Valor promedio por transacción. Influenciado por mix de productos y estrategia de precios.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">Mix Productos</span>
+                                <span class="driver-tag">Upselling</span>
+                                <span class="driver-tag">Premium</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 4: Costos Operativos -->
+                    <div class="factor-card cost-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Costos Operativos</h4>
+                                <span class="impact-level high">Impacto Alto</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±20% → ±$2.1M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Costos variables y fijos operacionales. Control crítico para mantener márgenes.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">Logística</span>
+                                <span class="driver-tag">Personal</span>
+                                <span class="driver-tag">Marketing</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 5: Tipo de Cambio -->
+                    <div class="factor-card external-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Tipo de Cambio</h4>
+                                <span class="impact-level medium">Impacto Medio</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±10% → ±$1.2M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Fluctuaciones cambiarias afectan ingresos en mercados internacionales y costos de importación.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">USD/CLP</span>
+                                <span class="driver-tag">Hedging</span>
+                                <span class="driver-tag">Exposición</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 6: Velocidad de Expansión -->
+                    <div class="factor-card strategic-driver">
+                        <div class="factor-header">
+                            <div class="factor-icon">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <div class="factor-title">
+                                <h4>Velocidad de Expansión</h4>
+                                <span class="impact-level medium">Impacto Medio</span>
+                            </div>
+                        </div>
+                        <div class="factor-content">
+                            <div class="factor-metric">
+                                <span class="metric-label">Sensibilidad:</span>
+                                <span class="metric-value">±6 meses → ±$0.8M VAN</span>
+                            </div>
+                            <div class="factor-description">
+                                Timing de entrada a nuevos mercados. Acelerar o retrasar expansión impacta flujos futuros.
+                            </div>
+                            <div class="factor-drivers">
+                                <span class="driver-tag">Regulaciones</span>
+                                <span class="driver-tag">Recursos</span>
+                                <span class="driver-tag">Market Timing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resumen de Sensibilidad -->
+                <div class="sensitivity-summary mt-8">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <h4><i class="fas fa-chart-bar"></i> Resumen de Sensibilidad del VAN</h4>
+                        </div>
+                        <div class="summary-content">
+                            <div class="sensitivity-chart">
+                                <div class="chart-item">
+                                    <span class="factor-name">Tráfico Web</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill high" style="width: 85%"></div>
+                                    </div>
+                                    <span class="impact-value">±$3.2M</span>
+                                </div>
+                                <div class="chart-item">
+                                    <span class="factor-name">Conversión</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill high" style="width: 75%"></div>
+                                    </div>
+                                    <span class="impact-value">±$2.8M</span>
+                                </div>
+                                <div class="chart-item">
+                                    <span class="factor-name">Costos Operativos</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill high" style="width: 65%"></div>
+                                    </div>
+                                    <span class="impact-value">±$2.1M</span>
+                                </div>
+                                <div class="chart-item">
+                                    <span class="factor-name">Ticket Promedio</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill medium" style="width: 45%"></div>
+                                    </div>
+                                    <span class="impact-value">±$1.5M</span>
+                                </div>
+                                <div class="chart-item">
+                                    <span class="factor-name">Tipo de Cambio</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill medium" style="width: 35%"></div>
+                                    </div>
+                                    <span class="impact-value">±$1.2M</span>
+                                </div>
+                                <div class="chart-item">
+                                    <span class="factor-name">Velocidad Expansión</span>
+                                    <div class="sensitivity-bar">
+                                        <div class="bar-fill low" style="width: 25%"></div>
+                                    </div>
+                                    <span class="impact-value">±$0.8M</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="scenario-controls">
                 <div class="info-panel">
@@ -763,19 +1318,19 @@
             </div>
 
             <div class="metrics-grid">
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="sensitivityVAN">$0M</div>
                     <div class="metric-label">VAN Escenario Base</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="sensitivityTIR">0%</div>
                     <div class="metric-label">TIR Escenario Base</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="sensitivityRevenue">$0M</div>
                     <div class="metric-label">Revenue 2030</div>
                 </div>
-                <div class="metric-card">
+                <div class="metric-cards">
                     <div class="metric-value" id="sensitivityRisk">Medio</div>
                     <div class="metric-label">Nivel de Riesgo</div>
                 </div>
@@ -799,20 +1354,29 @@
             </div>
         </div>
         
-        <div class="action-buttons">
-            <button class="reset-btn" onclick="resetToDefaults()"><i class="fas fa-undo"></i> Restaurar Valores por Defecto</button>
-            <button class="download-btn" onclick="downloadExcel()"><i class="fas fa-file-excel"></i> Descargar Modelo Excel Completo</button>
+            <div class="action-buttons px-6 py-8 border-t border-gray-200 bg-gray-50">
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="reset-btn flex items-center justify-center px-6 py-3 rounded-lg transition-all duration-200" onclick="resetToDefaults()">
+                        <i class="fas fa-undo mr-2"></i> Restaurar Valores por Defecto
+                    </button>
+                    <button class="download-btn flex items-center justify-center px-6 py-3 rounded-lg transition-all duration-200" onclick="downloadExcel()">
+                        <i class="fas fa-file-excel mr-2"></i> Descargar Modelo Excel Completo
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <img src="static/img/vspt.png" alt="VSPT Logo">
-            </div>
-            <div class="footer-text">
-                <p>&copy; 2025 VSPT Wine Group. Todos los derechos reservados.</p>
-                <p>Modelo Financiero para Expansión Digital | Desarrollado por Alumnos de DUOC UC</p>
+    <footer class="footer mt-8">
+        <div class="footer-content max-w-6xl mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="footer-logo">
+                    <img src="static/img/vspt.png" alt="VSPT Logo" class="h-12 w-auto">
+                </div>
+                <div class="footer-text text-center md:text-right">
+                    <p class="text-sm text-gray-600">&copy; 2025 VSPT Wine Group. Todos los derechos reservados.</p>
+                    <p class="text-xs text-gray-500 mt-1">Modelo Financiero para Expansión Digital | Desarrollado por Alumnos de DUOC UC</p>
+                </div>
             </div>
         </div>
     </footer>

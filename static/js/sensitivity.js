@@ -217,7 +217,7 @@ function calculateScenarioMetrics(baseMetrics, factors) {
     const revenueChange = baseMetrics.revenue2030 * (revenueMultiplier - 1);
     const newRevenue = baseMetrics.revenue2030 + revenueChange;
     
-    console.log('� Impacto en ingresos:', {
+    console.log('💰 Impacto en ingresos:', {
         revenueMultiplier,
         revenueChange: `$${(revenueChange / 1000000).toFixed(2)}M`,
         newRevenue: `$${(newRevenue / 1000000).toFixed(2)}M`
@@ -579,3 +579,521 @@ if (typeof window !== 'undefined') {
         }
     }, 1000);
 }
+
+// Módulo de Análisis de Sensibilidad Dinámico
+class SensitivityAnalysis {
+    constructor() {
+        this.baseScenario = null;
+        this.sensitivityResults = {};
+        this.factors = {
+            traffic: { name: 'Tráfico Web', variations: [-50, -25, 0, 25, 50], unit: '%' },
+            conversion: { name: 'Tasa de Conversión', variations: [-40, -20, 0, 20, 40], unit: '%' },
+            ticket: { name: 'Ticket Promedio', variations: [-15, -10, 0, 10, 15], unit: '%' },
+            costs: { name: 'Costos Operativos', variations: [-15, -10, 0, 10, 20], unit: '%' },
+            wacc: { name: 'WACC', variations: [-2, -1, 0, 1, 2], unit: 'pp' },
+            exchangeRate: { name: 'Tipo de Cambio', variations: [-10, -5, 0, 5, 10], unit: '%' }
+        };
+    }
+
+    // Inicializar análisis de sensibilidad
+    init() {
+        console.log('🔍 Inicializando análisis de sensibilidad dinámico...');
+        this.calculateBaseScenario();
+        this.calculateSensitivities();
+        this.updateSensitivityDisplay();
+    }
+
+    // Calcular escenario base
+    calculateBaseScenario() {
+        console.log('📊 Calculando escenario base...');
+        
+        // Obtener parámetros actuales del modelo
+        const baseParams = this.getCurrentModelParameters();
+        
+        // Generar flujos de caja para verificar
+        const cashFlows = this.generateCashFlows(baseParams);
+        console.log('💰 Flujos de caja generados:', {
+            'CAPEX inicial': `$${(cashFlows[0]/1000).toFixed(0)}K`,
+            '2025 (6m Chile)': `$${(cashFlows[1]/1000).toFixed(0)}K`,
+            '2026': `$${(cashFlows[2]/1000).toFixed(0)}K`,
+            '2027': `$${(cashFlows[3]/1000).toFixed(0)}K`,
+            '2028': `$${(cashFlows[4]/1000).toFixed(0)}K`,
+            '2029': `$${(cashFlows[5]/1000).toFixed(0)}K`,
+            '2030': `$${(cashFlows[6]/1000).toFixed(0)}K`
+        });
+        
+        // Verificar distribución de mercados
+        console.log('🌍 Distribución de mercados verificada:', {
+            'marketDistribution disponible': typeof marketDistribution !== 'undefined',
+            'Chile weight': typeof marketDistribution !== 'undefined' ? marketDistribution.chile?.weight : 'N/A',
+            'Total weights': typeof marketDistribution !== 'undefined' ? 
+                Object.values(marketDistribution).reduce((sum, m) => sum + m.weight, 0) : 'N/A'
+        });
+        
+        // Calcular métricas base
+        this.baseScenario = {
+            params: baseParams,
+            npv: this.calculateNPV(baseParams),
+            irr: this.calculateIRR(baseParams),
+            revenue2030: this.calculateRevenue2030(baseParams),
+            totalCosts: this.calculateTotalCosts(baseParams),
+            cashFlows: cashFlows
+        };
+        
+        console.log('📈 Escenario base calculado:', {
+            'VAN': `$${this.baseScenario.npv.toFixed(1)}M`,
+            'TIR': `${this.baseScenario.irr.toFixed(1)}%`,
+            'Revenue 2030': `$${this.baseScenario.revenue2030.toFixed(1)}M`,
+            'Costos Totales': `$${this.baseScenario.totalCosts.toFixed(1)}M`
+        });
+    }
+
+    // Obtener parámetros actuales del modelo
+    getCurrentModelParameters() {
+        return {
+            initialTraffic: parseFloat(document.getElementById('initialTraffic')?.value || 9100),
+            trafficGrowth: parseFloat(document.getElementById('trafficGrowth')?.value || 100) / 100, // Actualizado a 100%
+            initialConversion: parseFloat(document.getElementById('initialConversion')?.value || 1.5) / 100,
+            conversionGrowth: parseFloat(document.getElementById('conversionGrowthRate')?.value || 40) / 100, // Actualizado a 40%
+            initialTicket: parseFloat(document.getElementById('initialTicket')?.value || 45),
+            ticketGrowth: parseFloat(document.getElementById('ticketGrowth')?.value || 8) / 100,
+            wacc: 8.0, // WACC base
+            exchangeRates: {
+                CLP: 900,
+                MXN: 17,
+                BRL: 5.2,
+                CAD: 1.35
+            },
+            costMultipliers: {
+                marketing: 0.15,
+                operations: 0.25,
+                logistics: 0.12
+            }
+        };
+    }
+
+    // Calcular sensibilidades para todos los factores
+    calculateSensitivities() {
+        console.log('🎯 Calculando sensibilidades...');
+        
+        Object.keys(this.factors).forEach(factorKey => {
+            this.sensitivityResults[factorKey] = this.calculateFactorSensitivity(factorKey);
+        });
+        
+        console.log('📊 Resultados de sensibilidad:', this.sensitivityResults);
+    }
+
+    // Calcular sensibilidad para un factor específico
+    calculateFactorSensitivity(factorKey) {
+        const factor = this.factors[factorKey];
+        const results = [];
+        
+        factor.variations.forEach(variation => {
+            const modifiedParams = this.applyVariation(this.baseScenario.params, factorKey, variation);
+            const scenario = {
+                variation: variation,
+                npv: this.calculateNPV(modifiedParams),
+                irr: this.calculateIRR(modifiedParams),
+                revenue2030: this.calculateRevenue2030(modifiedParams)
+            };
+            results.push(scenario);
+        });
+        
+        // Calcular impacto máximo
+        const maxNPVImpact = Math.max(...results.map(r => Math.abs(r.npv - this.baseScenario.npv)));
+        const maxIRRImpact = Math.max(...results.map(r => Math.abs(r.irr - this.baseScenario.irr)));
+        
+        return {
+            scenarios: results,
+            maxNPVImpact: maxNPVImpact,
+            maxIRRImpact: maxIRRImpact,
+            impactLevel: this.classifyImpact(maxNPVImpact)
+        };
+    }
+
+    // Aplicar variación a parámetros
+    applyVariation(baseParams, factorKey, variation) {
+        const params = JSON.parse(JSON.stringify(baseParams)); // Deep copy
+        
+        switch(factorKey) {
+            case 'traffic':
+                params.initialTraffic *= (1 + variation / 100);
+                break;
+            case 'conversion':
+                params.initialConversion *= (1 + variation / 100);
+                break;
+            case 'ticket':
+                params.initialTicket *= (1 + variation / 100);
+                break;
+            case 'costs':
+                Object.keys(params.costMultipliers).forEach(key => {
+                    params.costMultipliers[key] *= (1 + variation / 100);
+                });
+                break;
+            case 'wacc':
+                params.wacc += variation; // Puntos porcentuales
+                break;
+            case 'exchangeRate':
+                params.exchangeRates.CLP *= (1 + variation / 100);
+                break;
+        }
+        
+        return params;
+    }
+
+    // Calcular VAN con parámetros dados
+    calculateNPV(params) {
+        const cashFlows = this.generateCashFlows(params);
+        const discountRate = params.wacc / 100;
+        
+        let npv = 0;
+        cashFlows.forEach((cf, year) => {
+            npv += cf / Math.pow(1 + discountRate, year + 1);
+        });
+        
+        return npv / 1000000; // En millones
+    }
+
+    // Calcular TIR con parámetros dados
+    calculateIRR(params) {
+        const cashFlows = this.generateCashFlows(params);
+        return this.calculateIRRIterative(cashFlows) * 100; // En porcentaje
+    }
+
+    // Generar flujos de caja proyectados
+    generateCashFlows(params) {
+        const years = [2025, 2026, 2027, 2028, 2029, 2030]; // Incluir 2025
+        const cashFlows = [];
+        
+        // CAPEX inicial (antes de 2025)
+        const initialCapex = -800000; // $800K
+        
+        years.forEach((year, index) => {
+            const yearIndex = index; // 2025 = año 0, 2026 = año 1, etc.
+            
+            // Para 2025, solo 6 meses de operación (Q3-Q4) - Solo Chile
+            const monthsOfOperation = year === 2025 ? 6 : 12;
+            
+            // Calcular ingresos
+            let traffic, conversion, ticket;
+            
+            if (year === 2025) {
+                // Valores iniciales para 2025 (más conservadores)
+                traffic = params.initialTraffic;
+                conversion = params.initialConversion;
+                ticket = params.initialTicket;
+            } else {
+                // Crecimiento desde 2025 como base
+                traffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
+                conversion = params.initialConversion * Math.pow(1 + params.conversionGrowth, yearIndex);
+                ticket = params.initialTicket * Math.pow(1 + params.ticketGrowth, yearIndex);
+            }
+            
+            const monthlyOrders = traffic * conversion;
+            const monthlyRevenue = monthlyOrders * ticket;
+            const annualRevenue = monthlyRevenue * monthsOfOperation; // Ajustado por meses
+            
+            // Aplicar distribución por mercados y tipos de cambio (pasar el yearIndex)
+            const revenueUSD = this.convertToUSD(annualRevenue, params.exchangeRates, yearIndex);
+            
+            // Calcular costos
+            const marketingCosts = revenueUSD * params.costMultipliers.marketing;
+            const operationsCosts = revenueUSD * params.costMultipliers.operations;
+            const logisticsCosts = revenueUSD * params.costMultipliers.logistics;
+            const totalCosts = marketingCosts + operationsCosts + logisticsCosts;
+            
+            // EBITDA
+            const ebitda = revenueUSD - totalCosts;
+            
+            // Depreciación (simplificada)
+            const depreciation = year === 2025 ? 40000 : 80000; // Proporcional para 2025
+            
+            // EBIT
+            const ebit = ebitda - depreciation;
+            
+            // Impuestos (promedio ponderado)
+            const taxRate = year === 2025 ? 0.27 : 0.25; // Chile tiene 27% en 2025
+            const taxes = ebit > 0 ? ebit * taxRate : 0;
+            
+            // Flujo de caja libre
+            const fcf = ebit - taxes + depreciation;
+            
+            cashFlows.push(fcf);
+        });
+        
+        return [initialCapex, ...cashFlows];
+    }
+
+    // Convertir ingresos a USD considerando mix de mercados por año
+    convertToUSD(revenueLocal, exchangeRates, year = null) {
+        // Verificar si marketDistribution está disponible
+        if (typeof marketDistribution === 'undefined') {
+            console.warn('⚠️ marketDistribution no disponible, usando valores por defecto');
+            // Fallback a valores por defecto
+            const marketMix = year === 0 ? 
+                { Chile: 1.00, Mexico: 0.00, Brazil: 0.00, Canada: 0.00, USA: 0.00 } :
+                { Chile: 0.40, Mexico: 0.25, Brazil: 0.15, Canada: 0.10, USA: 0.10 };
+            
+            let revenueUSD = 0;
+            revenueUSD += (revenueLocal * marketMix.Chile) / exchangeRates.CLP;
+            revenueUSD += (revenueLocal * marketMix.Mexico) / exchangeRates.MXN;
+            revenueUSD += (revenueLocal * marketMix.Brazil) / exchangeRates.BRL;
+            revenueUSD += (revenueLocal * marketMix.Canada) / exchangeRates.CAD;
+            revenueUSD += (revenueLocal * marketMix.USA);
+            return revenueUSD;
+        }
+        
+        // Usar marketDistribution real
+        let revenueUSD = 0;
+        
+        if (year === 0) { // 2025 - Solo Chile
+            const chileData = marketDistribution.chile;
+            revenueUSD = revenueLocal / exchangeRates[chileData.currency];
+        } else {
+            // Años posteriores - Distribución normal
+            Object.keys(marketDistribution).forEach(market => {
+                const marketData = marketDistribution[market];
+                const marketRevenue = revenueLocal * marketData.weight;
+                
+                if (marketData.currency === 'USD') {
+                    revenueUSD += marketRevenue;
+                } else {
+                    revenueUSD += marketRevenue / exchangeRates[marketData.currency];
+                }
+            });
+        }
+        
+        return revenueUSD;
+    }
+
+    // Calcular revenue 2030
+    calculateRevenue2030(params) {
+        const yearIndex = 5; // 2030 es año 5 desde 2025
+        const traffic2030 = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
+        const conversion2030 = params.initialConversion * Math.pow(1 + params.conversionGrowth, yearIndex);
+        const ticket2030 = params.initialTicket * Math.pow(1 + params.ticketGrowth, yearIndex);
+        
+        const monthlyRevenue = traffic2030 * conversion2030 * ticket2030;
+        const annualRevenue = monthlyRevenue * 12;
+        
+        // Para 2030, usar distribución normal de mercados (yearIndex = 5)
+        return this.convertToUSD(annualRevenue, params.exchangeRates, yearIndex) / 1000000; // En millones
+    }
+
+    // Calcular costos totales
+    calculateTotalCosts(params) {
+        const revenue2030 = this.calculateRevenue2030(params) * 1000000; // Volver a unidades
+        const totalCostRate = Object.values(params.costMultipliers).reduce((sum, rate) => sum + rate, 0);
+        return (revenue2030 * totalCostRate) / 1000000; // En millones
+    }
+
+    // Calcular TIR iterativo
+    calculateIRRIterative(cashFlows) {
+        let rate = 0.1; // Tasa inicial 10%
+        let tolerance = 0.0001;
+        let maxIterations = 1000;
+        
+        for (let i = 0; i < maxIterations; i++) {
+            let npv = 0;
+            let dnpv = 0;
+            
+            for (let j = 0; j < cashFlows.length; j++) {
+                npv += cashFlows[j] / Math.pow(1 + rate, j);
+                dnpv -= j * cashFlows[j] / Math.pow(1 + rate, j + 1);
+            }
+            
+            if (Math.abs(npv) < tolerance) {
+                return rate;
+            }
+            
+            rate = rate - npv / dnpv;
+            
+            if (rate < -0.99) rate = -0.99;
+            if (rate > 10) rate = 10;
+        }
+        
+        return rate;
+    }
+
+    // Clasificar nivel de impacto
+    classifyImpact(npvImpact) {
+        if (npvImpact >= 2.0) return 'high';
+        if (npvImpact >= 1.0) return 'medium';
+        return 'low';
+    }
+
+    // Actualizar display de sensibilidad
+    updateSensitivityDisplay() {
+        console.log('🎨 Actualizando display de sensibilidad...');
+        
+        // Actualizar factores individuales
+        this.updateFactorCards();
+        
+        // Actualizar gráfico de barras
+        this.updateSensitivityChart();
+        
+        // Actualizar métricas base
+        this.updateBaseMetrics();
+    }
+
+    // Actualizar tarjetas de factores
+    updateFactorCards() {
+        const factorKeys = Object.keys(this.factors);
+        
+        factorKeys.forEach((factorKey, index) => {
+            const factor = this.factors[factorKey];
+            const result = this.sensitivityResults[factorKey];
+            
+            if (!result) return;
+            
+            // Buscar la tarjeta correspondiente
+            const factorCards = document.querySelectorAll('.factor-card');
+            if (factorCards[index]) {
+                const card = factorCards[index];
+                
+                // Actualizar métrica de sensibilidad
+                const metricValue = card.querySelector('.factor-metric .metric-value');
+                if (metricValue) {
+                    const maxVariation = Math.max(...factor.variations.map(Math.abs));
+                    metricValue.textContent = `±${maxVariation}${factor.unit} → ±$${result.maxNPVImpact.toFixed(1)}M VAN`;
+                }
+                
+                // Actualizar nivel de impacto
+                const impactLevel = card.querySelector('.impact-level');
+                if (impactLevel) {
+                    impactLevel.className = `impact-level ${result.impactLevel}`;
+                    impactLevel.textContent = `Impacto ${result.impactLevel === 'high' ? 'Alto' : 
+                                                      result.impactLevel === 'medium' ? 'Medio' : 'Bajo'}`;
+                }
+            }
+        });
+    }
+
+    // Actualizar gráfico de barras de sensibilidad
+    updateSensitivityChart() {
+        const chartItems = document.querySelectorAll('.chart-item');
+        const factorKeys = Object.keys(this.factors);
+        
+        // Encontrar el impacto máximo para normalizar las barras
+        const maxImpact = Math.max(...Object.values(this.sensitivityResults).map(r => r.maxNPVImpact));
+        
+        factorKeys.forEach((factorKey, index) => {
+            if (chartItems[index]) {
+                const result = this.sensitivityResults[factorKey];
+                const chartItem = chartItems[index];
+                
+                // Actualizar nombre del factor
+                const factorName = chartItem.querySelector('.factor-name');
+                if (factorName) {
+                    factorName.textContent = this.factors[factorKey].name;
+                }
+                
+                // Actualizar barra
+                const barFill = chartItem.querySelector('.bar-fill');
+                if (barFill && result) {
+                    const percentage = (result.maxNPVImpact / maxImpact) * 100;
+                    barFill.style.width = `${percentage}%`;
+                    barFill.className = `bar-fill ${result.impactLevel}`;
+                }
+                
+                // Actualizar valor de impacto
+                const impactValue = chartItem.querySelector('.impact-value');
+                if (impactValue && result) {
+                    impactValue.textContent = `±$${result.maxNPVImpact.toFixed(1)}M`;
+                }
+            }
+        });
+    }
+
+    // Actualizar métricas base
+    updateBaseMetrics() {
+        if (!this.baseScenario) return;
+        
+        // Actualizar métricas en la sección principal
+        const sensitivityVAN = document.getElementById('sensitivityVAN');
+        const sensitivityTIR = document.getElementById('sensitivityTIR');
+        const sensitivityRevenue = document.getElementById('sensitivityRevenue');
+        
+        if (sensitivityVAN) {
+            sensitivityVAN.textContent = `$${this.baseScenario.npv.toFixed(1)}M`;
+        }
+        
+        if (sensitivityTIR) {
+            sensitivityTIR.textContent = `${this.baseScenario.irr.toFixed(1)}%`;
+        }
+        
+        if (sensitivityRevenue) {
+            sensitivityRevenue.textContent = `$${this.baseScenario.revenue2030.toFixed(1)}M`;
+        }
+        
+        // Actualizar parámetros base
+        this.updateBaseParameters();
+    }
+    
+    // Actualizar parámetros base en la interfaz
+    updateBaseParameters() {
+        if (!this.baseScenario) return;
+        
+        const params = this.baseScenario.params;
+        
+        // Actualizar valores de parámetros
+        const baseTraffic = document.getElementById('baseTraffic');
+        const baseConversion = document.getElementById('baseConversion');
+        const baseTicket = document.getElementById('baseTicket');
+        const baseWACC = document.getElementById('baseWACC');
+        const baseExchangeRate = document.getElementById('baseExchangeRate');
+        const baseCosts = document.getElementById('baseCosts');
+        
+        if (baseTraffic) {
+            baseTraffic.textContent = `${params.initialTraffic.toLocaleString()} (+${(params.trafficGrowth * 100).toFixed(0)}%/año)`;
+        }
+        
+        if (baseConversion) {
+            baseConversion.textContent = `${(params.initialConversion * 100).toFixed(1)}% (+${(params.conversionGrowth * 100).toFixed(0)}%/año)`;
+        }
+        
+        if (baseTicket) {
+            baseTicket.textContent = `$${params.initialTicket.toFixed(0)} (+${(params.ticketGrowth * 100).toFixed(0)}%/año)`;
+        }
+        
+        if (baseWACC) {
+            baseWACC.textContent = `${params.wacc.toFixed(1)}%`;
+        }
+        
+        if (baseExchangeRate) {
+            baseExchangeRate.textContent = `${params.exchangeRates.CLP.toLocaleString()} CLP/USD`;
+        }
+        
+        if (baseCosts) {
+            const totalCostRate = Object.values(params.costMultipliers).reduce((sum, rate) => sum + rate, 0);
+            baseCosts.textContent = `${(totalCostRate * 100).toFixed(0)}% ingresos`;
+        }
+    }
+
+    // Recalcular cuando cambien parámetros
+    recalculate() {
+        console.log('🔄 Recalculando sensibilidad...');
+        this.calculateBaseScenario();
+        this.calculateSensitivities();
+        this.updateSensitivityDisplay();
+    }
+}
+
+// Instancia global
+window.sensitivityAnalysis = new SensitivityAnalysis();
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        if (window.sensitivityAnalysis) {
+            window.sensitivityAnalysis.init();
+        }
+    }, 1000); // Esperar a que otros módulos se carguen
+});
+
+// Función para recalcular desde otros módulos
+window.updateSensitivityAnalysis = function() {
+    if (window.sensitivityAnalysis) {
+        window.sensitivityAnalysis.recalculate();
+    }
+};

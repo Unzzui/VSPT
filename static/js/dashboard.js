@@ -80,23 +80,52 @@ class Dashboard {
         const revenues = {};
         
         // Usar exactamente el mismo cálculo que revenues.js
-        for (let year = 2026; year <= 2030; year++) {
-            const yearIndex = year - 2026;
-            const yearlyTraffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex + 1);
+        for (let year = 2025; year <= 2030; year++) {
+            const yearIndex = year - 2025; // Cambiar base a 2025
             
-            // CONVERSIÓN CRECIENTE: Mejora gradual año a año (igual que revenues.js)
-            const conversionRate = Math.min(
-                params.initialConversion * Math.pow(1 + params.conversionGrowthRate, yearIndex), 
-                0.08 // Máximo 8%
-            );
+            // Para 2025, solo 6 meses de operación
+            const monthsOfOperation = year === 2025 ? 6 : 12;
             
-            const ticketSize = params.avgTicket * (1 + yearIndex * 0.08); // Crecimiento premium 8% anual
+            // Tráfico base ajustado por año
+            let yearlyTraffic;
+            if (year === 2025) {
+                yearlyTraffic = params.initialTraffic * 0.5; // 50% del tráfico inicial para Q3-Q4
+            } else {
+                yearlyTraffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
+            }
+            
+            // CONVERSIÓN CRECIENTE: Mejora gradual año a año
+            let conversionRate;
+            if (year === 2025) {
+                conversionRate = params.initialConversion * 0.7; // 70% de la conversión inicial
+            } else {
+                conversionRate = Math.min(
+                    params.initialConversion * Math.pow(1 + params.conversionGrowthRate, yearIndex - 1), 
+                    0.08 // Máximo 8%
+                );
+            }
+            
+            const ticketSize = params.avgTicket * (1 + Math.max(0, yearIndex - 1) * 0.08); // Sin crecimiento en 2025
 
             revenues[year] = {};
             
             Object.keys(marketDistribution).forEach(market => {
                 const marketData = marketDistribution[market];
-                const marketTraffic = yearlyTraffic * marketData.weight * 12; // Mensual * 12
+                
+                // En 2025, solo Chile tiene ingresos
+                if (year === 2025 && market !== 'chile') {
+                    revenues[year][market] = {
+                        traffic: 0,
+                        conversionRate: 0,
+                        orders: 0,
+                        avgTicket: 0,
+                        grossRevenue: 0,
+                        netRevenue: 0
+                    };
+                    return;
+                }
+                
+                const marketTraffic = yearlyTraffic * marketData.weight * monthsOfOperation;
                 const orders = marketTraffic * conversionRate;
                 const localPrice = ticketSize * marketData.premium;
                 const grossRevenue = orders * localPrice;
@@ -126,7 +155,9 @@ class Dashboard {
             return sum + (revenues[2026][market] ? revenues[2026][market].netRevenue : 0);
         }, 0);
 
-        const cagr = revenue2026 > 0 ? Math.pow(revenue2030 / revenue2026, 1/4) - 1 : 0;
+        // CAGR desde Chile 2025 hasta total 2030
+        const revenue2025Chile = revenues[2025] && revenues[2025].chile ? revenues[2025].chile.netRevenue : 0;
+        const cagr = revenue2025Chile > 0 ? Math.pow(revenue2030 / revenue2025Chile, 1/5) - 1 : 0;
 
         return {
             yearlyData: revenues,
@@ -481,6 +512,11 @@ class Dashboard {
                 this.data.cashflow.npv = this.calculateNPV();
             }
             
+            // Calcular TIR económica si no está disponible del modelo
+            if (!this.data.cashflow.economicIRR) {
+                this.data.cashflow.economicIRR = this.calculateSimpleIRR(yearlyFCF);
+            }
+            
             // Calcular métricas financieras solo si no están disponibles del modelo
             if (!this.data.cashflow.financialNPV) {
                 this.data.cashflow.financialNPV = this.calculateFinancialNPV();
@@ -539,9 +575,18 @@ class Dashboard {
             'dashTotalCapex': this.formatCurrency(this.data.capex.totalCapex, 'K'),
             'dashROI': roi + '%',
             'dashNPV': this.formatCurrency(this.data.cashflow.npv || 2500000),
+            'dashEconomicIRR': Math.round(this.data.cashflow.economicIRR || 0) + '%',
             'dashFinancialNPV': this.formatCurrency(this.data.cashflow.financialNPV || 1800000),
             'dashFinancialIRR': Math.round(this.data.cashflow.financialIRR || 0) + '%'
         };
+
+        // Logging detallado para debugging
+        console.log('📊 Actualizando KPIs Dashboard:');
+        console.log(`- ROI: ${roi}%`);
+        console.log(`- VAN Económico: $${((this.data.cashflow.npv || 0)/1000).toFixed(0)}K`);
+        console.log(`- TIR Económica: ${Math.round(this.data.cashflow.economicIRR || 0)}%`);
+        console.log(`- VAN Financiero: $${((this.data.cashflow.financialNPV || 0)/1000).toFixed(0)}K`);
+        console.log(`- TIR Financiera: ${Math.round(this.data.cashflow.financialIRR || 0)}%`);
 
         Object.entries(elements).forEach(([id, value]) => {
             const element = document.getElementById(id);
@@ -550,6 +595,12 @@ class Dashboard {
         
         // Actualizar estado del ROI dinámicamente
         this.updateROIStatus(roi);
+        
+        // Actualizar estados de VAN y TIR dinámicamente
+        this.updateNPVStatus();
+        this.updateEconomicIRRStatus();
+        this.updateFinancialNPVStatus();
+        this.updateFinancialIRRStatus();
     }
     
     // Actualizar estado del ROI basado en el valor
@@ -577,6 +628,211 @@ class Dashboard {
         } else {
             trendElement.classList.add('negative');
             statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
+        }
+    }
+
+    // Actualizar estado del VAN Económico basado en el valor
+    updateNPVStatus() {
+        const npvValue = this.data.cashflow.npv || 0;
+        // Buscar específicamente la tarjeta del VAN Económico por su contenido
+        const npvCards = document.querySelectorAll('.kpi-card');
+        let npvCard = null;
+        
+        npvCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('VAN Económico')) {
+                npvCard = card;
+            }
+        });
+        
+        const npvTrend = npvCard?.querySelector('.kpi-trend');
+        
+        console.log(`📈 Evaluando VAN Económico: $${(npvValue/1000).toFixed(0)}K`);
+        
+        if (!npvTrend) {
+            console.log('⚠️ No se encontró el elemento de tendencia del VAN Económico');
+            return;
+        }
+        
+        // Limpiar clases existentes
+        npvTrend.className = 'kpi-trend';
+        
+        if (npvValue >= 2000000) { // >= $2M
+            npvTrend.classList.add('positive');
+            npvTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+            console.log('- Evaluación: Excelente (>= $2M)');
+        } else if (npvValue >= 1000000) { // >= $1M
+            npvTrend.classList.add('positive');
+            npvTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+            console.log('- Evaluación: Muy Bueno (>= $1M)');
+        } else if (npvValue > 0) { // > $0
+            npvTrend.classList.add('positive');
+            npvTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Positivo';
+            console.log('- Evaluación: Positivo (> $0)');
+        } else if (npvValue >= -500000) { // >= -$500K
+            npvTrend.classList.add('warning');
+            npvTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+            console.log('- Evaluación: Bajo (>= -$500K)');
+        } else { // < -$500K
+            npvTrend.classList.add('negative');
+            npvTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
+            console.log('- Evaluación: Negativo (< -$500K)');
+        }
+    }
+    
+    // Actualizar estado de la TIR Económica basado en el valor
+    updateEconomicIRRStatus() {
+        const economicIRRValue = this.data.cashflow.economicIRR || 0;
+        // Buscar específicamente la tarjeta de la TIR Económica por su contenido
+        const economicIRRCards = document.querySelectorAll('.kpi-card');
+        let economicIRRCard = null;
+        
+        economicIRRCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('TIR Económica')) {
+                economicIRRCard = card;
+            }
+        });
+        
+        const economicIRRTrend = economicIRRCard?.querySelector('.kpi-trend');
+        
+        console.log(`📈 Evaluando TIR Económica: ${economicIRRValue.toFixed(1)}%`);
+        
+        if (!economicIRRTrend) {
+            console.log('⚠️ No se encontró el elemento de tendencia de la TIR Económica');
+            return;
+        }
+        
+        // Limpiar clases existentes
+        economicIRRTrend.className = 'kpi-trend';
+        
+        // Comparar con WACC (8%)
+        if (economicIRRValue >= 15) { // >= 15%
+            economicIRRTrend.classList.add('positive');
+            economicIRRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+            console.log('- Evaluación: Excelente (>= 15%)');
+        } else if (economicIRRValue >= 12) { // >= 12%
+            economicIRRTrend.classList.add('positive');
+            economicIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+            console.log('- Evaluación: Muy Bueno (>= 12%)');
+        } else if (economicIRRValue >= 8) { // >= 8% (WACC)
+            economicIRRTrend.classList.add('positive');
+            economicIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Viable';
+            console.log('- Evaluación: Viable (>= WACC 8%)');
+        } else if (economicIRRValue >= 5) { // >= 5%
+            economicIRRTrend.classList.add('warning');
+            economicIRRTrend.innerHTML = '<i class="fas fa-minus"></i> Marginal';
+            console.log('- Evaluación: Marginal (>= 5%)');
+        } else if (economicIRRValue >= 0) { // >= 0%
+            economicIRRTrend.classList.add('warning');
+            economicIRRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+            console.log('- Evaluación: Bajo (>= 0%)');
+        } else { // < 0%
+            economicIRRTrend.classList.add('negative');
+            economicIRRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
+            console.log('- Evaluación: Negativo (< 0%)');
+        }
+    }
+    
+    // Actualizar estado del VAN Financiero basado en el valor
+    updateFinancialNPVStatus() {
+        const financialNPVValue = this.data.cashflow.financialNPV || 0;
+        // Buscar específicamente la tarjeta del VAN Financiero por su contenido
+        const financialNPVCards = document.querySelectorAll('.kpi-card');
+        let financialNPVCard = null;
+        
+        financialNPVCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('VAN Financiero')) {
+                financialNPVCard = card;
+            }
+        });
+        
+        const financialNPVTrend = financialNPVCard?.querySelector('.kpi-trend');
+        
+        console.log(`📈 Evaluando VAN Financiero: $${(financialNPVValue/1000).toFixed(0)}K`);
+        
+        if (!financialNPVTrend) {
+            console.log('⚠️ No se encontró el elemento de tendencia del VAN Financiero');
+            return;
+        }
+        
+        // Limpiar clases existentes
+        financialNPVTrend.className = 'kpi-trend';
+        
+        if (financialNPVValue >= 1500000) { // >= $1.5M
+            financialNPVTrend.classList.add('positive');
+            financialNPVTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+            console.log('- Evaluación: Excelente (>= $1.5M)');
+        } else if (financialNPVValue >= 800000) { // >= $800K
+            financialNPVTrend.classList.add('positive');
+            financialNPVTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+            console.log('- Evaluación: Muy Bueno (>= $800K)');
+        } else if (financialNPVValue > 0) { // > $0
+            financialNPVTrend.classList.add('positive');
+            financialNPVTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Positivo';
+            console.log('- Evaluación: Positivo (> $0)');
+        } else if (financialNPVValue >= -300000) { // >= -$300K
+            financialNPVTrend.classList.add('warning');
+            financialNPVTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+            console.log('- Evaluación: Bajo (>= -$300K)');
+        } else { // < -$300K
+            financialNPVTrend.classList.add('negative');
+            financialNPVTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
+            console.log('- Evaluación: Negativo (< -$300K)');
+        }
+    }
+    
+    // Actualizar estado de la TIR Financiera basado en el valor
+    updateFinancialIRRStatus() {
+        const financialIRRValue = this.data.cashflow.financialIRR || 0;
+        // Buscar específicamente la tarjeta de la TIR Financiera por su contenido
+        const financialIRRCards = document.querySelectorAll('.kpi-card');
+        let financialIRRCard = null;
+        
+        financialIRRCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('TIR Financiera')) {
+                financialIRRCard = card;
+            }
+        });
+        
+        const financialIRRTrend = financialIRRCard?.querySelector('.kpi-trend');
+        
+        console.log(`📈 Evaluando TIR Financiera: ${financialIRRValue.toFixed(1)}%`);
+        
+        if (!financialIRRTrend) {
+            console.log('⚠️ No se encontró el elemento de tendencia de la TIR Financiera');
+            return;
+        }
+        
+        // Limpiar clases existentes
+        financialIRRTrend.className = 'kpi-trend';
+        
+        if (financialIRRValue >= 30) { // >= 30%
+            financialIRRTrend.classList.add('positive');
+            financialIRRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+            console.log('- Evaluación: Excelente (>= 30%)');
+        } else if (financialIRRValue >= 20) { // >= 20%
+            financialIRRTrend.classList.add('positive');
+            financialIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+            console.log('- Evaluación: Muy Bueno (>= 20%)');
+        } else if (financialIRRValue >= 12) { // >= 12% (por encima del WACC típico)
+            financialIRRTrend.classList.add('positive');
+            financialIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Bueno';
+            console.log('- Evaluación: Bueno (>= 12%)');
+        } else if (financialIRRValue >= 8) { // >= 8%
+            financialIRRTrend.classList.add('warning');
+            financialIRRTrend.innerHTML = '<i class="fas fa-minus"></i> Regular';
+            console.log('- Evaluación: Regular (>= 8%)');
+        } else if (financialIRRValue > 0) { // > 0%
+            financialIRRTrend.classList.add('warning');
+            financialIRRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+            console.log('- Evaluación: Bajo (> 0%)');
+        } else { // <= 0%
+            financialIRRTrend.classList.add('negative');
+            financialIRRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
+            console.log('- Evaluación: Negativo (<= 0%)');
         }
     }
 
@@ -678,10 +934,11 @@ class Dashboard {
         const labels = countries.map(market => marketDistribution[market].label);
         const shares = countries.map(market => marketDistribution[market].weight * 100);
         const colors = [
-            '#1e3a8a', // USA - Azul
-            '#15803d', // Brasil - Verde
-            '#dc2626', // México - Rojo
-            '#f59e0b'  // Canadá - Amarillo/Naranja
+            '#dc2626', // Chile - Rojo
+            '#15803d', // México - Verde
+            '#1e3a8a', // Brasil - Azul
+            '#7c3aed', // Canadá - Púrpura
+            '#f59e0b'  // USA - Amarillo/Naranja
         ];
 
         if (this.charts.market) {
@@ -856,6 +1113,11 @@ class Dashboard {
             
             this.charts.revenue.update();
         }
+        
+        // Evaluar viabilidad del proyecto después de actualizar todos los KPIs
+        setTimeout(() => {
+            evaluateProjectViability();
+        }, 100);
     }
 
     // Utilidades
@@ -898,5 +1160,262 @@ document.addEventListener('DOMContentLoaded', function() {
 window.updateDashboard = function() {
     if (window.vsptDashboard && window.vsptDashboard.initialized) {
         window.vsptDashboard.update();
+        
+        // También evaluar viabilidad directamente
+        setTimeout(() => {
+            evaluateProjectViability();
+        }, 200);
+        
+        // Actualizar análisis de sensibilidad si está disponible
+        setTimeout(() => {
+            if (window.updateSensitivityAnalysis) {
+                window.updateSensitivityAnalysis();
+            }
+        }, 500);
     }
-}; 
+};
+
+// Función para evaluar la viabilidad del proyecto
+function evaluateProjectViability() {
+    console.log('🔍 Evaluando viabilidad del proyecto...');
+    
+    // Obtener métricas calculadas de los elementos correctos
+    const economicIRRElement = document.getElementById('economicIRR');
+    const financialIRRElement = document.getElementById('financialIRR');
+    const economicNPVElement = document.getElementById('economicNPV');
+    const financialNPVElement = document.getElementById('financialNPV');
+    
+    // También intentar obtener del dashboard principal como fallback
+    const dashEconomicIRRElement = document.getElementById('dashEconomicIRR');
+    const dashFinancialIRRElement = document.getElementById('dashFinancialIRR');
+    const dashNPVElement = document.getElementById('dashNPV');
+    const dashFinancialNPVElement = document.getElementById('dashFinancialNPV');
+    
+    const economicIRR = parseFloat(economicIRRElement?.textContent?.replace('%', '') || 
+                                  dashEconomicIRRElement?.textContent?.replace('%', '') || '0');
+    const financialIRR = parseFloat(financialIRRElement?.textContent?.replace('%', '') || 
+                                   dashFinancialIRRElement?.textContent?.replace('%', '') || '0');
+    const economicNPV = parseFloat(economicNPVElement?.textContent?.replace(/[$M,]/g, '') || 
+                                  dashNPVElement?.textContent?.replace(/[$M,]/g, '') || '0');
+    const financialNPV = parseFloat(financialNPVElement?.textContent?.replace(/[$M,]/g, '') || 
+                                   dashFinancialNPVElement?.textContent?.replace(/[$M,]/g, '') || '0');
+    
+    // Tasas de descuento (estas podrían venir de configuración)
+    const WACC = 8.0; // Costo promedio ponderado de capital
+    const Ke = 12.0;  // Costo del patrimonio
+    
+    console.log('📊 Elementos encontrados:', {
+        economicIRRElement: economicIRRElement?.textContent,
+        financialIRRElement: financialIRRElement?.textContent,
+        economicNPVElement: economicNPVElement?.textContent,
+        financialNPVElement: financialNPVElement?.textContent,
+        dashEconomicIRRElement: dashEconomicIRRElement?.textContent,
+        dashFinancialIRRElement: dashFinancialIRRElement?.textContent,
+        dashNPVElement: dashNPVElement?.textContent,
+        dashFinancialNPVElement: dashFinancialNPVElement?.textContent
+    });
+    
+    console.log('📊 Métricas obtenidas:', {
+        economicIRR,
+        financialIRR,
+        economicNPV,
+        financialNPV,
+        WACC,
+        Ke
+    });
+    
+    // Actualizar valores en la interfaz
+    updateViabilityMetrics(economicIRR, financialIRR, economicNPV, financialNPV, WACC, Ke);
+    
+    // Evaluar viabilidad económica
+    const economicViability = evaluateEconomicViability(economicIRR, economicNPV, WACC);
+    
+    // Evaluar viabilidad financiera
+    const financialViability = evaluateFinancialViability(financialIRR, financialNPV, Ke);
+    
+    // Mostrar resultados
+    displayViabilityResults(economicViability, financialViability);
+    
+    // Generar conclusión general
+    generateProjectConclusion(economicViability, financialViability);
+}
+
+// Función para actualizar las métricas en la interfaz
+function updateViabilityMetrics(economicIRR, financialIRR, economicNPV, financialNPV, WACC, Ke) {
+    // Actualizar valores económicos
+    const economicIRRElement = document.getElementById('economicIRRValue');
+    const waccElement = document.getElementById('waccValue');
+    const economicNPVElement = document.getElementById('economicNPVValue');
+    
+    if (economicIRRElement) economicIRRElement.textContent = `${economicIRR.toFixed(1)}%`;
+    if (waccElement) waccElement.textContent = `${WACC.toFixed(1)}%`;
+    if (economicNPVElement) economicNPVElement.textContent = `$${economicNPV.toFixed(1)}M`;
+    
+    // Actualizar valores financieros
+    const financialIRRElement = document.getElementById('financialIRRValue');
+    const keElement = document.getElementById('keValue');
+    const financialNPVElement = document.getElementById('financialNPVValue');
+    
+    if (financialIRRElement) financialIRRElement.textContent = `${financialIRR.toFixed(1)}%`;
+    if (keElement) keElement.textContent = `${Ke.toFixed(1)}%`;
+    if (financialNPVElement) financialNPVElement.textContent = `$${financialNPV.toFixed(1)}M`;
+}
+
+// Función para evaluar viabilidad económica
+function evaluateEconomicViability(irr, npv, wacc) {
+    const irrDifference = irr - wacc;
+    
+    let status, description, icon, viable;
+    
+    if (irr > wacc && npv > 0) {
+        if (irrDifference >= 5) {
+            status = 'Altamente Viable';
+            description = `TIR supera WACC por ${irrDifference.toFixed(1)}pp. VAN positivo.`;
+            icon = 'fas fa-check-circle';
+            viable = 'viable';
+        } else if (irrDifference >= 2) {
+            status = 'Viable';
+            description = `TIR supera WACC por ${irrDifference.toFixed(1)}pp. VAN positivo.`;
+            icon = 'fas fa-check-circle';
+            viable = 'viable';
+        } else {
+            status = 'Marginalmente Viable';
+            description = `TIR supera WACC por ${irrDifference.toFixed(1)}pp. Margen ajustado.`;
+            icon = 'fas fa-exclamation-triangle';
+            viable = 'marginal';
+        }
+    } else if (irr > wacc && npv <= 0) {
+        status = 'Revisar Análisis';
+        description = 'TIR > WACC pero VAN negativo. Verificar cálculos.';
+        icon = 'fas fa-question-circle';
+        viable = 'marginal';
+    } else {
+        status = 'No Viable';
+        description = `TIR (${irr.toFixed(1)}%) inferior al WACC (${wacc.toFixed(1)}%).`;
+        icon = 'fas fa-times-circle';
+        viable = 'not-viable';
+    }
+    
+    return { status, description, icon, viable, irrDifference };
+}
+
+// Función para evaluar viabilidad financiera
+function evaluateFinancialViability(irr, npv, ke) {
+    const irrDifference = irr - ke;
+    
+    let status, description, icon, viable;
+    
+    if (irr > ke && npv > 0) {
+        if (irrDifference >= 8) {
+            status = 'Altamente Atractivo';
+            description = `TIR supera Ke por ${irrDifference.toFixed(1)}pp. Excelente retorno.`;
+            icon = 'fas fa-star';
+            viable = 'viable';
+        } else if (irrDifference >= 3) {
+            status = 'Atractivo';
+            description = `TIR supera Ke por ${irrDifference.toFixed(1)}pp. Buen retorno.`;
+            icon = 'fas fa-check-circle';
+            viable = 'viable';
+        } else {
+            status = 'Marginalmente Atractivo';
+            description = `TIR supera Ke por ${irrDifference.toFixed(1)}pp. Retorno ajustado.`;
+            icon = 'fas fa-exclamation-triangle';
+            viable = 'marginal';
+        }
+    } else if (irr > ke && npv <= 0) {
+        status = 'Revisar Análisis';
+        description = 'TIR > Ke pero VAN negativo. Verificar cálculos.';
+        icon = 'fas fa-question-circle';
+        viable = 'marginal';
+    } else {
+        status = 'No Atractivo';
+        description = `TIR (${irr.toFixed(1)}%) inferior al Ke (${ke.toFixed(1)}%).`;
+        icon = 'fas fa-times-circle';
+        viable = 'not-viable';
+    }
+    
+    return { status, description, icon, viable, irrDifference };
+}
+
+// Función para mostrar los resultados de viabilidad
+function displayViabilityResults(economicViability, financialViability) {
+    // Mostrar resultado económico
+    const economicResultElement = document.getElementById('economicViabilityResult');
+    if (economicResultElement) {
+        economicResultElement.className = `viability-result ${economicViability.viable}`;
+        economicResultElement.innerHTML = `
+            <div class="result-icon">
+                <i class="${economicViability.icon}"></i>
+            </div>
+            <div class="result-text">
+                <span class="result-status">${economicViability.status}</span>
+                <span class="result-description">${economicViability.description}</span>
+            </div>
+        `;
+    }
+    
+    // Mostrar resultado financiero
+    const financialResultElement = document.getElementById('financialViabilityResult');
+    if (financialResultElement) {
+        financialResultElement.className = `viability-result ${financialViability.viable}`;
+        financialResultElement.innerHTML = `
+            <div class="result-icon">
+                <i class="${financialViability.icon}"></i>
+            </div>
+            <div class="result-text">
+                <span class="result-status">${financialViability.status}</span>
+                <span class="result-description">${financialViability.description}</span>
+            </div>
+        `;
+    }
+}
+
+// Función para generar la conclusión general del proyecto
+function generateProjectConclusion(economicViability, financialViability) {
+    const conclusionCard = document.getElementById('projectConclusionCard');
+    const conclusionText = document.getElementById('projectConclusionText');
+    
+    if (!conclusionCard || !conclusionText) return;
+    
+    let overallStatus, conclusionMessage, cardClass, icon;
+    
+    // Determinar el estado general basado en ambas evaluaciones
+    if (economicViability.viable === 'viable' && financialViability.viable === 'viable') {
+        overallStatus = 'Proyecto Recomendado';
+        conclusionMessage = 'El proyecto es viable tanto económica como financieramente. Se recomienda su implementación ya que genera valor para la empresa y ofrece retornos atractivos para los inversionistas.';
+        cardClass = 'viable';
+        icon = 'fas fa-thumbs-up';
+    } else if (economicViability.viable === 'viable' || financialViability.viable === 'viable') {
+        if (economicViability.viable === 'viable') {
+            overallStatus = 'Proyecto con Reservas';
+            conclusionMessage = 'El proyecto es económicamente viable pero presenta desafíos financieros. Considerar reestructurar el financiamiento o buscar mejores condiciones de capital.';
+        } else {
+            overallStatus = 'Evaluar Estructura Financiera';
+            conclusionMessage = 'El proyecto es financieramente atractivo pero presenta desafíos económicos. Revisar supuestos operativos y estructura de costos.';
+        }
+        cardClass = 'mixed';
+        icon = 'fas fa-balance-scale';
+    } else if (economicViability.viable === 'marginal' || financialViability.viable === 'marginal') {
+        overallStatus = 'Proyecto Marginal';
+        conclusionMessage = 'El proyecto presenta viabilidad marginal. Se recomienda optimizar parámetros clave, revisar supuestos y considerar escenarios alternativos antes de la decisión final.';
+        cardClass = 'mixed';
+        icon = 'fas fa-exclamation-triangle';
+    } else {
+        overallStatus = 'Proyecto No Recomendado';
+        conclusionMessage = 'El proyecto no cumple con los criterios mínimos de viabilidad económica y financiera. Se recomienda replantear el modelo de negocio o considerar alternativas de inversión.';
+        cardClass = 'not-viable';
+        icon = 'fas fa-times-circle';
+    }
+    
+    // Actualizar la interfaz
+    conclusionCard.className = `conclusion-card ${cardClass}`;
+    conclusionCard.querySelector('.conclusion-icon i').className = icon;
+    conclusionCard.querySelector('h4').textContent = overallStatus;
+    conclusionText.textContent = conclusionMessage;
+    
+    console.log('📋 Conclusión del proyecto:', {
+        overallStatus,
+        economicViable: economicViability.viable,
+        financialViable: financialViability.viable
+    });
+} 

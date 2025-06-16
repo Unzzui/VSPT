@@ -30,14 +30,14 @@ function calculateCosts() {
             totalCosts: 0
         };
         
-        // Solo calcular costos operativos desde 2026 cuando empiecen las ventas
-        if (year >= 2026 && modelData.revenues && modelData.revenues[year]) {
-            // Calcular revenue total del año
+        // Solo calcular costos operativos desde 2025 cuando empiecen las ventas (Chile únicamente en 2025)
+        if (year >= 2025 && modelData.revenues && modelData.revenues[year]) {
+            // Calcular revenue total del año (en 2025 solo Chile contribuye)
             const yearRevenue = Object.keys(marketDistribution).reduce((sum, market) => {
                 return sum + (modelData.revenues[year][market] ? modelData.revenues[year][market].netRevenue : 0);
             }, 0);
             
-            // COGS (Cost of Goods Sold) - 60% del revenue
+            // COGS (Cost of Goods Sold) - 54% del revenue (ajustado de 60% a 54%)
             costs[year].cogs = yearRevenue * params.cogsPct;
             
             // Gastos operativos variables
@@ -46,8 +46,8 @@ function calculateCosts() {
             costs[year].operatingExpenses.technology = yearRevenue * 0.05; // 5% tecnología
             costs[year].operatingExpenses.administrative = yearRevenue * 0.08; // 8% administrativos
             
-            // Gastos operativos fijos
-            costs[year].operatingExpenses.salesSalary = businessParams.salesSalary * (1 + businessParams.inflation) ** (year - 2026);
+            // Gastos operativos fijos (ajustados por año base 2025)
+            costs[year].operatingExpenses.salesSalary = businessParams.salesSalary * (1 + businessParams.inflation) ** (year - 2025);
             
             costs[year].operatingExpenses.total = 
                 costs[year].operatingExpenses.salesSalary +

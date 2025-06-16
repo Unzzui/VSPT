@@ -24,8 +24,8 @@ function calculateEconomicCashFlow() {
             fcf: 0
         };
         
-        // Ingresos (solo desde 2026)
-        if (year >= 2026 && modelData.revenues && modelData.revenues[year]) {
+        // Ingresos (desde 2025 Q3-Q4)
+        if (year >= 2025 && modelData.revenues && modelData.revenues[year]) {
             Object.keys(marketDistribution).forEach(market => {
                 const revenueData = modelData.revenues[year][market];
                 if (revenueData) {

@@ -7,13 +7,23 @@ const exchangeRates = {
     MXN: 18.5,
     BRL: 5.2,
     CAD: 1.35,
+    CLP: 900,  // Peso chileno
     USD: 1.0
 };
 
 // Distribución de mercados con configuración de working capital
 const marketDistribution = {
+    chile: { 
+        weight: 0.40, 
+        currency: 'CLP', 
+        tax: 0.27, 
+        premium: 1.0, 
+        paymentDays: 0, 
+        inventoryDays: 30,
+        label: 'Chile'
+    },
     mexico: { 
-        weight: 0.35, 
+        weight: 0.25, 
         currency: 'MXN', 
         tax: 0.16, 
         premium: 1.1, 
@@ -22,7 +32,7 @@ const marketDistribution = {
         label: 'México'
     },
     brasil: { 
-        weight: 0.25, 
+        weight: 0.15, 
         currency: 'BRL', 
         tax: 0.18, 
         premium: 1.2, 
@@ -31,7 +41,7 @@ const marketDistribution = {
         label: 'Brasil'
     },
     canada: { 
-        weight: 0.20, 
+        weight: 0.10, 
         currency: 'CAD', 
         tax: 0.13, 
         premium: 1.3, 
@@ -40,7 +50,7 @@ const marketDistribution = {
         label: 'Canadá'
     },
     usa: { 
-        weight: 0.20, 
+        weight: 0.10, 
         currency: 'USD', 
         tax: 0.08, 
         premium: 1.4, 
@@ -144,12 +154,12 @@ function getBusinessParams() {
 
     return {
         initialTraffic: initialTrafficElement ? parseInt(initialTrafficElement.value) : 9100,
-        trafficGrowth: trafficGrowthElement ? parseFloat(trafficGrowthElement.value) / 100 : 0.45,
+        trafficGrowth: trafficGrowthElement ? parseFloat(trafficGrowthElement.value) / 100 : 1,
         initialConversion: initialConversionElement ? parseFloat(initialConversionElement.value) / 100 : 0.02,
-        conversionGrowthRate: conversionGrowthElement ? parseFloat(conversionGrowthElement.value) / 100 : 0.20,
-        avgTicket: avgTicketElement ? parseInt(avgTicketElement.value) : 40,
-        salesSalary: salesSalaryElement ? parseInt(salesSalaryElement.value) : 120000,
-        marketingPct: marketingPctElement ? parseFloat(marketingPctElement.value) / 100 : 0.12,
-        inflation: inflationElement ? parseFloat(inflationElement.value) / 100 : 0.035
+        conversionGrowthRate: conversionGrowthElement ? parseFloat(conversionGrowthElement.value) / 100 : 0.4,
+        avgTicket: avgTicketElement ? parseInt(avgTicketElement.value) : 50,
+        salesSalary: salesSalaryElement ? parseInt(salesSalaryElement.value) : 50000,
+        marketingPct: marketingPctElement ? parseFloat(marketingPctElement.value) / 100 : 0.1,
+        inflation: inflationElement ? parseFloat(inflationElement.value) / 100 : 0.02
     };
 }

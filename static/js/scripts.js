@@ -34,6 +34,23 @@ function showTab(tabName) {
     try {
         console.log(`🔄 Cambiando a tab: ${tabName}`);
         
+        // Cerrar menú móvil si está abierto
+        const tabsContainer = document.querySelector('.tabs');
+        const menuButton = document.getElementById('mobile-menu-button');
+        if (tabsContainer && tabsContainer.classList.contains('mobile-open')) {
+            tabsContainer.classList.remove('mobile-open');
+            if (menuButton) {
+                menuButton.classList.remove('active');
+                menuButton.setAttribute('aria-label', 'Abrir menú');
+                
+                // Restaurar ícono de hamburguesa
+                const icon = menuButton.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-bars';
+                }
+            }
+        }
+        
         // Ocultar todos los contenidos
         document.querySelectorAll('.content').forEach(content => {
             content.classList.add('hidden');
@@ -49,29 +66,53 @@ function showTab(tabName) {
             return;
         }
         
-        // Actualizar tabs activos
+        // Remover clase 'active' de todos los tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
         });
         
-        // Marcar el tab activo (usar event.target si existe, sino buscar por onclick)
-        if (event && event.target) {
-            event.target.classList.add('active');
-        } else {
-            // Buscar el botón que corresponde a este tab
-            const buttons = document.querySelectorAll('.tab');
-            buttons.forEach(button => {
-                if (button.onclick && button.onclick.toString().includes(tabName)) {
-                    button.classList.add('active');
-                }
-            });
+        // Agregar clase 'active' al tab seleccionado
+        const activeTab = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
         }
         
-        // Actualizar cálculos si es necesario
-        updateCalculations();
+        // Llamar a la función específica de cada tab
+        switch (tabName) {
+            case 'dashboard':
+                if (typeof updateDashboard === 'function') updateDashboard();
+                break;
+            case 'inversiones':
+                if (typeof calculateProgressiveCapex === 'function') calculateProgressiveCapex();
+                break;
+            case 'ingresos':
+                if (typeof calculateRevenues === 'function') calculateRevenues();
+                break;
+            case 'costos':
+                if (typeof calculateCosts === 'function') calculateCosts();
+                break;
+            case 'workingCapital':
+                if (typeof calculateWorkingCapital === 'function') calculateWorkingCapital();
+                break;
+            case 'debtSchedule':
+                if (typeof calculateDebtSchedule === 'function') calculateDebtSchedule();
+                break;
+            case 'depreciaciones':
+                if (typeof calculateDepreciation === 'function') calculateDepreciation();
+                break;
+            case 'economicFlow':
+                if (typeof calculateEconomicCashFlow === 'function') calculateEconomicCashFlow();
+                break;
+            case 'financialFlow':
+                if (typeof calculateFinancialCashFlow === 'function') calculateFinancialCashFlow();
+                break;
+            case 'sensibilidad':
+                if (typeof calculateSensitivityAnalysis === 'function') calculateSensitivityAnalysis();
+                break;
+        }
         
     } catch (error) {
-        console.error('❌ Error en navegación:', error);
+        console.error(`❌ Error en showTab(${tabName}):`, error);
     }
 }
 
@@ -383,15 +424,15 @@ function resetToDefaults() {
             
             // Ingresos
             'initialTraffic': 9100,
-            'trafficGrowth': 60,
+            'trafficGrowth': 100,
             'initialConversion': 2,
-            'conversionGrowthRate': 30,
+            'conversionGrowthRate': 40,
             'avgTicket': 50,
             
             // Costos
-            'salesSalary': 35000,
-            'marketingPct': 8,
-            'inflation': 3,
+            'salesSalary': 50000,
+            'marketingPct': 10,
+            'inflation': 2,
             
             // Depreciaciones
             'residualValue': 10,
@@ -476,13 +517,57 @@ function resetToDefaults() {
     }
 }
 
-// Exponer funciones de debug globalmente
-window.debugModel = debugModel;
-window.resetModel = resetModel;
-window.debugInventory = debugInventory;
-window.debugDepreciations = debugDepreciations;
+// ============================================================================
+// FUNCIÓN PARA MENÚ HAMBURGUESA RESPONSIVE
+// ============================================================================
+
+function toggleMobileMenu() {
+    const tabsContainer = document.querySelector('.tabs');
+    const menuButton = document.getElementById('mobile-menu-button');
+    
+    if (tabsContainer && menuButton) {
+        // Toggle de visibilidad del menú en móvil
+        tabsContainer.classList.toggle('mobile-open');
+        menuButton.classList.toggle('active');
+        
+        // Cambiar el aria-label del botón
+        const isExpanded = tabsContainer.classList.contains('mobile-open');
+        menuButton.setAttribute('aria-label', isExpanded ? 'Cerrar menú' : 'Abrir menú');
+        
+        // Cambiar ícono del botón
+        const icon = menuButton.querySelector('i');
+        if (icon) {
+            icon.className = isExpanded ? 'fas fa-times' : 'fas fa-bars';
+        }
+        
+        console.log(`📱 Menú móvil ${isExpanded ? 'abierto' : 'cerrado'}`);
+    }
+}
+
+// Cerrar menú móvil al redimensionar ventana a desktop
+window.addEventListener('resize', function() {
+    const tabsContainer = document.querySelector('.tabs');
+    const menuButton = document.getElementById('mobile-menu-button');
+    
+    if (window.innerWidth >= 769) { // breakpoint para desktop
+        if (tabsContainer) {
+            tabsContainer.classList.remove('mobile-open');
+        }
+        if (menuButton) {
+            menuButton.classList.remove('active');
+            menuButton.setAttribute('aria-label', 'Abrir menú');
+            
+            // Restaurar ícono de hamburguesa
+            const icon = menuButton.querySelector('i');
+            if (icon) {
+                icon.className = 'fas fa-bars';
+            }
+        }
+    }
+});
+
+// Exponer funciones globalmente
 window.downloadExcel = downloadExcel;
 window.resetToDefaults = resetToDefaults;
-
-// Exponer función de navegación globalmente para que esté disponible en onclick
 window.showTab = showTab;
+window.toggleMobileMenu = toggleMobileMenu;
