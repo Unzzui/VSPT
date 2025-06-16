@@ -1,0 +1,8 @@
+.venv
+tst.py
+analsis.py
+catadores.py
+.xlsx
+*.xlsx
+*.csv
+*.py

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSPT Digital 360 - Modelo Financiero</title>
+    <link rel="icon" type="image/png" href="static/img/favicon.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Cargar módulos JS en orden -->
+    <script src="static/js/config.js"></script>
+    <script src="static/js/utils.js"></script>
+    <script src="static/js/investments.js"></script>
+    <script src="static/js/revenues.js"></script>
+    <script src="static/js/costs.js"></script>
+    <script src="static/js/workingCapital.js"></script>
+    <script src="static/js/debt.js"></script>
+    <script src="static/js/depreciation.js"></script>
+    <script src="static/js/cashflow.js"></script>
+    <script src="static/js/sensitivity.js"></script>
+    <script src="static/js/dashboard.js"></script>
+    <script src="static/js/scripts.js"></script>
+    
+    <link rel="stylesheet" href="static/css/styles.css">
+    <!-- Agregar Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <img src="static/img/vspt.png" alt="VSPT Logo" class="header-logo">
+                <div class="header-text">
+                    <h1>VSPT Digital 360</h1>
+                    <p>Modelo Financiero 2025-2030 | México • Brasil • Canadá • Estados Unidos</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button class="tab" onclick="showTab('inversiones')"><i class="fas fa-chart-line"></i> CAPEX & Financing</button>
+            <button class="tab" onclick="showTab('ingresos')"><i class="fas fa-money-bill-wave"></i> Ingresos</button>
+            <button class="tab" onclick="showTab('costos')"><i class="fas fa-file-invoice-dollar"></i> Costos</button>
+            <button class="tab" onclick="showTab('workingCapital')"><i class="fas fa-wallet"></i> Working Capital</button>
+            <button class="tab" onclick="showTab('debtSchedule')"><i class="fas fa-landmark"></i> Deuda</button>
+            <button class="tab" onclick="showTab('depreciaciones')"><i class="fas fa-percentage"></i> Depreciaciones</button>
+            <button class="tab" onclick="showTab('economicFlow')"><i class="fas fa-chart-bar"></i> F. Económico</button>
+            <button class="tab" onclick="showTab('financialFlow')"><i class="fas fa-chart-pie"></i> F. Financiero</button>
+            <button class="tab" onclick="showTab('sensibilidad')"><i class="fas fa-balance-scale"></i> Sensibilidad</button>
+        </div>
+        
+        <!-- Tab 0: Dashboard -->
+        <div id="dashboard" class="content">
+            <h2>Dashboard Ejecutivo - VSPT Digital 360</h2>
+            
+            <!-- KPI Cards principales -->
+            <div class="dashboard-kpis">
+                <div class="kpi-card primary">
+                    <div class="kpi-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashTotalRevenue">$12.5M</div>
+                        <div class="kpi-label">Revenue Total 2030</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i> +285% CAGR
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="kpi-card success">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashTotalCapex">$800K</div>
+                        <div class="kpi-label">CAPEX Total</div>
+                        <div class="kpi-trend neutral">
+                            <i class="fas fa-calendar"></i> 2025-2028
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="kpi-card warning">
+                    <div class="kpi-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashROI">156%</div>
+                        <div class="kpi-label">ROI Proyectado</div>
+                        <div class="kpi-trend" id="dashROITrend">
+                            <i class="fas fa-trophy"></i> <span id="dashROIStatus">Excelente</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="kpi-card info">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-area"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashNPV">$2.5M</div>
+                        <div class="kpi-label">VAN Económico</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i> Positivo
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card primary">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashFinancialNPV">$1.7M</div>
+                        <div class="kpi-label">VAN Financiero</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i> Positivo
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card success">
+                    <div class="kpi-icon">
+                        <i class="fas fa-trending-up"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="dashFinancialIRR">38%</div>
+                        <div class="kpi-label">TIR Financiera</div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i> Excelente
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de gráficos -->
+            <div class="dashboard-charts">
+                <div class="chart-section">
+                    <h3><i class="fas fa-chart-bar"></i> Evolución de Flujos de Caja</h3>
+                    <div class="chart-placeholder">
+                        <div class="chart-info">
+                            <p>Flujos de caja libres proyectados desde 2026 hasta 2030</p>
+                            <div class="chart-metrics">
+                                <span class="metric">FCF Positivo: 2027+</span>
+                                <span class="metric">Crecimiento Sostenido</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h3><i class="fas fa-chart-pie"></i> Distribución por Mercado 2030</h3>
+                    <div class="chart-placeholder">
+                        <div class="market-distribution">
+                            <div class="market-item">
+                                <span class="market-flag">🇺🇸</span>
+                                <span class="market-name">Estados Unidos</span>
+                                <span class="market-percentage">40%</span>
+                            </div>
+                            <div class="market-item">
+                                <span class="market-flag">🇧🇷</span>
+                                <span class="market-name">Brasil</span>
+                                <span class="market-percentage">25%</span>
+                            </div>
+                            <div class="market-item">
+                                <span class="market-flag">🇲🇽</span>
+                                <span class="market-name">México</span>
+                                <span class="market-percentage">20%</span>
+                            </div>
+                            <div class="market-item">
+                                <span class="market-flag">🇨🇦</span>
+                                <span class="market-name">Canadá</span>
+                                <span class="market-percentage">15%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Métricas por mercado -->
+            <div class="market-metrics">
+                <h3><i class="fas fa-flag"></i> Métricas por Mercado 2030</h3>
+                <div class="market-cards">
+                    <div class="market-card usa">
+                        <div class="market-header">
+                            <span class="market-flag-large">🇺🇸</span>
+                            <h4>Estados Unidos</h4>
+                        </div>
+                        <div class="market-stats">
+                            <div class="stat">
+                                <span class="stat-value">$5.0M</span>
+                                <span class="stat-label">Revenue</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">83K</span>
+                                <span class="stat-label">Órdenes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">$60</span>
+                                <span class="stat-label">AOV</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="market-card brazil">
+                        <div class="market-header">
+                            <span class="market-flag-large">🇧🇷</span>
+                            <h4>Brasil</h4>
+                        </div>
+                        <div class="market-stats">
+                            <div class="stat">
+                                <span class="stat-value">$3.1M</span>
+                                <span class="stat-label">Revenue</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">78K</span>
+                                <span class="stat-label">Órdenes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">$40</span>
+                                <span class="stat-label">AOV</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="market-card mexico">
+                        <div class="market-header">
+                            <span class="market-flag-large">🇲🇽</span>
+                            <h4>México</h4>
+                        </div>
+                        <div class="market-stats">
+                            <div class="stat">
+                                <span class="stat-value">$2.5M</span>
+                                <span class="stat-label">Revenue</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">62K</span>
+                                <span class="stat-label">Órdenes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">$40</span>
+                                <span class="stat-label">AOV</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="market-card canada">
+                        <div class="market-header">
+                            <span class="market-flag-large">🇨🇦</span>
+                            <h4>Canadá</h4>
+                        </div>
+                        <div class="market-stats">
+                            <div class="stat">
+                                <span class="stat-value">$1.9M</span>
+                                <span class="stat-label">Revenue</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">38K</span>
+                                <span class="stat-label">Órdenes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">$50</span>
+                                <span class="stat-label">AOV</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen de Cashflow -->
+            <div class="cashflow-summary">
+                <h3><i class="fas fa-money-bill-trend-up"></i> Resumen Financiero</h3>
+                <div class="cashflow-cards">
+                    <div class="cashflow-card positive">
+                        <div class="cashflow-icon">
+                            <i class="fas fa-arrow-trend-up"></i>
+                        </div>
+                        <div class="cashflow-content">
+                            <div class="cashflow-value">$8.2M</div>
+                            <div class="cashflow-label">FCF Acumulado</div>
+                            <div class="cashflow-period">2026-2030</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cashflow-card neutral">
+                        <div class="cashflow-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="cashflow-content">
+                            <div class="cashflow-value">18 meses</div>
+                            <div class="cashflow-label">Payback Period</div>
+                            <div class="cashflow-period" id="breakEvenYear">Break-even 2027</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cashflow-card success">
+                        <div class="cashflow-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="cashflow-content">
+                            <div class="cashflow-value">42%</div>
+                            <div class="cashflow-label">IRR</div>
+                            <div class="cashflow-period">Tasa Interna Retorno</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cashflow-card warning">
+                        <div class="cashflow-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="cashflow-content">
+                            <div class="cashflow-value">$280K</div>
+                            <div class="cashflow-label">Financiamiento</div>
+                            <div class="cashflow-period" id="debtPercentage">35% Deuda</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 1: CAPEX & Financing -->
+        <div id="inversiones" class="content hidden">
+            <h2>CAPEX Progresivo 2025-2028 & Estructura de Financiamiento</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Botellas por Contenedor:</label>
+                    <input type="number" id="bottlesPerContainer" value="12000" onchange="updateCalculations()">
+                </div>
+                <div class="control-group">
+                    <label>Costo Contenedor (USD):</label>
+                    <input type="number" id="containerCost" value="5000" onchange="updateCalculations()">
+                </div>
+                <div class="control-group">
+                    <label>Stock Inicial (meses):</label>
+                    <input type="number" id="initialStock" value="3" onchange="updateCalculations()">
+                </div>
+                <div class="control-group">
+                    <label>Proporción Deuda (%):</label>
+                    <input type="number" id="debtRatio" value="35" min="0" max="70" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Tasa de Interés:</label>
+                    <input type="number" id="interestRate" value="6" step="0.5" min="3" max="15" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Plazo Deuda (años):</label>
+                    <input type="number" id="debtTerm" value="5" min="3" max="10" onchange="updateCalculations()">
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalCapex">$800K</div>
+                    <div class="metric-label">CAPEX Total</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalDebt">$280K</div>
+                    <div class="metric-label">Financiamiento Deuda</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalEquity">$520K</div>
+                    <div class="metric-label">Financiamiento Equity</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="inventoryInvestment">$0K</div>
+                    <div class="metric-label">Inversión Inventario</div>
+                </div>
+            </div>
+            
+            <div class="table-container highlight">
+                <table id="inversionesTable" class="capex-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Concepto</th>
+                            <th>2025 (45%)</th>
+                            <th>2026 (30%)</th>
+                            <th>2027 (20%)</th>
+                            <th>2028 (5%)</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inversionesBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Tab 2: Ingresos -->
+        <div id="ingresos" class="content hidden">
+            <h2>Proyección de Ingresos 2026-2030</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Tráfico Inicial (visitas/mes):</label>
+                    <input type="number" id="initialTraffic" value="9100" onchange="updateCalculations()">
+                </div>
+                <div class="control-group">
+                    <label>Crecimiento Anual Tráfico:</label>
+                    <input type="number" id="trafficGrowth" value="60" step="5" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Conversión Inicial:</label>
+                    <input type="number" id="initialConversion" value="2" step="0.1" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Mejora Conversión Anual:</label>
+                    <input type="number" id="conversionGrowthRate" value="30" step="5" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Ticket Promedio (USD):</label>
+                    <input type="number" id="avgTicket" value="50" onchange="updateCalculations()">
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalRevenue2030">$0M</div>
+                    <div class="metric-label">Revenue Total 2030</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalOrders2030">0</div>
+                    <div class="metric-label">Órdenes Anuales 2030</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avgGrowthRate">0%</div>
+                    <div class="metric-label">CAGR Promedio</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="conversionEvolution">0%</div>
+                    <div class="metric-label">Evolución Conversión</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="inventoryInvestment2">$0K</div>
+                    <div class="metric-label">Inversión Inventario</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="ingresosTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">País/Métrica</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ingresosBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Tab 3: Costos -->
+        <div id="costos" class="content hidden">
+            <h2>Costos Operativos Detallados</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Salario Comercial (USD/año):</label>
+                    <input type="number" id="salesSalary" value="120000" onchange="updateCalculations()">
+                </div>
+                <div class="control-group">
+                    <label>Marketing (% Revenue):</label>
+                    <input type="number" id="marketingPct" value="12" step="1" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Inflación Anual:</label>
+                    <input type="number" id="inflation" value="3" step="0.5" onchange="updateCalculations()">%
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="costosTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Concepto</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costosBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Tab 4: Working Capital -->
+        <div id="workingCapital" class="content hidden">
+            <h2>Working Capital Detallado por País</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Cuentas por Cobrar:</label>
+                    <span>B2C: 0 días | B2B: 30 días</span>
+                </div>
+                <div class="control-group">
+                    <label>Inventario:</label>
+                    <span>México: 45 días | Brasil: 60 días | Otros: 45 días</span>
+                </div>
+                <div class="control-group">
+                    <label>Cuentas por Pagar:</label>
+                    <span>Proveedores: 45 días | Servicios: 30 días</span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="workingCapitalTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">País/Concepto</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workingCapitalBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 5: Cronograma Deuda -->
+        <div id="debtSchedule" class="content hidden">
+            <h2>Cronograma de Amortización de Deuda</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Total Deuda:</label>
+                    <span id="dynamicDebtAmount" style="font-weight: bold; color: #d32f2f;">$280K (35% del CAPEX)</span>
+                </div>
+                <div class="control-group">
+                    <label>Plazo:</label>
+                    <span id="dynamicDebtTerm">5 años</span>
+                </div>
+                <div class="control-group">
+                    <label>Tasa Interés:</label>
+                    <span id="dynamicInterestRate">6% anual</span>
+                </div>
+                <div class="control-group">
+                    <label>Cuota Mensual:</label>
+                    <span id="dynamicMonthlyPayment" style="font-weight: bold; color: #1976d2;">$0</span>
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalDebtAmount">$280K</div>
+                    <div class="metric-label">Monto Total Deuda</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="monthlyPaymentAmount">$0</div>
+                    <div class="metric-label">Cuota Mensual</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalInterestPaid">$0K</div>
+                    <div class="metric-label">Intereses Totales</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="debtServiceRatio">0%</div>
+                    <div class="metric-label">Ratio Deuda/Equity</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="debtScheduleTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Concepto</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="debtScheduleBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 6: Depreciaciones Detalladas -->
+        <div id="depreciaciones" class="content hidden">
+            <h2>Cronograma de Depreciaciones Detallado</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Método de Depreciación:</label>
+                    <select id="depreciationMethod" onchange="updateCalculations()">
+                        <option value="linear" selected>Línea Recta</option>
+                        <option value="accelerated">Acelerada (Doble Saldo Decreciente)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Valor Residual (%):</label>
+                    <input type="number" id="residualValue" value="10" min="0" max="50" onchange="updateCalculations()">%
+                </div>
+                <div class="control-group">
+                    <label>Año de Inicio:</label>
+                    <span>2025 (según cronograma CAPEX)</span>
+                </div>
+                <div class="control-group">
+                    <label>Total Depreciable:</label>
+                    <span id="totalDepreciableAmount" style="font-weight: bold; color: #1976d2;">$0K</span>
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalDepreciation">$0K</div>
+                    <div class="metric-label">Depreciación Total</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avgAnnualDepreciation">$0K</div>
+                    <div class="metric-label">Depreciación Anual Promedio</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="depreciationPercent">0%</div>
+                    <div class="metric-label">% del CAPEX Total</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="residualValueAmount">$0K</div>
+                    <div class="metric-label">Valor Residual</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="depreciacionesTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Activo / Concepto</th>
+                            <th>Vida Útil</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depreciacionesBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 7: Flujo Económico -->
+        <div id="economicFlow" class="content hidden">
+            <h2>Flujo de Caja Económico</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="economicNPV">$0M</div>
+                    <div class="metric-label">VAN Económico (WACC 12%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="economicIRR">0%</div>
+                    <div class="metric-label">TIR Económico</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="economicPayback">0</div>
+                    <div class="metric-label">Payback (años)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="economicROI">0%</div>
+                    <div class="metric-label">ROI Acumulado</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="economicFlowTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Concepto</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="economicFlowBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 8: Flujo Financiero -->
+        <div id="financialFlow" class="content hidden">
+            <h2>Flujo de Caja Financiero</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="financialNPV">$0M</div>
+                    <div class="metric-label">VAN Financiero (WACC 12%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="financialIRR">0%</div>
+                    <div class="metric-label">TIR Financiero</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="financialPayback">0</div>
+                    <div class="metric-label">Payback (años)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="financialROE">0%</div>
+                    <div class="metric-label">ROE Promedio</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="financialFlowTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Concepto</th>
+                            <th>2025</th>
+                            <th>2026</th>
+                            <th>2027</th>
+                            <th>2028</th>
+                            <th>2029</th>
+                            <th>2030</th>
+                        </tr>
+                    </thead>
+                    <tbody id="financialFlowBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 8: Análisis Sensibilidad -->
+        <div id="sensibilidad" class="content hidden">
+            <h2>Análisis de Sensibilidad</h2>
+            
+            <div class="scenario-controls">
+                <div class="info-panel">
+                    <h3><i class="fas fa-chart-line"></i> Análisis de Escenarios</h3>
+                    <p>Evaluación de 4 escenarios principales basados en variaciones de parámetros clave del modelo:</p>
+                    <ul>
+                        <li><strong>Pesimista:</strong> Conversión -30%, Tráfico -40%, Ticket -15%, Costos +20%</li>
+                        <li><strong>Base:</strong> Escenario según parámetros actuales del modelo</li>
+                        <li><strong>Optimista:</strong> Conversión +40%, Tráfico +50%, Ticket +15%, Costos -15%</li>
+                        <li><strong>Stress Test:</strong> Conversión -50%, Tráfico -60%, Ticket -25%, Costos +40%</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="sensitivityVAN">$0M</div>
+                    <div class="metric-label">VAN Escenario Base</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="sensitivityTIR">0%</div>
+                    <div class="metric-label">TIR Escenario Base</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="sensitivityRevenue">$0M</div>
+                    <div class="metric-label">Revenue 2030</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="sensitivityRisk">Medio</div>
+                    <div class="metric-label">Nivel de Riesgo</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="sensibilidadTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; width: 25%; min-width: 200px;">Escenario</th>
+                            <th style="text-align: center; width: 15%;">VAN Económico<br><small>(USD M)</small></th>
+                            <th style="text-align: center; width: 15%;">VAN Financiero<br><small>(USD M)</small></th>
+                            <th style="text-align: center; width: 15%;">TIR Económico<br><small>(%)</small></th>
+                            <th style="text-align: center; width: 15%;">TIR Financiero<br><small>(%)</small></th>
+                            <th style="text-align: center; width: 15%;">Revenue 2030<br><small>(USD M)</small></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sensibilidadBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="reset-btn" onclick="resetToDefaults()"><i class="fas fa-undo"></i> Restaurar Valores por Defecto</button>
+            <button class="download-btn" onclick="downloadExcel()"><i class="fas fa-file-excel"></i> Descargar Modelo Excel Completo</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="static/img/vspt.png" alt="VSPT Logo">
+            </div>
+            <div class="footer-text">
+                <p>&copy; 2025 VSPT Wine Group. Todos los derechos reservados.</p>
+                <p>Modelo Financiero para Expansión Digital | Desarrollado por Alumnos de DUOC UC</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
