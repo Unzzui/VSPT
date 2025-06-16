@@ -151,6 +151,9 @@ function calculateEconomicCashFlow() {
 
 function calculateFinancialCashFlow() {
     console.log('💸 Calculando flujo de caja financiero...');
+    console.log('🔍 modelData.investments disponible:', !!modelData.investments);
+    console.log('🔍 modelData.capexFinancing disponible:', !!modelData.capexFinancing);
+    console.log('🔍 modelData.capexFinancing:', modelData.capexFinancing);
     
     const params = getFinancialParams();
     const financialFlow = {};
@@ -169,9 +172,22 @@ function calculateFinancialCashFlow() {
             interestExpense: 0,
             taxShield: 0,
             debtService: 0,
+            debtProceeds: 0, // Ingresos por préstamo recibido
             equityContribution: 0,
             fcfe: 0
         };
+        
+        // Ingresos por préstamo (solo en 2025 - monto total)
+        if (year === 2025) {
+            // Calcular deuda total basada en CAPEX total optimizado
+            const totalCapex = 565000; // CAPEX optimizado total
+            const params = getFinancialParams();
+            financialFlow[year].debtProceeds = totalCapex * params.debtRatio;
+            console.log(`💰 Año ${year} - Debt Proceeds (préstamo total): $${financialFlow[year].debtProceeds} (${(params.debtRatio*100).toFixed(0)}% de $${totalCapex})`);
+        } else {
+            financialFlow[year].debtProceeds = 0;
+            console.log(`💰 Año ${year} - Sin debt proceeds (préstamo ya recibido en 2025)`);
+        }
         
         // Gastos financieros (intereses de la deuda REAL)
         if (modelData.debt && modelData.debt.schedule && modelData.debt.schedule[year]) {
@@ -207,6 +223,7 @@ function calculateFinancialCashFlow() {
                                    financialFlow[year].deltaWC - 
                                    financialFlow[year].interestExpense - // Restar intereses explícitamente
                                    financialFlow[year].debtService + // Restar amortización
+                                   financialFlow[year].debtProceeds + // Sumar ingresos por préstamo
                                    financialFlow[year].equityContribution +
                                    financialFlow[year].residualValue;
     }
@@ -233,6 +250,7 @@ function calculateFinancialCashFlow() {
         'Equity NPV': `$${(equityNPV/1000).toFixed(0)}K`,
         'Project IRR': `${(projectIRR*100).toFixed(1)}%`,
         'Equity Cost': `${(params.equityCost*100).toFixed(1)}%`,
+        'Préstamo Inicial 2025': `$${(financialFlow[2025]?.debtProceeds/1000 || 0).toFixed(0)}K`,
         'Desglose Servicio Deuda 2026': {
             'Intereses': `$${(financialFlow[2026]?.interestExpense/1000 || 0).toFixed(0)}K`,
             'Amortización': `$${(financialFlow[2026]?.debtService/1000 || 0).toFixed(0)}K`,
@@ -369,6 +387,7 @@ function updateFinancialFlowTable(financialFlow) {
         { key: 'nopat', label: 'NOPAT', format: 'currency' },
         { key: 'depreciation', label: 'Depreciación', format: 'currency' },
         { key: 'taxShield', label: 'Escudo Fiscal', format: 'currency' },
+        { key: 'debtProceeds', label: 'Ingresos por Préstamo', format: 'currency' },
         { key: 'capex', label: 'CAPEX', format: 'currency' },
         { key: 'deltaWC', label: 'Δ Working Capital', format: 'currency' },
         { key: 'interestExpense', label: 'Gastos Financieros (Intereses)', format: 'currency' },
