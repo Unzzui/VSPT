@@ -188,6 +188,9 @@ function updateCalculations() {
             console.warn('⚠️ calculateFinancialCashFlow no disponible');
         }
         
+        // 8.1. Sincronizar datos entre módulos
+        syncDataBetweenModules();
+        
         // 9. Análisis de Sensibilidad (sensitivity.js) - Solo ejecutar si estamos en la pestaña de sensibilidad
         setTimeout(() => {
             const sensitivityTab = document.querySelector('[onclick="showTab(\'sensitivity\')"]');
@@ -234,6 +237,74 @@ function updateCalculations() {
             showAlert('Error en los cálculos. Verifique los datos ingresados.', 'error');
         }
     }
+}
+
+// ============================================================================
+// FUNCIÓN PARA SINCRONIZAR DATOS ENTRE MÓDULOS
+// ============================================================================
+
+function syncDataBetweenModules() {
+    console.log('🔄 Sincronizando datos entre módulos...');
+    
+    // Verificar que modelData existe
+    if (typeof modelData === 'undefined') {
+        window.modelData = {};
+    }
+    
+    // Verificar datos de ingresos
+    if (modelData.revenues && modelData.revenues[2030]) {
+        const revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+            return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
+        }, 0);
+        
+        console.log('📊 Datos sincronizados:', {
+            'Revenue 2030 del modelo': `$${(revenue2030/1000000).toFixed(1)}M`,
+            'Mercados disponibles': Object.keys(modelData.revenues[2030] || {}),
+            'Datos por mercado 2030': Object.keys(modelData.revenues[2030] || {}).map(market => ({
+                market,
+                revenue: `$${((modelData.revenues[2030][market]?.netRevenue || 0)/1000000).toFixed(1)}M`,
+                orders: Math.round(modelData.revenues[2030][market]?.orders || 0).toLocaleString()
+            }))
+        });
+        
+        // Forzar actualización de elementos específicos si están disponibles
+        const totalRevenue2030Element = document.getElementById('totalRevenue2030');
+        if (totalRevenue2030Element) {
+            totalRevenue2030Element.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
+        }
+        
+        // Actualizar análisis de sensibilidad si está disponible
+        const sensitivityRevenueElement = document.getElementById('sensitivityRevenue');
+        if (sensitivityRevenueElement) {
+            sensitivityRevenueElement.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
+            console.log('✅ Análisis de sensibilidad sincronizado:', `$${(revenue2030/1000000).toFixed(1)}M`);
+        }
+        
+        // Actualizar dashboard si está disponible
+        const dashTotalRevenueElement = document.getElementById('dashTotalRevenue');
+        if (dashTotalRevenueElement) {
+            dashTotalRevenueElement.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
+        }
+        
+        // Forzar actualización del análisis de sensibilidad si está disponible
+        setTimeout(() => {
+            if (window.sensitivityAnalysis && typeof window.sensitivityAnalysis.updateBaseMetrics === 'function') {
+                console.log('🔄 Forzando actualización de métricas de sensibilidad...');
+                window.sensitivityAnalysis.updateBaseMetrics();
+            }
+            
+            // También intentar con la función global
+            if (typeof window.updateSensitivityAnalysis === 'function') {
+                console.log('🔄 Forzando actualización global de sensibilidad...');
+                window.updateSensitivityAnalysis();
+            }
+        }, 200);
+        
+    } else {
+        console.warn('⚠️ Datos de ingresos no disponibles para sincronización');
+    }
+    
+    console.log('✅ Sincronización completada');
 }
 
 // ============================================================================

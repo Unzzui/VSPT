@@ -74,8 +74,50 @@ class Dashboard {
         };
     }
 
-    // Obtener datos de ingresos usando las mismas funciones que revenues.js
+    // Obtener datos de ingresos usando los datos reales del modelo
     getRevenueData() {
+        // PRIORIDAD 1: Usar datos reales del modelo si están disponibles
+        if (modelData.revenues) {
+            console.log('📊 Dashboard usando datos reales del modelo de ingresos');
+            
+            // Calcular totales usando los datos reales del modelo
+            const revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[2030] && modelData.revenues[2030][market] ? 
+                    modelData.revenues[2030][market].netRevenue : 0);
+            }, 0);
+            
+            const orders2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[2030] && modelData.revenues[2030][market] ? 
+                    modelData.revenues[2030][market].orders : 0);
+            }, 0);
+
+            const revenue2026 = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[2026] && modelData.revenues[2026][market] ? 
+                    modelData.revenues[2026][market].netRevenue : 0);
+            }, 0);
+
+            // CAGR desde Chile 2025 hasta total 2030
+            const revenue2025Chile = modelData.revenues[2025] && modelData.revenues[2025].chile ? 
+                modelData.revenues[2025].chile.netRevenue : 0;
+            const cagr = revenue2025Chile > 0 ? Math.pow(revenue2030 / revenue2025Chile, 1/5) - 1 : 0;
+
+            console.log('✅ Dashboard usando datos del modelo:', {
+                'Revenue 2030': `$${(revenue2030/1000000).toFixed(1)}M`,
+                'Orders 2030': Math.round(orders2030).toLocaleString(),
+                'CAGR': `${(cagr * 100).toFixed(1)}%`
+            });
+
+            return {
+                yearlyData: modelData.revenues,
+                totalRevenue2030: revenue2030,
+                totalOrders2030: orders2030,
+                cagr: cagr * 100, // Convertir a porcentaje
+                countries: marketDistribution
+            };
+        }
+        
+        // PRIORIDAD 2: Si no hay datos del modelo, calcular usando la misma lógica que revenues.js
+        console.log('⚠️ Dashboard calculando datos propios (modelo no disponible)');
         const params = getBusinessParams(); // Usar la función de config.js
         const revenues = {};
         
@@ -89,21 +131,16 @@ class Dashboard {
             // Tráfico base ajustado por año
             let yearlyTraffic;
             if (year === 2025) {
-                yearlyTraffic = params.initialTraffic * 0.5; // 50% del tráfico inicial para Q3-Q4
+                yearlyTraffic = params.initialTraffic; // Usar tráfico inicial completo
             } else {
                 yearlyTraffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
             }
             
             // CONVERSIÓN CRECIENTE: Mejora gradual año a año
-            let conversionRate;
-            if (year === 2025) {
-                conversionRate = params.initialConversion * 0.7; // 70% de la conversión inicial
-            } else {
-                conversionRate = Math.min(
-                    params.initialConversion * Math.pow(1 + params.conversionGrowthRate, yearIndex - 1), 
-                    0.08 // Máximo 8%
-                );
-            }
+            let conversionRate = Math.min(
+                params.initialConversion * Math.pow(1 + params.conversionGrowthRate, yearIndex), 
+                0.08 // Máximo 8%
+            );
             
             const ticketSize = params.avgTicket * (1 + Math.max(0, yearIndex - 1) * 0.08); // Sin crecimiento en 2025
 
@@ -125,11 +162,20 @@ class Dashboard {
                     return;
                 }
                 
-                const marketTraffic = yearlyTraffic * marketData.weight * monthsOfOperation;
+                // Calcular tráfico por mercado
+                let marketTraffic;
+                if (year === 2025) {
+                    // En 2025, Chile recibe TODO el tráfico (100%)
+                    marketTraffic = market === 'chile' ? yearlyTraffic * monthsOfOperation : 0;
+                } else {
+                    // En años posteriores, distribución normal por peso de mercado
+                    marketTraffic = yearlyTraffic * marketData.weight * monthsOfOperation;
+                }
+                
                 const orders = marketTraffic * conversionRate;
                 const localPrice = ticketSize * marketData.premium;
                 const grossRevenue = orders * localPrice;
-                const netRevenue = grossRevenue * 0.99; // Fees de procesamiento
+                const netRevenue = grossRevenue; // Sin fees de procesamiento como en revenues.js
                 
                 revenues[year][market] = {
                     traffic: marketTraffic,
@@ -1032,15 +1078,26 @@ class Dashboard {
 
     // Actualizar métricas por mercado usando datos reales
     updateMarketMetrics() {
+        // Mapeo correcto según marketDistribution en config.js
         const countryMapping = {
-            'usa': 'usa',
-            'brazil': 'brasil', 
-            'mexico': 'mexico',
-            'canada': 'canada'
+            'usa': 'usa',           // Estados Unidos
+            'brazil': 'brasil',     // Brasil  
+            'mexico': 'mexico',     // México
+            'canada': 'canada',     // Canadá
+            'chile': 'chile'        // Chile (falta en el dashboard pero está en los datos)
         };
         
+        console.log('🌍 Actualizando métricas por mercado...');
+        console.log('- Datos de ingresos disponibles:', this.data.revenues?.yearlyData?.[2030] ? 'Sí' : 'No');
+        
+        if (this.data.revenues?.yearlyData?.[2030]) {
+            console.log('- Mercados en datos 2030:', Object.keys(this.data.revenues.yearlyData[2030]));
+        }
+        
         Object.entries(countryMapping).forEach(([cssClass, marketKey]) => {
-            const marketData = this.data.revenues.yearlyData[2030]?.[marketKey];
+            const marketData = this.data.revenues?.yearlyData?.[2030]?.[marketKey];
+            
+            console.log(`- Procesando ${marketKey} (CSS: ${cssClass}):`, marketData ? 'Datos encontrados' : 'Sin datos');
             
             if (marketData) {
                 const card = document.querySelector(`.market-card.${cssClass}`);
@@ -1050,9 +1107,131 @@ class Dashboard {
                         stats[0].textContent = this.formatCurrency(marketData.netRevenue);
                         stats[1].textContent = this.formatNumber(marketData.orders);
                         stats[2].textContent = '$' + Math.round(marketData.avgTicket);
+                        
+                        console.log(`✅ ${marketKey} actualizado:`, {
+                            revenue: this.formatCurrency(marketData.netRevenue),
+                            orders: this.formatNumber(marketData.orders),
+                            ticket: '$' + Math.round(marketData.avgTicket)
+                        });
+                    } else {
+                        console.warn(`⚠️ No se encontraron suficientes elementos .stat-value en ${cssClass}`);
                     }
+                } else {
+                    console.warn(`⚠️ No se encontró tarjeta con clase .market-card.${cssClass}`);
+                }
+            } else {
+                console.warn(`⚠️ No hay datos para ${marketKey} en 2030`);
+            }
+        });
+        
+        // También actualizar Chile si existe en el dashboard (aunque no esté en el mapeo original)
+        const chileData = this.data.revenues?.yearlyData?.[2030]?.chile;
+        if (chileData) {
+            const chileCard = document.querySelector('.market-card.chile');
+            if (chileCard) {
+                const stats = chileCard.querySelectorAll('.stat-value');
+                if (stats.length >= 3) {
+                    stats[0].textContent = this.formatCurrency(chileData.netRevenue);
+                    stats[1].textContent = this.formatNumber(chileData.orders);
+                    stats[2].textContent = '$' + Math.round(chileData.avgTicket);
+                    
+                    console.log('✅ Chile actualizado:', {
+                        revenue: this.formatCurrency(chileData.netRevenue),
+                        orders: this.formatNumber(chileData.orders),
+                        ticket: '$' + Math.round(chileData.avgTicket)
+                    });
                 }
             }
+        }
+
+        // Actualizar tabla de métricas por mercado 2030 (tabla principal del dashboard)
+        this.updateMarketTable();
+    }
+
+    // Actualizar tabla de métricas por mercado 2030 (tabla principal del dashboard)
+    updateMarketTable() {
+        console.log('📊 Actualizando tabla de métricas por mercado 2030...');
+        
+        if (!this.data.revenues?.yearlyData?.[2030]) {
+            console.warn('⚠️ No hay datos de ingresos 2030 para actualizar la tabla');
+            return;
+        }
+        
+        const marketData2030 = this.data.revenues.yearlyData[2030];
+        console.log('- Datos disponibles para 2030:', Object.keys(marketData2030));
+        
+        // Calcular totales
+        let totalRevenue = 0;
+        let totalOrders = 0;
+        let totalTicketWeighted = 0;
+        
+        // Mapeo de mercados a IDs de la tabla
+        const marketTableMapping = {
+            'chile': { revenue: 'chile-revenue', orders: 'chile-orders', aov: 'chile-aov', share: 'chile-share' },
+            'mexico': { revenue: 'mexico-revenue', orders: 'mexico-orders', aov: 'mexico-aov', share: 'mexico-share' },
+            'brasil': { revenue: 'brasil-revenue', orders: 'brasil-orders', aov: 'brasil-aov', share: 'brasil-share' },
+            'canada': { revenue: 'canada-revenue', orders: 'canada-orders', aov: 'canada-aov', share: 'canada-share' },
+            'usa': { revenue: 'usa-revenue', orders: 'usa-orders', aov: 'usa-aov', share: 'usa-share' }
+        };
+        
+        // Actualizar cada mercado
+        Object.entries(marketTableMapping).forEach(([marketKey, ids]) => {
+            const data = marketData2030[marketKey];
+            
+            if (data) {
+                // Actualizar valores en la tabla
+                const revenueElement = document.getElementById(ids.revenue);
+                const ordersElement = document.getElementById(ids.orders);
+                const aovElement = document.getElementById(ids.aov);
+                const shareElement = document.getElementById(ids.share);
+                
+                if (revenueElement) revenueElement.textContent = this.formatCurrency(data.netRevenue);
+                if (ordersElement) ordersElement.textContent = this.formatNumber(data.orders);
+                if (aovElement) aovElement.textContent = '$' + Math.round(data.avgTicket);
+                
+                // Acumular totales
+                totalRevenue += data.netRevenue;
+                totalOrders += data.orders;
+                totalTicketWeighted += data.netRevenue; // Para calcular AOV promedio ponderado
+                
+                console.log(`✅ Tabla ${marketKey} actualizada:`, {
+                    revenue: this.formatCurrency(data.netRevenue),
+                    orders: this.formatNumber(data.orders),
+                    aov: '$' + Math.round(data.avgTicket)
+                });
+            } else {
+                console.warn(`⚠️ No hay datos para ${marketKey} en la tabla`);
+            }
+        });
+        
+        // Calcular y actualizar participaciones de mercado
+        Object.entries(marketTableMapping).forEach(([marketKey, ids]) => {
+            const data = marketData2030[marketKey];
+            if (data && totalRevenue > 0) {
+                const shareElement = document.getElementById(ids.share);
+                if (shareElement) {
+                    const marketShare = (data.netRevenue / totalRevenue) * 100;
+                    shareElement.textContent = `${marketShare.toFixed(1)}%`;
+                }
+            }
+        });
+        
+        // Actualizar totales
+        const totalRevenueElement = document.getElementById('total-revenue-table');
+        const totalOrdersElement = document.getElementById('total-orders-table');
+        const totalAovElement = document.getElementById('total-aov-table');
+        
+        if (totalRevenueElement) totalRevenueElement.textContent = this.formatCurrency(totalRevenue);
+        if (totalOrdersElement) totalOrdersElement.textContent = this.formatNumber(totalOrders);
+        if (totalAovElement && totalOrders > 0) {
+            const avgAOV = totalRevenue / totalOrders;
+            totalAovElement.textContent = '$' + Math.round(avgAOV);
+        }
+        
+        console.log('✅ Tabla de métricas actualizada:', {
+            'Total Revenue': this.formatCurrency(totalRevenue),
+            'Total Orders': this.formatNumber(totalOrders),
+            'Avg AOV': totalOrders > 0 ? '$' + Math.round(totalRevenue / totalOrders) : '$0'
         });
     }
 
@@ -1090,6 +1269,8 @@ class Dashboard {
         this.collectData();
         this.updateKPIs();
         this.updateMarketMetrics();
+        this.updateMarketTable(); // Actualizar tabla de métricas por mercado 2030
+        this.updateMarketSummary(); // Actualizar resumen visual dinámico
         this.updateCashflowSummary();
         
         // Actualizar gráficos
@@ -1142,6 +1323,97 @@ class Dashboard {
 
     calculateCAGR(startValue, endValue, years) {
         return Math.round((Math.pow(endValue / startValue, 1 / years) - 1) * 100);
+    }
+
+    // Actualizar resumen visual dinámico (Mercado Líder, Mayor AOV, Mayor Volumen)
+    updateMarketSummary() {
+        console.log('📈 Actualizando resumen visual de mercados...');
+        
+        if (!this.data.revenues?.yearlyData?.[2030]) {
+            console.warn('⚠️ No hay datos de ingresos 2030 para actualizar el resumen');
+            return;
+        }
+        
+        const marketData2030 = this.data.revenues.yearlyData[2030];
+        const markets = Object.keys(marketData2030);
+        
+        // Calcular totales para participaciones
+        const totalRevenue = markets.reduce((sum, market) => {
+            return sum + (marketData2030[market]?.netRevenue || 0);
+        }, 0);
+        
+        // 1. MERCADO LÍDER (mayor participación por revenue)
+        let leaderMarket = null;
+        let leaderRevenue = 0;
+        let leaderShare = 0;
+        
+        markets.forEach(market => {
+            const revenue = marketData2030[market]?.netRevenue || 0;
+            if (revenue > leaderRevenue) {
+                leaderRevenue = revenue;
+                leaderMarket = market;
+                leaderShare = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
+            }
+        });
+        
+        // 2. MAYOR AOV (mayor ticket promedio)
+        let highestAOVMarket = null;
+        let highestAOV = 0;
+        
+        markets.forEach(market => {
+            const aov = marketData2030[market]?.avgTicket || 0;
+            if (aov > highestAOV) {
+                highestAOV = aov;
+                highestAOVMarket = market;
+            }
+        });
+        
+        // 3. MAYOR VOLUMEN (más órdenes)
+        let highestVolumeMarket = null;
+        let highestVolume = 0;
+        
+        markets.forEach(market => {
+            const orders = marketData2030[market]?.orders || 0;
+            if (orders > highestVolume) {
+                highestVolume = orders;
+                highestVolumeMarket = market;
+            }
+        });
+        
+        // Mapeo de nombres de mercados para display
+        const marketNames = {
+            'chile': 'Chile',
+            'mexico': 'México',
+            'brasil': 'Brasil',
+            'canada': 'Canadá',
+            'usa': 'Estados Unidos'
+        };
+        
+        // Actualizar elementos en el DOM
+        const marketLeaderElement = document.getElementById('market-leader-summary');
+        const highestAOVElement = document.getElementById('highest-aov-summary');
+        const highestVolumeElement = document.getElementById('highest-volume-summary');
+        
+        if (marketLeaderElement && leaderMarket) {
+            const marketName = marketNames[leaderMarket] || leaderMarket;
+            marketLeaderElement.innerHTML = `${marketName} representa el <strong>${leaderShare.toFixed(1)}%</strong> del revenue total`;
+        }
+        
+        if (highestAOVElement && highestAOVMarket) {
+            const marketName = marketNames[highestAOVMarket] || highestAOVMarket;
+            highestAOVElement.innerHTML = `${marketName} con <strong>$${Math.round(highestAOV)}</strong> de ticket promedio`;
+        }
+        
+        if (highestVolumeElement && highestVolumeMarket) {
+            const marketName = marketNames[highestVolumeMarket] || highestVolumeMarket;
+            highestVolumeElement.innerHTML = `${marketName} con <strong>${this.formatNumber(highestVolume)}</strong> órdenes anuales`;
+        }
+        
+        console.log('✅ Resumen visual actualizado:', {
+            'Mercado Líder': leaderMarket ? `${marketNames[leaderMarket]} (${leaderShare.toFixed(1)}%)` : 'N/A',
+            'Mayor AOV': highestAOVMarket ? `${marketNames[highestAOVMarket]} ($${Math.round(highestAOV)})` : 'N/A',
+            'Mayor Volumen': highestVolumeMarket ? `${marketNames[highestVolumeMarket]} (${this.formatNumber(highestVolume)})` : 'N/A'
+        });
     }
 }
 

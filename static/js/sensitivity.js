@@ -129,9 +129,35 @@ function getBaseScenarioMetrics() {
     const financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
     const financialIRR = (modelData.financialCashFlow?.metrics?.projectIRR || 0) * 100;
     
-    // Revenue 2030 del modelo de ingresos
-    const revenue2030 = modelData.revenues?.[2030] ? 
-        Object.values(modelData.revenues[2030]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+    // Revenue 2030 del modelo de ingresos - USAR DATOS REALES DEL MODELO
+    let revenue2030 = 0;
+    if (modelData.revenues && modelData.revenues[2030]) {
+        revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+            return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
+        }, 0);
+        console.log('📊 Sensibilidad usando revenue 2030 del modelo de ingresos:', `$${(revenue2030/1000000).toFixed(1)}M`);
+    } else {
+        // Fallback: calcular usando la misma lógica que revenues.js
+        console.log('⚠️ Sensibilidad calculando revenue 2030 propio');
+        const params = getBusinessParams();
+        const yearIndex = 5; // 2030 es año 5 desde 2025
+        const yearlyTraffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
+        const conversionRate = Math.min(
+            params.initialConversion * Math.pow(1 + params.conversionGrowthRate, yearIndex), 
+            0.08 // Máximo 8%
+        );
+        const ticketSize = params.avgTicket * (1 + Math.max(0, yearIndex - 1) * 0.08);
+        
+        // Calcular por mercado usando distribución normal (2030)
+        revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+            const marketData = marketDistribution[market];
+            const marketTraffic = yearlyTraffic * marketData.weight * 12; // 12 meses
+            const orders = marketTraffic * conversionRate;
+            const localPrice = ticketSize * marketData.premium;
+            const netRevenue = orders * localPrice;
+            return sum + netRevenue;
+        }, 0);
+    }
     
     // EBITDA 2030 del flujo económico
     const ebitda2030 = modelData.economicCashFlow?.[2030]?.ebitda || 0;
@@ -1007,23 +1033,63 @@ class SensitivityAnalysis {
 
     // Actualizar métricas base
     updateBaseMetrics() {
-        if (!this.baseScenario) return;
-        
-        // Actualizar métricas en la sección principal
-        const sensitivityVAN = document.getElementById('sensitivityVAN');
-        const sensitivityTIR = document.getElementById('sensitivityTIR');
-        const sensitivityRevenue = document.getElementById('sensitivityRevenue');
-        
-        if (sensitivityVAN) {
-            sensitivityVAN.textContent = `$${this.baseScenario.npv.toFixed(1)}M`;
-        }
-        
-        if (sensitivityTIR) {
-            sensitivityTIR.textContent = `${this.baseScenario.irr.toFixed(1)}%`;
-        }
-        
-        if (sensitivityRevenue) {
-            sensitivityRevenue.textContent = `$${this.baseScenario.revenue2030.toFixed(1)}M`;
+        // PRIORIDAD 1: Usar datos reales del modelo si están disponibles
+        if (modelData.revenues && modelData.revenues[2030]) {
+            console.log('📊 Sensibilidad usando datos reales del modelo');
+            
+            // Calcular revenue 2030 usando datos reales del modelo
+            const revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
+            }, 0);
+            
+            // Obtener métricas del modelo económico y financiero
+            const economicNPV = modelData.economicCashFlow?.metrics?.npv || 0;
+            const economicIRR = (modelData.economicCashFlow?.metrics?.irr || 0) * 100;
+            
+            // Actualizar métricas en la sección principal usando datos reales
+            const sensitivityVAN = document.getElementById('sensitivityVAN');
+            const sensitivityTIR = document.getElementById('sensitivityTIR');
+            const sensitivityRevenue = document.getElementById('sensitivityRevenue');
+            
+            if (sensitivityVAN) {
+                sensitivityVAN.textContent = `$${(economicNPV/1000000).toFixed(1)}M`;
+            }
+            
+            if (sensitivityTIR) {
+                sensitivityTIR.textContent = `${economicIRR.toFixed(1)}%`;
+            }
+            
+            if (sensitivityRevenue) {
+                sensitivityRevenue.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
+            }
+            
+            console.log('✅ Sensibilidad actualizada con datos del modelo:', {
+                'Revenue 2030': `$${(revenue2030/1000000).toFixed(1)}M`,
+                'VAN Económico': `$${(economicNPV/1000000).toFixed(1)}M`,
+                'TIR Económica': `${economicIRR.toFixed(1)}%`
+            });
+            
+        } else if (this.baseScenario) {
+            // FALLBACK: Usar datos calculados por la clase si no hay datos del modelo
+            console.log('⚠️ Sensibilidad usando datos calculados internamente');
+            
+            const sensitivityVAN = document.getElementById('sensitivityVAN');
+            const sensitivityTIR = document.getElementById('sensitivityTIR');
+            const sensitivityRevenue = document.getElementById('sensitivityRevenue');
+            
+            if (sensitivityVAN) {
+                sensitivityVAN.textContent = `$${this.baseScenario.npv.toFixed(1)}M`;
+            }
+            
+            if (sensitivityTIR) {
+                sensitivityTIR.textContent = `${this.baseScenario.irr.toFixed(1)}%`;
+            }
+            
+            if (sensitivityRevenue) {
+                sensitivityRevenue.textContent = `$${this.baseScenario.revenue2030.toFixed(1)}M`;
+            }
+        } else {
+            console.warn('⚠️ No hay datos disponibles para actualizar métricas de sensibilidad');
         }
         
         // Actualizar parámetros base
