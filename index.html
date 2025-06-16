@@ -31,6 +31,7 @@
     <!-- Cargar módulos JS en orden -->
     <script src="static/js/config.js"></script>
     <script src="static/js/utils.js"></script>
+    <script src="static/js/capex.js"></script>
     <script src="static/js/investments.js"></script>
     <script src="static/js/revenues.js"></script>
     <script src="static/js/costs.js"></script>
@@ -56,7 +57,7 @@
                     <img src="static/img/vspt.png" alt="VSPT Logo" class="header-logo">
                     <div class="header-text">
                         <h1>VSPT Digital 360</h1>
-                        <p>Modelo Financiero 2025-2030 | México • Brasil • Canadá • Estados Unidos</p>
+                        <p>Modelo Financiero Optimizado 2025-2030 | Chile • México (CAPEX -29.4%)</p>
                     </div>
                 </div>
             </div>
@@ -237,10 +238,10 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="kpi-content">
-                        <div class="kpi-value" id="dashTotalCapex">$800K</div>
-                        <div class="kpi-label">CAPEX Total</div>
-                        <div class="kpi-trend neutral">
-                            <i class="fas fa-calendar"></i> 2025-2028
+                        <div class="kpi-value" id="dashTotalCapex">$565K</div>
+                        <div class="kpi-label">CAPEX Optimizado</div>
+                        <div class="kpi-trend success">
+                            <i class="fas fa-arrow-down"></i> -29.4% vs Original
                         </div>
                     </div>
                 </div>
@@ -329,33 +330,29 @@
                 </div>
                 
                 <div class="chart-section">
-                    <h3><i class="fas fa-chart-pie"></i> Distribución por Mercado 2030</h3>
+                    <h3><i class="fas fa-chart-pie"></i> Distribución por Mercado 2030 (Optimizado)</h3>
                     <div class="chart-placeholder">
                         <div class="market-distribution grid grid-cols-1 gap-3">
                             <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
                                 <span class="market-flag">🇨🇱</span>
                                 <span class="market-name font-medium">Chile</span>
-                                <span class="market-percentage font-bold text-red-600">40%</span>
+                                <span class="market-percentage font-bold text-red-600">65%</span>
                             </div>
                             <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
                                 <span class="market-flag">🇲🇽</span>
                                 <span class="market-name font-medium">México</span>
-                                <span class="market-percentage font-bold text-green-600">25%</span>
+                                <span class="market-percentage font-bold text-green-600">35%</span>
                             </div>
-                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
-                                <span class="market-flag">🇧🇷</span>
-                                <span class="market-name font-medium">Brasil</span>
-                                <span class="market-percentage font-bold text-blue-600">15%</span>
+                            <div class="market-item flex justify-between items-center p-3 bg-red-50 rounded border border-red-200">
+                                <span class="market-flag">❌</span>
+                                <span class="market-name font-medium text-red-600">Brasil, Canadá, USA</span>
+                                <span class="market-percentage font-bold text-red-600">Eliminados</span>
                             </div>
-                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
-                                <span class="market-flag">🇨🇦</span>
-                                <span class="market-name font-medium">Canadá</span>
-                                <span class="market-percentage font-bold text-purple-600">10%</span>
-                            </div>
-                            <div class="market-item flex justify-between items-center p-3 bg-gray-50 rounded">
-                                <span class="market-flag">🇺🇸</span>
-                                <span class="market-name font-medium">Estados Unidos</span>
-                                <span class="market-percentage font-bold text-orange-600">10%</span>
+                            <div class="bg-green-50 border border-green-200 rounded p-3 mt-2">
+                                <p class="text-sm text-green-700">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Scope Optimizado:</strong> Enfoque en 2 mercados principales para maximizar ROI
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -442,82 +439,7 @@
                                     </td>
                                 </tr>
                                 
-                                <tr class="hover:bg-green-50 transition-colors duration-200">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <span class="text-2xl">🇧🇷</span>
-                                            <div>
-                                                <div class="font-medium text-gray-900">Brasil</div>
-                                                <div class="text-sm text-gray-500">Potencial medio</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="brasil-revenue" class="text-lg font-bold text-green-600">$1.9M</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="brasil-orders" class="text-lg font-semibold text-gray-700">39K</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="brasil-aov" class="text-lg font-semibold text-green-600">$48</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="brasil-share" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                            16.1%
-                                        </span>
-                                    </td>
-                                </tr>
-                                
-                                <tr class="hover:bg-blue-50 transition-colors duration-200">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <span class="text-2xl">🇺🇸</span>
-                                            <div>
-                                                <div class="font-medium text-gray-900">Estados Unidos</div>
-                                                <div class="text-sm text-gray-500">Alto valor</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="usa-revenue" class="text-lg font-bold text-indigo-600">$1.3M</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="usa-orders" class="text-lg font-semibold text-gray-700">23K</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="usa-aov" class="text-lg font-semibold text-green-600">$56</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="usa-share" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                                            11.0%
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-red-50 transition-colors duration-200">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <span class="text-2xl">🇨🇦</span>
-                                            <div>
-                                                <div class="font-medium text-gray-900">Canadá</div>
-                                                <div class="text-sm text-gray-500">Premium market</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="canada-revenue" class="text-lg font-bold text-purple-600">$1.3M</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="canada-orders" class="text-lg font-semibold text-gray-700">25K</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="canada-aov" class="text-lg font-semibold text-green-600">$52</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span id="canada-share" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                                            11.0%
-                                        </span>
-                                    </td>
-                                </tr>
+                               
                                 
                             </tbody>
                             <tfoot class="bg-gray-50">
@@ -558,7 +480,7 @@
                         <h4 class="font-semibold text-green-800 mb-2">
                             <i class="fas fa-chart-line mr-2"></i>Mayor AOV
                         </h4>
-                        <p id="highest-aov-summary" class="text-green-700">Estados Unidos con <strong>$56</strong> de ticket promedio</p>
+                        <p id="highest-aov-summary" class="text-green-700">México con <strong>$44</strong> de ticket promedio</p>
                     </div>
                     
                     <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
@@ -623,7 +545,26 @@
         
         <!-- Tab 1: CAPEX & Financing -->
         <div id="inversiones" class="content hidden px-6 py-8">
-            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">CAPEX Progresivo 2025-2028 & Estructura de Financiamiento</h2>
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">CAPEX Optimizado 2025-2028 & Estructura de Financiamiento</h2>
+            
+            <!-- Panel informativo del CAPEX optimizado -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-green-800">
+                    <i class="fas fa-check-circle"></i> CAPEX Optimizado - Reducción del 29.4%
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-green-700 mb-2"><strong>Total Optimizado:</strong> $565K (era $800K)</p>
+                        <p class="text-green-700 mb-2"><strong>Ahorro Total:</strong> $235K (-29.4%)</p>
+                        <p class="text-green-700"><strong>Scope:</strong> Solo Chile + México</p>
+                    </div>
+                    <div>
+                        <p class="text-green-700 mb-2"><strong>Eliminados:</strong> Brasil, Canadá, USA</p>
+                        <p class="text-green-700 mb-2"><strong>Reducidos:</strong> Warehouses, Expansión Internacional</p>
+                        <p class="text-green-700"><strong>Distribución:</strong> 53% | 25% | 18% | 4%</p>
+                    </div>
+                </div>
+            </div>
             
             <div class="controls">
                 <div class="control-group">
@@ -654,18 +595,21 @@
             
             <div class="metrics-grid">
                 <div class="metric-cards">
-                    <div class="metric-value" id="totalCapex">$800K</div>
-                    <div class="metric-label">CAPEX Total</div>
+                    <div class="metric-value" id="totalCapex">$565K</div>
+                    <div class="metric-label">CAPEX Total Optimizado</div>
                 </div>
                 <div class="metric-cards">
-                    <div class="metric-value" id="totalDebt">$280K</div>
-                    <div class="metric-label">Financiamiento Deuda</div>
+                    <div class="metric-value" id="totalDebt">$282K</div>
+                    <div class="metric-label">Financiamiento Deuda (50%)</div>
                 </div>
                 <div class="metric-cards">
-                    <div class="metric-value" id="totalEquity">$520K</div>
-                    <div class="metric-label">Financiamiento Equity</div>
+                    <div class="metric-value" id="totalEquity">$283K</div>
+                    <div class="metric-label">Financiamiento Equity (50%)</div>
                 </div>
-          
+                <div class="metric-cards">
+                    <div class="metric-value" style="color: #059669;">-$235K</div>
+                    <div class="metric-label">Ahorro vs Original (-29.4%)</div>
+                </div>
             </div>
             
             <div class="table-container overflow-x-auto">
@@ -673,10 +617,10 @@
                     <thead>
                         <tr>
                             <th style="text-align: left;">Concepto</th>
-                            <th>2025 (45%)</th>
-                            <th>2026 (30%)</th>
-                            <th>2027 (20%)</th>
-                            <th>2028 (5%)</th>
+                            <th>2025 (53%)</th>
+                            <th>2026 (25%)</th>
+                            <th>2027 (18%)</th>
+                            <th>2028 (4%)</th>
                             <th>Total</th>
                         </tr>
                     </thead>
@@ -696,21 +640,59 @@
                     <input type="number" id="initialTraffic" value="9100" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
                 <div class="control-group">
-                    <label>Crecimiento Anual Tráfico:</label>
-                    <input type="number" id="trafficGrowth" value="100" step="5" onchange="updateCalculations()" class="w-full lg:w-auto">%
-                </div>
-                <div class="control-group">
                     <label>Conversión Inicial:</label>
                     <input type="number" id="initialConversion" value="2" step="0.1" onchange="updateCalculations()" class="w-full lg:w-auto">%
-                </div>
-                <div class="control-group">
-                    <label>Mejora Conversión Anual:</label>
-                    <input type="number" id="conversionGrowthRate" value="40" step="5" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Ticket Promedio (USD):</label>
                     <input type="number" id="avgTicket" value="50" onchange="updateCalculations()" class="w-full lg:w-auto">
                 </div>
+            </div>
+            
+            <!-- Tabla de Progresión de Drivers -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 text-blue-800">
+                    <i class="fas fa-chart-line"></i> Progresión Anual de Drivers (Modelo Decreciente)
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-blue-100">
+                                <th class="px-4 py-2 text-left font-semibold">Driver</th>
+                                <th class="px-4 py-2 text-center font-semibold">Valor Inicial</th>
+                                <th class="px-4 py-2 text-center font-semibold">2026</th>
+                                <th class="px-4 py-2 text-center font-semibold">2027</th>
+                                <th class="px-4 py-2 text-center font-semibold">2028</th>
+                                <th class="px-4 py-2 text-center font-semibold">2029</th>
+                                <th class="px-4 py-2 text-center font-semibold">2030</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="px-4 py-2 font-medium">Crecimiento Tráfico</td>
+                                <td class="px-4 py-2 text-center">9,100 visitas/mes</td>
+                                <td class="px-4 py-2 text-center bg-green-50">+100%</td>
+                                <td class="px-4 py-2 text-center bg-yellow-50">+80%</td>
+                                <td class="px-4 py-2 text-center bg-orange-50">+50%</td>
+                                <td class="px-4 py-2 text-center bg-red-50">+30%</td>
+                                <td class="px-4 py-2 text-center bg-red-100">+20%</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 font-medium">Mejora Conversión</td>
+                                <td class="px-4 py-2 text-center">2.00%</td>
+                                <td class="px-4 py-2 text-center bg-green-50">+40%</td>
+                                <td class="px-4 py-2 text-center bg-yellow-50">+25%</td>
+                                <td class="px-4 py-2 text-center bg-orange-50">+15%</td>
+                                <td class="px-4 py-2 text-center bg-red-50">+10%</td>
+                                <td class="px-4 py-2 text-center bg-red-100">+5%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-sm text-blue-700 mt-3">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Modelo de Madurez del Negocio:</strong> Crecimiento acelerado inicial con desaceleración gradual conforme el mercado madura.
+                </p>
             </div>
             
             <div class="metrics-grid">
@@ -729,6 +711,18 @@
                 <div class="metric-cards">
                     <div class="metric-value" id="conversionEvolution">0%</div>
                     <div class="metric-label">Evolución Conversión</div>
+                </div>
+                <div class="metric-cards">
+                    <div class="metric-value" id="customerCAC">$0</div>
+                    <div class="metric-label">CAC Promedio</div>
+                </div>
+                <div class="metric-cards">
+                    <div class="metric-value" id="customerLTV">$0</div>
+                    <div class="metric-label">LTV Promedio</div>
+                </div>
+                <div class="metric-cards">
+                    <div class="metric-value" id="ltvCacRatio">0.0x</div>
+                    <div class="metric-label">Ratio LTV/CAC</div>
                 </div>
              
             </div>
@@ -763,7 +757,7 @@
                 </div>
                 <div class="control-group">
                     <label>Marketing (% Revenue):</label>
-                    <input type="number" id="marketingPct" value="12" step="1" onchange="updateCalculations()" class="w-full lg:w-auto">%
+                    <input type="number" id="marketingPct" value="10" step="1" onchange="updateCalculations()" class="w-full lg:w-auto">%
                 </div>
                 <div class="control-group">
                     <label>Inflación Anual:</label>
@@ -1041,41 +1035,59 @@
 
         <!-- Tab 9: Análisis Sensibilidad -->
         <div id="sensibilidad" class="content hidden px-6 py-8">
-            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Análisis de Sensibilidad Dinámico</h2>
+            <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Análisis de Sensibilidad</h2>
             
             <!-- Panel de Parámetros Base -->
             <div class="base-parameters mb-8">
                 <h3 class="text-xl font-semibold mb-6"><i class="fas fa-cog"></i> Parámetros Base del Modelo</h3>
                 <div class="parameters-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <div class="parameter-card">
-                        <div class="parameter-label">Tráfico Web</div>
-                        <div class="parameter-value" id="baseTraffic">9,100</div>
-                        <div class="parameter-unit">visitantes/mes</div>
+                    <div class="parameter-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                        <div class="parameter-icon text-blue-600 mb-2">
+                            <i class="fas fa-users text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-blue-800">Tráfico Web</div>
+                        <div class="parameter-value text-xl font-bold text-blue-900" id="baseTraffic">9,100</div>
+                        <div class="parameter-unit text-xs text-blue-600">visitantes/mes</div>
                     </div>
-                    <div class="parameter-card">
-                        <div class="parameter-label">Conversión</div>
-                        <div class="parameter-value" id="baseConversion">1.5%</div>
-                        <div class="parameter-unit">tasa inicial</div>
+                    <div class="parameter-card bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                        <div class="parameter-icon text-green-600 mb-2">
+                            <i class="fas fa-shopping-cart text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-green-800">Conversión</div>
+                        <div class="parameter-value text-xl font-bold text-green-900" id="baseConversion">2.0%</div>
+                        <div class="parameter-unit text-xs text-green-600">tasa inicial</div>
                     </div>
-                    <div class="parameter-card">
-                        <div class="parameter-label">Ticket Promedio</div>
-                        <div class="parameter-value" id="baseTicket">$45</div>
-                        <div class="parameter-unit">USD inicial</div>
+                    <div class="parameter-card bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                        <div class="parameter-icon text-purple-600 mb-2">
+                            <i class="fas fa-dollar-sign text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-purple-800">Ticket Promedio</div>
+                        <div class="parameter-value text-xl font-bold text-purple-900" id="baseTicket">$50</div>
+                        <div class="parameter-unit text-xs text-purple-600">USD inicial</div>
                     </div>
-                    <div class="parameter-card">
-                        <div class="parameter-label">WACC</div>
-                        <div class="parameter-value" id="baseWACC">8.0%</div>
-                        <div class="parameter-unit">tasa descuento</div>
+                    <div class="parameter-card bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+                        <div class="parameter-icon text-orange-600 mb-2">
+                            <i class="fas fa-percentage text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-orange-800">WACC</div>
+                        <div class="parameter-value text-xl font-bold text-orange-900" id="baseWACC">8.0%</div>
+                        <div class="parameter-unit text-xs text-orange-600">tasa descuento</div>
                     </div>
-                    <div class="parameter-card">
-                        <div class="parameter-label">Tipo Cambio CLP</div>
-                        <div class="parameter-value" id="baseExchangeRate">900</div>
-                        <div class="parameter-unit">CLP/USD</div>
+                    <div class="parameter-card bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
+                        <div class="parameter-icon text-red-600 mb-2">
+                            <i class="fas fa-exchange-alt text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-red-800">Tipo Cambio CLP</div>
+                        <div class="parameter-value text-xl font-bold text-red-900" id="baseExchangeRate">900</div>
+                        <div class="parameter-unit text-xs text-red-600">CLP/USD</div>
                     </div>
-                    <div class="parameter-card">
-                        <div class="parameter-label">Costos Operativos</div>
-                        <div class="parameter-value" id="baseCosts">52%</div>
-                        <div class="parameter-unit">% ingresos</div>
+                    <div class="parameter-card bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg border border-indigo-200">
+                        <div class="parameter-icon text-indigo-600 mb-2">
+                            <i class="fas fa-cogs text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-indigo-800">Costos Operativos</div>
+                        <div class="parameter-value text-xl font-bold text-indigo-900" id="baseCosts">54%</div>
+                        <div class="parameter-unit text-xs text-indigo-600">% ingresos</div>
                     </div>
                 </div>
             </div>
@@ -1086,163 +1098,163 @@
                 
                 <div class="factors-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Factor 1: Tráfico Web -->
-                    <div class="factor-card revenue-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-users"></i>
+                    <div class="factor-card bg-white rounded-lg border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-blue-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-users text-xl"></i>
+                                </div>
+                                <span class="bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Alto</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Tráfico Web</h4>
-                                <span class="impact-level high">Impacto Alto</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-blue-900 mt-3">Tráfico Web</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±50% → ±$3.2M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-blue-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-blue-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-blue-900">±50% → ±$3.2M</div>
                             </div>
-                            <div class="factor-description">
-                                Base del modelo de ingresos. Variaciones significativas impactan directamente el revenue y FCF.
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
+                                Base del modelo de ingresos con crecimiento decreciente. Variaciones significativas impactan directamente el revenue y FCF.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">SEO/SEM</span>
-                                <span class="driver-tag">Marketing Digital</span>
-                                <span class="driver-tag">Expansión Geográfica</span>
+                                <span class="driver-tag bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">SEO/SEM</span>
+                                <span class="driver-tag bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Marketing Digital</span>
+                                <span class="driver-tag bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Expansión Geográfica</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Factor 2: Tasa de Conversión -->
-                    <div class="factor-card revenue-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-shopping-cart"></i>
+                    <div class="factor-card bg-white rounded-lg border border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-green-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-shopping-cart text-xl"></i>
+                                </div>
+                                <span class="bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Alto</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Tasa de Conversión</h4>
-                                <span class="impact-level high">Impacto Alto</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-green-900 mt-3">Tasa de Conversión</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±40% → ±$2.8M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-green-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-green-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-green-900">±40% → ±$2.8M</div>
                             </div>
-                            <div class="factor-description">
-                                Eficiencia de conversión de visitantes a compradores. Crítico para la rentabilidad.
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
+                                Eficiencia de conversión con mejora decreciente anual. Crítico para la rentabilidad del modelo.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">UX/UI</span>
-                                <span class="driver-tag">Precio</span>
-                                <span class="driver-tag">Confianza</span>
+                                <span class="driver-tag bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">UX/UI</span>
+                                <span class="driver-tag bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Pricing</span>
+                                <span class="driver-tag bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Trust & Security</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Factor 3: Ticket Promedio -->
-                    <div class="factor-card revenue-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-dollar-sign"></i>
+                    <div class="factor-card bg-white rounded-lg border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-purple-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-dollar-sign text-xl"></i>
+                                </div>
+                                <span class="bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Medio</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Ticket Promedio</h4>
-                                <span class="impact-level medium">Impacto Medio</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-purple-900 mt-3">Ticket Promedio</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±15% → ±$1.5M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-purple-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-purple-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-purple-900">±15% → ±$1.5M</div>
                             </div>
-                            <div class="factor-description">
-                                Valor promedio por transacción. Influenciado por mix de productos y estrategia de precios.
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
+                                Valor promedio por transacción. Influenciado por mix de productos y estrategia de precios premium.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">Mix Productos</span>
-                                <span class="driver-tag">Upselling</span>
-                                <span class="driver-tag">Premium</span>
+                                <span class="driver-tag bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Mix Productos</span>
+                                <span class="driver-tag bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Upselling</span>
+                                <span class="driver-tag bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Premium Wines</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Factor 4: Costos Operativos -->
-                    <div class="factor-card cost-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-cogs"></i>
+                    <div class="factor-card bg-white rounded-lg border border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-orange-50 to-orange-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-orange-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-cogs text-xl"></i>
+                                </div>
+                                <span class="bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Alto</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Costos Operativos</h4>
-                                <span class="impact-level high">Impacto Alto</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-orange-900 mt-3">Costos Operativos</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±20% → ±$2.1M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-orange-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-orange-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-orange-900">±20% → ±$2.1M</div>
                             </div>
-                            <div class="factor-description">
-                                Costos variables y fijos operacionales. Control crítico para mantener márgenes.
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
+                                Costos variables y fijos operacionales. Control crítico para mantener márgenes y rentabilidad.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">Logística</span>
-                                <span class="driver-tag">Personal</span>
-                                <span class="driver-tag">Marketing</span>
+                                <span class="driver-tag bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Logística</span>
+                                <span class="driver-tag bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Personal</span>
+                                <span class="driver-tag bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Marketing</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Factor 5: Tipo de Cambio -->
-                    <div class="factor-card external-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-exchange-alt"></i>
+                    <div class="factor-card bg-white rounded-lg border border-red-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-red-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-exchange-alt text-xl"></i>
+                                </div>
+                                <span class="bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Medio</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Tipo de Cambio</h4>
-                                <span class="impact-level medium">Impacto Medio</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-red-900 mt-3">Tipo de Cambio</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±10% → ±$1.2M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-red-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-red-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-red-900">±10% → ±$1.2M</div>
                             </div>
-                            <div class="factor-description">
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
                                 Fluctuaciones cambiarias afectan ingresos en mercados internacionales y costos de importación.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">USD/CLP</span>
-                                <span class="driver-tag">Hedging</span>
-                                <span class="driver-tag">Exposición</span>
+                                <span class="driver-tag bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">USD/CLP</span>
+                                <span class="driver-tag bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Hedging</span>
+                                <span class="driver-tag bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">FX Exposure</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Factor 6: Velocidad de Expansión -->
-                    <div class="factor-card strategic-driver">
-                        <div class="factor-header">
-                            <div class="factor-icon">
-                                <i class="fas fa-rocket"></i>
+                    <div class="factor-card bg-white rounded-lg border border-indigo-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div class="factor-header p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="factor-icon bg-indigo-500 text-white p-3 rounded-full">
+                                    <i class="fas fa-rocket text-xl"></i>
+                                </div>
+                                <span class="bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Impacto Medio</span>
                             </div>
-                            <div class="factor-title">
-                                <h4>Velocidad de Expansión</h4>
-                                <span class="impact-level medium">Impacto Medio</span>
-                            </div>
+                            <h4 class="text-lg font-bold text-indigo-900 mt-3">Velocidad de Expansión</h4>
                         </div>
-                        <div class="factor-content">
-                            <div class="factor-metric">
-                                <span class="metric-label">Sensibilidad:</span>
-                                <span class="metric-value">±6 meses → ±$0.8M VAN</span>
+                        <div class="factor-content p-6">
+                            <div class="factor-metric bg-indigo-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-indigo-800 mb-1">Sensibilidad VAN:</div>
+                                <div class="text-lg font-bold text-indigo-900">±25% → ±$1.8M</div>
                             </div>
-                            <div class="factor-description">
-                                Timing de entrada a nuevos mercados. Acelerar o retrasar expansión impacta flujos futuros.
+                            <div class="factor-description text-gray-700 text-sm mb-4 leading-relaxed">
+                                Ritmo de penetración en nuevos mercados. Solo Chile en 2025, expansión completa desde 2026.
                             </div>
                             <div class="factor-drivers">
-                                <span class="driver-tag">Regulaciones</span>
-                                <span class="driver-tag">Recursos</span>
-                                <span class="driver-tag">Market Timing</span>
+                                <span class="driver-tag bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Market Entry</span>
+                                <span class="driver-tag bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Regulatory</span>
+                                <span class="driver-tag bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded mr-2 mb-2 inline-block">Investment</span>
                             </div>
                         </div>
                     </div>
@@ -1250,53 +1262,73 @@
                 
                 <!-- Resumen de Sensibilidad -->
                 <div class="sensitivity-summary mt-8">
-                    <div class="summary-card">
-                        <div class="summary-header">
-                            <h4><i class="fas fa-chart-bar"></i> Resumen de Sensibilidad del VAN</h4>
+                    <div class="summary-card bg-white rounded-lg border border-gray-200 shadow-lg p-6">
+                        <div class="summary-header mb-6">
+                            <h4 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-chart-bar text-blue-600 mr-3"></i>
+                                Resumen de Sensibilidad del VAN
+                            </h4>
+                            <p class="text-sm text-gray-600 mt-2">Impacto de variaciones en factores clave sobre el Valor Actual Neto del proyecto</p>
                         </div>
                         <div class="summary-content">
-                            <div class="sensitivity-chart">
-                                <div class="chart-item">
-                                    <span class="factor-name">Tráfico Web</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill high" style="width: 85%"></div>
+                            <div class="sensitivity-chart space-y-4">
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Tráfico Web</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-red-400 to-red-600 h-full rounded-full" style="width: 85%"></div>
                                     </div>
-                                    <span class="impact-value">±$3.2M</span>
+                                    <span class="impact-value font-bold text-red-600 w-20 text-right">±$3.2M</span>
                                 </div>
-                                <div class="chart-item">
-                                    <span class="factor-name">Conversión</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill high" style="width: 75%"></div>
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Conversión</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full" style="width: 75%"></div>
                                     </div>
-                                    <span class="impact-value">±$2.8M</span>
+                                    <span class="impact-value font-bold text-orange-600 w-20 text-right">±$2.8M</span>
                                 </div>
-                                <div class="chart-item">
-                                    <span class="factor-name">Costos Operativos</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill high" style="width: 65%"></div>
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Costos Op.</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full" style="width: 65%"></div>
                                     </div>
-                                    <span class="impact-value">±$2.1M</span>
+                                    <span class="impact-value font-bold text-orange-600 w-20 text-right">±$2.1M</span>
                                 </div>
-                                <div class="chart-item">
-                                    <span class="factor-name">Ticket Promedio</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill medium" style="width: 45%"></div>
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Expansión</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full" style="width: 50%"></div>
                                     </div>
-                                    <span class="impact-value">±$1.5M</span>
+                                    <span class="impact-value font-bold text-yellow-600 w-20 text-right">±$1.8M</span>
                                 </div>
-                                <div class="chart-item">
-                                    <span class="factor-name">Tipo de Cambio</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill medium" style="width: 35%"></div>
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Ticket Avg.</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-yellow-400 to-yellow-600 h-full rounded-full" style="width: 45%"></div>
                                     </div>
-                                    <span class="impact-value">±$1.2M</span>
+                                    <span class="impact-value font-bold text-yellow-600 w-20 text-right">±$1.5M</span>
                                 </div>
-                                <div class="chart-item">
-                                    <span class="factor-name">Velocidad Expansión</span>
-                                    <div class="sensitivity-bar">
-                                        <div class="bar-fill low" style="width: 25%"></div>
+                                <div class="chart-item flex items-center">
+                                    <span class="factor-name w-32 text-sm font-medium text-gray-700">Tipo Cambio</span>
+                                    <div class="sensitivity-bar flex-1 mx-4 bg-gray-200 rounded-full h-4 relative">
+                                        <div class="bar-fill bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full" style="width: 35%"></div>
                                     </div>
-                                    <span class="impact-value">±$0.8M</span>
+                                    <span class="impact-value font-bold text-green-600 w-20 text-right">±$1.2M</span>
+                                </div>
+                            </div>
+                            <div class="summary-footer mt-6 pt-4 border-t border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                    <div class="summary-metric">
+                                        <div class="text-lg font-bold text-red-600">Alto Riesgo</div>
+                                        <div class="text-sm text-gray-600">Tráfico & Conversión</div>
+                                    </div>
+                                    <div class="summary-metric">
+                                        <div class="text-lg font-bold text-yellow-600">Riesgo Medio</div>
+                                        <div class="text-sm text-gray-600">Expansión & Ticket</div>
+                                    </div>
+                                    <div class="summary-metric">
+                                        <div class="text-lg font-bold text-green-600">Bajo Riesgo</div>
+                                        <div class="text-sm text-gray-600">Tipo de Cambio</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1304,16 +1336,58 @@
                 </div>
             </div>
             
-            <div class="scenario-controls">
-                <div class="info-panel">
-                    <h3><i class="fas fa-chart-line"></i> Análisis de Escenarios</h3>
-                    <p>Evaluación de 4 escenarios principales basados en variaciones de parámetros clave del modelo:</p>
-                    <ul>
-                        <li><strong>Pesimista:</strong> Conversión -30%, Tráfico -40%, Ticket -15%, Costos +20%</li>
-                        <li><strong>Base:</strong> Escenario según parámetros actuales del modelo</li>
-                        <li><strong>Optimista:</strong> Conversión +40%, Tráfico +50%, Ticket +15%, Costos -15%</li>
-                        <li><strong>Stress Test:</strong> Conversión -50%, Tráfico -60%, Ticket -25%, Costos +40%</li>
-                    </ul>
+            <div class="scenario-controls mb-8">
+                <div class="info-panel bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-blue-600 mr-3"></i>
+                        Análisis de Escenarios
+                    </h3>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        Evaluación de 4 escenarios principales basados en variaciones de parámetros clave del modelo con el nuevo patrón de crecimiento decreciente:
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="scenario-item bg-white p-4 rounded-lg border border-red-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+                                <h4 class="font-bold text-red-800">Escenario Pesimista</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Conversión -30%, Tráfico -40%, Ticket -15%, Costos +20%</p>
+                        </div>
+                        
+                        <div class="scenario-item bg-white p-4 rounded-lg border border-blue-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-4 h-4 bg-blue-500 rounded-full mr-3"></div>
+                                <h4 class="font-bold text-blue-800">Escenario Base</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Escenario según parámetros actuales del modelo decreciente</p>
+                        </div>
+                        
+                        <div class="scenario-item bg-white p-4 rounded-lg border border-green-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                                <h4 class="font-bold text-green-800">Escenario Optimista</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Conversión +40%, Tráfico +50%, Ticket +15%, Costos -15%</p>
+                        </div>
+                        
+                        <div class="scenario-item bg-white p-4 rounded-lg border border-orange-200">
+                            <div class="flex items-center mb-2">
+                                <div class="w-4 h-4 bg-orange-500 rounded-full mr-3"></div>
+                                <h4 class="font-bold text-orange-800">Stress Test</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">Conversión -50%, Tráfico -60%, Ticket -25%, Costos +40%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-600 mt-1 mr-2"></i>
+                            <p class="text-sm text-blue-800">
+                                <strong>Nota:</strong> Todos los escenarios consideran el modelo de crecimiento decreciente implementado: 
+                                tráfico (100%, 80%, 50%, 30%, 20%) y conversión (40%, 25%, 15%, 10%, 5%) por año.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

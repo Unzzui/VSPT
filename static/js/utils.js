@@ -15,7 +15,7 @@ function updateImpactMetrics() {
     
     // Calcular métricas de impacto del proyecto
     const metrics = {
-        totalInvestment: 800000,
+        totalInvestment: 565000,
         peakRevenue: 0,
         totalRevenue5Years: 0,
         peakOrders: 0,
@@ -49,7 +49,7 @@ function updateImpactMetrics() {
     
     // Inversión acumulada
     if (modelData.investments) {
-        metrics.cumulativeInvestment = modelData.investments.totalCapex || 800000;
+        metrics.cumulativeInvestment = modelData.investments.totalCapex || 565000;
     }
     
     // Empleo generado (estimación basada en revenue)
@@ -721,13 +721,46 @@ function createFinancialFlowSheet() {
     
     if (modelData.financialCashFlow) {
         const flow = modelData.financialCashFlow;
+        
+        // Agregar todas las líneas del flujo financiero con desglose completo
         data.push(['NOPAT', flow[2025]?.nopat || 0, flow[2026]?.nopat || 0,
                   flow[2027]?.nopat || 0, flow[2028]?.nopat || 0,
                   flow[2029]?.nopat || 0, flow[2030]?.nopat || 0]);
-        data.push(['Servicio Deuda', flow[2025]?.debtService || 0, flow[2026]?.debtService || 0,
+        
+        data.push(['Depreciación', flow[2025]?.depreciation || 0, flow[2026]?.depreciation || 0,
+                  flow[2027]?.depreciation || 0, flow[2028]?.depreciation || 0,
+                  flow[2029]?.depreciation || 0, flow[2030]?.depreciation || 0]);
+        
+        data.push(['Escudo Fiscal', flow[2025]?.taxShield || 0, flow[2026]?.taxShield || 0,
+                  flow[2027]?.taxShield || 0, flow[2028]?.taxShield || 0,
+                  flow[2029]?.taxShield || 0, flow[2030]?.taxShield || 0]);
+        
+        data.push(['CAPEX', flow[2025]?.capex || 0, flow[2026]?.capex || 0,
+                  flow[2027]?.capex || 0, flow[2028]?.capex || 0,
+                  flow[2029]?.capex || 0, flow[2030]?.capex || 0]);
+        
+        data.push(['Δ Working Capital', flow[2025]?.deltaWC || 0, flow[2026]?.deltaWC || 0,
+                  flow[2027]?.deltaWC || 0, flow[2028]?.deltaWC || 0,
+                  flow[2029]?.deltaWC || 0, flow[2030]?.deltaWC || 0]);
+        
+        // DESGLOSE DEL SERVICIO DE LA DEUDA
+        data.push(['Gastos Financieros (Intereses)', flow[2025]?.interestExpense || 0, flow[2026]?.interestExpense || 0,
+                  flow[2027]?.interestExpense || 0, flow[2028]?.interestExpense || 0,
+                  flow[2029]?.interestExpense || 0, flow[2030]?.interestExpense || 0]);
+        
+        data.push(['Amortización Capital', flow[2025]?.debtService || 0, flow[2026]?.debtService || 0,
                   flow[2027]?.debtService || 0, flow[2028]?.debtService || 0,
                   flow[2029]?.debtService || 0, flow[2030]?.debtService || 0]);
-        data.push(['Flujo al Accionista', flow[2025]?.fcfe || 0, flow[2026]?.fcfe || 0,
+        
+        data.push(['Aporte Equity', flow[2025]?.equityContribution || 0, flow[2026]?.equityContribution || 0,
+                  flow[2027]?.equityContribution || 0, flow[2028]?.equityContribution || 0,
+                  flow[2029]?.equityContribution || 0, flow[2030]?.equityContribution || 0]);
+        
+        data.push(['Valor Residual', flow[2025]?.residualValue || 0, flow[2026]?.residualValue || 0,
+                  flow[2027]?.residualValue || 0, flow[2028]?.residualValue || 0,
+                  flow[2029]?.residualValue || 0, flow[2030]?.residualValue || 0]);
+        
+        data.push(['FCFE', flow[2025]?.fcfe || 0, flow[2026]?.fcfe || 0,
                   flow[2027]?.fcfe || 0, flow[2028]?.fcfe || 0,
                   flow[2029]?.fcfe || 0, flow[2030]?.fcfe || 0]);
         
@@ -735,6 +768,7 @@ function createFinancialFlowSheet() {
             data.push(['', '', '', '', '', '', '']);
             data.push(['VAN Equity', '', '', '', '', '', flow.metrics.equityNPV || 0]);
             data.push(['TIR Proyecto', '', '', '', '', '', flow.metrics.projectIRR ? (flow.metrics.projectIRR * 100).toFixed(1) + '%' : '0%']);
+            data.push(['Costo Equity', '', '', '', '', '', flow.metrics.equityCost ? (flow.metrics.equityCost * 100).toFixed(1) + '%' : 'N/A']);
         }
     }
     
@@ -746,7 +780,7 @@ function createMetricsSheet() {
         ['MÉTRICAS CLAVE DEL PROYECTO', ''],
         ['', ''],
         ['INVERSIÓN', ''],
-        ['CAPEX Total', 800000],
+        ['CAPEX Total', 565000],
         ['Financiamiento Deuda', 280000],
         ['Financiamiento Equity', 520000],
         ['', ''],
@@ -895,9 +929,9 @@ function updateMetricsDisplay() {
         // Crear los datos de métricas usando la misma lógica que createMetricsSheet
         const metricsData = {
             investment: {
-                capexTotal: 800000,
+                capexTotal: 565000,
                 debt: 280000,
-                equity: 520000
+                equity: 285000
             },
             economic: {},
             financial: {},

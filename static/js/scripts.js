@@ -83,7 +83,7 @@ function showTab(tabName) {
                 if (typeof updateDashboard === 'function') updateDashboard();
                 break;
             case 'inversiones':
-                if (typeof calculateProgressiveCapex === 'function') calculateProgressiveCapex();
+                if (typeof calculateOptimizedCapex === 'function') calculateOptimizedCapex();
                 break;
             case 'ingresos':
                 if (typeof calculateRevenues === 'function') calculateRevenues();
@@ -107,7 +107,7 @@ function showTab(tabName) {
                 if (typeof calculateFinancialCashFlow === 'function') calculateFinancialCashFlow();
                 break;
             case 'sensibilidad':
-                if (typeof calculateSensitivityAnalysis === 'function') calculateSensitivityAnalysis();
+                if (typeof updateSensitivity === 'function') updateSensitivity();
                 break;
         }
         
@@ -125,11 +125,11 @@ function updateCalculations() {
         console.log('🚀 Iniciando actualización completa del modelo financiero...');
         
         // 1. CAPEX Progresivo y Financiamiento (investments.js)
-        if (typeof calculateProgressiveCapex === 'function') {
-            calculateProgressiveCapex();
+        if (typeof calculateOptimizedCapex === 'function') {
+            calculateOptimizedCapex();
             console.log('✅ CAPEX progresivo y financiamiento calculados');
         } else {
-            console.warn('⚠️ calculateProgressiveCapex no disponible');
+            console.warn('⚠️ calculateOptimizedCapex no disponible');
         }
         
         // 2. Proyección de Ingresos (revenues.js)
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar que todos los módulos estén cargados
     const requiredFunctions = [
-        'calculateProgressiveCapex',    // investments.js
+        'calculateOptimizedCapex',      // capex.js (nueva función optimizada)
         'calculateRevenues',            // revenues.js
         'calculateCosts',               // costs.js
         'calculateWorkingCapital',      // workingCapital.js
@@ -404,7 +404,7 @@ function downloadExcel() {
 function debugModel() {
     console.log('🔍 Estado actual del modelo:', modelData);
     console.log('📊 Módulos disponibles:', {
-        investments: typeof calculateProgressiveCapex !== 'undefined',
+        investments: typeof calculateOptimizedCapex !== 'undefined',
         revenues: typeof calculateRevenues !== 'undefined',
         costs: typeof calculateCosts !== 'undefined',
         workingCapital: typeof calculateWorkingCapital !== 'undefined',

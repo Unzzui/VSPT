@@ -58,7 +58,10 @@ function updateSensitivity() {
     console.log('📊 Iniciando análisis de sensibilidad...');
     
     try {
-        // Primero asegurar que los cálculos principales estén ejecutados
+        // Actualizar primero los parámetros base en la interfaz
+        updateBaseParametersDisplay();
+        
+        // Asegurar que los cálculos principales estén ejecutados
         ensureModelDataReady();
         
         // Obtener métricas del escenario base real
@@ -128,6 +131,13 @@ function getBaseScenarioMetrics() {
     const economicIRR = (modelData.economicCashFlow?.metrics?.irr || 0) * 100;
     const financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
     const financialIRR = (modelData.financialCashFlow?.metrics?.projectIRR || 0) * 100;
+    
+    console.log('🔍 Sensibilidad - Métricas del modelo:');
+    console.log('  economicNPV:', economicNPV);
+    console.log('  economicIRR:', economicIRR);
+    console.log('  financialNPV:', financialNPV);
+    console.log('  financialIRR:', financialIRR);
+    console.log('  modelData.economicCashFlow completo:', modelData.economicCashFlow);
     
     // Revenue 2030 del modelo de ingresos - USAR DATOS REALES DEL MODELO
     let revenue2030 = 0;
@@ -1163,3 +1173,34 @@ window.updateSensitivityAnalysis = function() {
         window.sensitivityAnalysis.recalculate();
     }
 };
+
+// Función para actualizar parámetros base en la interfaz
+function updateBaseParametersDisplay() {
+    try {
+        // Obtener parámetros actuales del modelo
+        const params = getBusinessParams();
+        const financialParams = getFinancialParams();
+        
+        // Actualizar elementos de parámetros base
+        const elements = {
+            'baseTraffic': params.initialTraffic ? params.initialTraffic.toLocaleString() : '9,100',
+            'baseConversion': params.initialConversion ? `${(params.initialConversion * 100).toFixed(1)}%` : '2.0%',
+            'baseTicket': params.avgTicket ? `$${params.avgTicket}` : '$50',
+            'baseWACC': financialParams.wacc ? `${(financialParams.wacc * 100).toFixed(1)}%` : '8.0%',
+            'baseExchangeRate': exchangeRates?.CLP || '900',
+            'baseCosts': `${((params.marketingPct || 0.12) * 100 + 42).toFixed(0)}%` // Marketing + COGS estimado
+        };
+        
+        Object.keys(elements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = elements[id];
+            }
+        });
+        
+        console.log('✅ Parámetros base actualizados en la interfaz:', elements);
+        
+    } catch (error) {
+        console.error('❌ Error actualizando parámetros base:', error);
+    }
+}

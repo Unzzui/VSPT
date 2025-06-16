@@ -28,11 +28,10 @@ function calculateDepreciations() {
     try {
         console.log('🔄 Calculando cronograma de depreciaciones...');
         
-        // Obtener datos de CAPEX desde el módulo de inversiones
+        // Obtener datos de CAPEX desde el módulo optimizado
         const investments = modelData.investments || {};
-        const capexBreakdown = investments.capexBreakdown || [];
         
-        if (capexBreakdown.length === 0) {
+        if (Object.keys(investments).length === 0) {
             console.warn('⚠️ No hay datos de CAPEX disponibles para depreciaciones');
             return;
         }
@@ -47,12 +46,54 @@ function calculateDepreciations() {
         let totalDepreciation = 0;
         let totalDepreciableAmount = 0;
         
-        // Procesar cada componente del CAPEX
-        capexBreakdown.forEach(item => {
-            if (item.concepto === 'TOTAL') return;
+        // Convertir estructura de CAPEX optimizado a formato para depreciaciones
+        const capexItems = [];
+        
+        // Recopilar todos los componentes únicos del CAPEX
+        const allComponents = new Set();
+        Object.keys(investments).forEach(year => {
+            if (investments[year] && typeof investments[year] === 'object') {
+                Object.keys(investments[year]).forEach(component => {
+                    if (component !== 'total') {
+                        allComponents.add(component);
+                    }
+                });
+            }
+        });
+        
+        // Crear estructura de datos para cada componente
+        allComponents.forEach(component => {
+            const item = { concepto: component };
+            let hasValue = false;
             
-            const assetLife = ASSET_LIVES[item.concepto] || 5;
-            if (assetLife === 0) return; // No depreciable
+            Object.keys(investments).forEach(year => {
+                const value = investments[year] && investments[year][component] ? investments[year][component] : 0;
+                item[year] = value;
+                if (value > 0) hasValue = true;
+            });
+            
+            if (hasValue) {
+                capexItems.push(item);
+            }
+        });
+        
+        // Procesar cada componente del CAPEX
+        capexItems.forEach(item => {
+            // Determinar vida útil basada en el tipo de componente
+            let assetLife = 5; // Por defecto
+            const component = item.concepto.toLowerCase();
+            
+            if (component.includes('web') || component.includes('digital') || component.includes('platform')) {
+                assetLife = 4;
+            } else if (component.includes('technology') || component.includes('upgrade')) {
+                assetLife = 5;
+            } else if (component.includes('legal') || component.includes('setup') || component.includes('certification')) {
+                assetLife = 3;
+            } else if (component.includes('inventory') || component.includes('warehouse')) {
+                assetLife = 10; // Activos físicos
+            } else if (component.includes('marketing') || component.includes('seo')) {
+                assetLife = 2;
+            }
             
             // Calcular valor total del activo
             const totalAssetValue = (item['2025'] || 0) + (item['2026'] || 0) + 
@@ -184,14 +225,14 @@ function updateDepreciationTable() {
                         ${item.concepto}
                     </td>
                     <td style="text-align: center;">${item.vidaUtil}</td>
-                    <td style="text-align: right;">$${formatNumber(item['2025'] || 0)}K</td>
-                    <td style="text-align: right;">$${formatNumber(item['2026'] || 0)}K</td>
-                    <td style="text-align: right;">$${formatNumber(item['2027'] || 0)}K</td>
-                    <td style="text-align: right;">$${formatNumber(item['2028'] || 0)}K</td>
-                    <td style="text-align: right;">$${formatNumber(item['2029'] || 0)}K</td>
-                    <td style="text-align: right;">$${formatNumber(item['2030'] || 0)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2025'] || 0)/1000, 1)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2026'] || 0)/1000, 1)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2027'] || 0)/1000, 1)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2028'] || 0)/1000, 1)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2029'] || 0)/1000, 1)}K</td>
+                    <td style="text-align: right;">$${formatNumber((item['2030'] || 0)/1000, 1)}K</td>
                     <td style="text-align: right; font-weight: ${isTotal ? 'bold' : 'normal'};">
-                        $${formatNumber(item.total || 0)}K
+                        $${formatNumber((item.total || 0)/1000, 1)}K
                     </td>
                 </tr>
             `;
@@ -210,29 +251,36 @@ function updateDepreciationMetrics() {
         const data = modelData.depreciation || {};
         const investments = modelData.investments || {};
         
+        // Calcular CAPEX total desde la nueva estructura
+        let totalCapex = 0;
+        Object.keys(investments).forEach(year => {
+            if (investments[year] && investments[year].total) {
+                totalCapex += investments[year].total;
+            }
+        });
+        
         // Total Depreciable Amount
         const totalDepreciableElement = document.getElementById('totalDepreciableAmount');
         if (totalDepreciableElement) {
-            totalDepreciableElement.textContent = `$${formatNumber(data.totalDepreciableAmount || 0)}K`;
+            totalDepreciableElement.textContent = `$${formatNumber((data.totalDepreciableAmount || 0)/1000, 1)}K`;
         }
         
         // Total Depreciation
         const totalDepreciationElement = document.getElementById('totalDepreciation');
         if (totalDepreciationElement) {
-            totalDepreciationElement.textContent = `$${formatNumber(data.totalDepreciation || 0)}K`;
+            totalDepreciationElement.textContent = `$${formatNumber((data.totalDepreciation || 0)/1000, 1)}K`;
         }
         
         // Average Annual Depreciation
         const avgAnnualElement = document.getElementById('avgAnnualDepreciation');
         if (avgAnnualElement) {
-            avgAnnualElement.textContent = `$${formatNumber(data.avgAnnualDepreciation || 0)}K`;
+            avgAnnualElement.textContent = `$${formatNumber((data.avgAnnualDepreciation || 0)/1000, 1)}K`;
         }
         
         // Depreciation Percentage of CAPEX
         const depreciationPercentElement = document.getElementById('depreciationPercent');
         if (depreciationPercentElement) {
-            const totalCapex = investments.totalCapex || 1;
-            const percentage = ((data.totalDepreciation || 0) / totalCapex) * 100;
+            const percentage = totalCapex > 0 ? ((data.totalDepreciation || 0) / totalCapex) * 100 : 0;
             depreciationPercentElement.textContent = `${percentage.toFixed(1)}%`;
         }
         
@@ -241,7 +289,7 @@ function updateDepreciationMetrics() {
         if (residualValueElement) {
             const schedule = data.schedule || [];
             const totalResidual = schedule.reduce((sum, item) => sum + (item.residualValue || 0), 0);
-            residualValueElement.textContent = `$${formatNumber(totalResidual)}K`;
+            residualValueElement.textContent = `$${formatNumber(totalResidual/1000, 1)}K`;
         }
         
         console.log('✅ Métricas de depreciaciones actualizadas');

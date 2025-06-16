@@ -8,6 +8,16 @@ function calculateEconomicCashFlow() {
     const params = getFinancialParams();
     const economicFlow = {};
     
+    // Debug: verificar disponibilidad de datos
+    console.log('🔍 Datos disponibles para cashflow:', {
+        'revenues': !!modelData.revenues,
+        'costs': !!modelData.costs,
+        'investments': !!modelData.investments,
+        'depreciation': !!modelData.depreciation,
+        'workingCapital': !!modelData.workingCapital,
+        'marketDistribution': typeof marketDistribution !== 'undefined'
+    });
+    
     for (let year = 2025; year <= 2030; year++) {
         economicFlow[year] = {
             revenues: 0,
@@ -26,44 +36,54 @@ function calculateEconomicCashFlow() {
         
         // Ingresos (desde 2025 Q3-Q4)
         if (year >= 2025 && modelData.revenues && modelData.revenues[year]) {
-            Object.keys(marketDistribution).forEach(market => {
-                const revenueData = modelData.revenues[year][market];
-                if (revenueData) {
-                    economicFlow[year].revenues += revenueData.netRevenue;
-                }
-            });
+            if (typeof marketDistribution !== 'undefined') {
+                Object.keys(marketDistribution).forEach(market => {
+                    const revenueData = modelData.revenues[year][market];
+                    if (revenueData) {
+                        economicFlow[year].revenues += revenueData.netRevenue;
+                    }
+                });
+            }
         }
         
         // COGS y gastos operativos
         economicFlow[year].cogs = economicFlow[year].revenues * params.cogsPct;
         economicFlow[year].grossProfit = economicFlow[year].revenues - economicFlow[year].cogs;
         
-        // Gastos operativos (del modelo de costos)
+        // Gastos operativos (del modelo de costos REAL)
         if (modelData.costs && modelData.costs[year]) {
             economicFlow[year].operatingExpenses = modelData.costs[year].operatingExpenses.total + 
                                                    modelData.costs[year].fixedCosts.total;
         } else {
-            // Fallback calculation
-            economicFlow[year].operatingExpenses = economicFlow[year].revenues * params.operatingExpensesPct;
-            if (year >= 2026) {
-                economicFlow[year].operatingExpenses += getBusinessParams().salesSalary;
-            }
-            economicFlow[year].operatingExpenses += 168000 * Math.pow(1.035, year - 2025); // Costos fijos base actualizados
+            // Fallback usando parámetros reales del modelo
+            const businessParams = getBusinessParams();
+            economicFlow[year].operatingExpenses = economicFlow[year].revenues * businessParams.marketingPct + // Marketing
+                                                   economicFlow[year].revenues * 0.08 + // Otros gastos operativos
+                                                   (year >= 2026 ? businessParams.salesSalary || 50000 : 0) + // Salario comercial
+                                                   120000 * Math.pow(1.035, year - 2025); // Costos fijos base con inflación
         }
         
         // EBITDA
         economicFlow[year].ebitda = economicFlow[year].grossProfit - economicFlow[year].operatingExpenses;
         
-        // Depreciación (usando datos del módulo de depreciación si están disponibles)
+        // Depreciación (usando datos REALES del módulo de depreciación)
         if (modelData.depreciation && modelData.depreciation.schedule) {
             const totalDepreciationYear = modelData.depreciation.schedule
                 .filter(item => !item.concepto.includes('TOTAL'))
                 .reduce((sum, item) => sum + (item[year] || 0), 0);
-            economicFlow[year].depreciation = totalDepreciationYear * 1000; // Convertir de K a USD
+            economicFlow[year].depreciation = totalDepreciationYear; // Ya está en USD
         } else {
-            // Fallback: depreciación lineal del CAPEX acumulado
-            const accumulatedCapex = getAccumulatedCapex(year);
-            economicFlow[year].depreciation = accumulatedCapex / params.depreciationYears;
+            // Fallback: depreciación lineal del CAPEX acumulado hasta ese año usando datos REALES
+            let accumulatedCapex = 0;
+            if (modelData.investments) {
+                for (let y = 2025; y <= year; y++) {
+                    if (modelData.investments[y]) {
+                        accumulatedCapex += modelData.investments[y].total || 0;
+                    }
+                }
+            }
+            // Usar vida útil promedio de 5 años
+            economicFlow[year].depreciation = accumulatedCapex / 5;
         }
         
         // EBIT y impuestos
@@ -71,20 +91,35 @@ function calculateEconomicCashFlow() {
         economicFlow[year].taxes = Math.max(0, economicFlow[year].ebit * params.taxRate);
         economicFlow[year].nopat = economicFlow[year].ebit - economicFlow[year].taxes;
         
-        // CAPEX
-        const capexData = capexDistribution[year];
-        economicFlow[year].capex = capexData ? 800000 * capexData.pct : 0;
+        // CAPEX - usar datos del CAPEX optimizado
+        if (modelData.investments && modelData.investments[year]) {
+            economicFlow[year].capex = modelData.investments[year].total || 0;
+        } else {
+            economicFlow[year].capex = 0;
+        }
         
-        // Working Capital
-        economicFlow[year].deltaWC = modelData.workingCapital && modelData.workingCapital[year] ? 
-            modelData.workingCapital[year].deltaWC || 0 : 0;
+        // Working Capital (usando datos REALES del módulo de working capital)
+        if (modelData.workingCapital && modelData.workingCapital[year]) {
+            economicFlow[year].deltaWC = modelData.workingCapital[year].deltaWC || 0;
+        } else {
+            // Fallback: estimar working capital como % de ingresos incrementales
+            const previousRevenue = year > 2025 && modelData.revenues && modelData.revenues[year-1] ? 
+                Object.values(modelData.revenues[year-1]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+            const currentRevenue = economicFlow[year].revenues;
+            const revenueGrowth = currentRevenue - previousRevenue;
+            economicFlow[year].deltaWC = revenueGrowth * 0.15; // 15% del crecimiento de ingresos
+        }
         
-        // Valor residual en el último año (2030)
+        // Valor residual en el último año (2030) usando CAPEX OPTIMIZADO REAL
         economicFlow[year].residualValue = 0;
         if (year === 2030) {
-            // Calcular valor residual como % del CAPEX total
-            const totalCapex = 800000;
-            const residualValuePct = modelData.depreciation?.residualValuePct || 0.1; // 10% por defecto
+            // Calcular valor residual como % del CAPEX total optimizado REAL
+            const totalCapex = modelData.investments ? 
+                Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+                565000; // CAPEX optimizado base como fallback
+            
+            // Usar parámetro real de valor residual o 10% por defecto
+            const residualValuePct = modelData.depreciation?.residualValuePct || 0.1;
             economicFlow[year].residualValue = totalCapex * residualValuePct;
         }
         
@@ -138,18 +173,30 @@ function calculateFinancialCashFlow() {
             fcfe: 0
         };
         
-        // Gastos financieros (intereses de la deuda)
+        // Gastos financieros (intereses de la deuda REAL)
         if (modelData.debt && modelData.debt.schedule && modelData.debt.schedule[year]) {
             financialFlow[year].interestExpense = modelData.debt.schedule[year].interestPayment || 0;
             financialFlow[year].debtService = modelData.debt.schedule[year].principalPayment || 0;
+        } else {
+            // Fallback usando parámetros reales de deuda
+            const financialParams = getFinancialParams();
+            const totalDebt = modelData.debt?.totalAmount || 0;
+            if (totalDebt > 0 && year >= 2025) {
+                // Estimación simple de intereses (deuda promedio * tasa)
+                const avgDebt = totalDebt * (1 - (year - 2025) / 5); // Asumiendo amortización lineal en 5 años
+                financialFlow[year].interestExpense = avgDebt * financialParams.interestRate;
+                financialFlow[year].debtService = totalDebt / 5; // Amortización lineal
+            }
         }
         
         // Escudo fiscal por intereses
         financialFlow[year].taxShield = financialFlow[year].interestExpense * params.taxRate;
         
         // Aporte de capital (equity) en años de CAPEX
-        if (year <= 2028 && capexDistribution[year]) {
-            financialFlow[year].equityContribution = -(800000 * capexDistribution[year].pct * params.equityRatio);
+        if (modelData.capexFinancing && modelData.capexFinancing[year]) {
+            financialFlow[year].equityContribution = -(modelData.capexFinancing[year].equity || 0);
+        } else {
+            financialFlow[year].equityContribution = 0;
         }
         
         // Free Cash Flow to Equity
@@ -158,7 +205,8 @@ function calculateFinancialCashFlow() {
                                    financialFlow[year].taxShield -
                                    financialFlow[year].capex - 
                                    financialFlow[year].deltaWC - 
-                                   financialFlow[year].debtService +
+                                   financialFlow[year].interestExpense - // Restar intereses explícitamente
+                                   financialFlow[year].debtService + // Restar amortización
                                    financialFlow[year].equityContribution +
                                    financialFlow[year].residualValue;
     }
@@ -184,7 +232,12 @@ function calculateFinancialCashFlow() {
     console.log('✅ Flujo financiero calculado:', {
         'Equity NPV': `$${(equityNPV/1000).toFixed(0)}K`,
         'Project IRR': `${(projectIRR*100).toFixed(1)}%`,
-        'Equity Cost': `${(params.equityCost*100).toFixed(1)}%`
+        'Equity Cost': `${(params.equityCost*100).toFixed(1)}%`,
+        'Desglose Servicio Deuda 2026': {
+            'Intereses': `$${(financialFlow[2026]?.interestExpense/1000 || 0).toFixed(0)}K`,
+            'Amortización': `$${(financialFlow[2026]?.debtService/1000 || 0).toFixed(0)}K`,
+            'Total Servicio': `$${((financialFlow[2026]?.interestExpense + financialFlow[2026]?.debtService)/1000 || 0).toFixed(0)}K`
+        }
     });
 }
 
@@ -318,7 +371,8 @@ function updateFinancialFlowTable(financialFlow) {
         { key: 'taxShield', label: 'Escudo Fiscal', format: 'currency' },
         { key: 'capex', label: 'CAPEX', format: 'currency' },
         { key: 'deltaWC', label: 'Δ Working Capital', format: 'currency' },
-        { key: 'debtService', label: 'Servicio Deuda', format: 'currency' },
+        { key: 'interestExpense', label: 'Gastos Financieros (Intereses)', format: 'currency' },
+        { key: 'debtService', label: 'Amortización Capital', format: 'currency' },
         { key: 'equityContribution', label: 'Aporte Equity', format: 'currency' },
         { key: 'residualValue', label: 'Valor Residual', format: 'currency', highlight: true },
         { key: 'fcfe', label: 'FCFE', format: 'currency', highlight: true }
@@ -509,7 +563,8 @@ function createFinancialFlowSheet() {
             { key: 'taxShield', label: 'Escudo Fiscal' },
             { key: 'capex', label: 'CAPEX' },
             { key: 'deltaWC', label: 'Δ Working Capital' },
-            { key: 'debtService', label: 'Servicio Deuda' },
+            { key: 'interestExpense', label: 'Gastos Financieros (Intereses)' },
+            { key: 'debtService', label: 'Amortización Capital' },
             { key: 'equityContribution', label: 'Aporte Capital' },
             { key: 'fcfe', label: 'Flujo al Accionista' }
         ];

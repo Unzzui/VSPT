@@ -10,82 +10,41 @@ class Dashboard {
 
     // Inicializar el dashboard
     init() {
-        console.log('🚀 Dashboard: Iniciando...');
-        if (this.initialized) {
-            console.log('⚠️ Dashboard ya inicializado');
-            return;
-        }
+        if (this.initialized) return;
         
         // Esperar a que todos los módulos estén cargados
         if (typeof updateCalculations === 'function') {
-            console.log('✅ Módulos disponibles, verificando datos...');
-            console.log('🔍 Estado de modelData al inicializar:', {
-                economicCashFlow: !!modelData.economicCashFlow,
-                economicCashFlowKeys: modelData.economicCashFlow ? Object.keys(modelData.economicCashFlow) : [],
-                revenues: !!modelData.revenues,
-                investments: !!modelData.investments
-            });
-            
-            // Verificar si los datos del modelo están disponibles
-            const hasEconomicData = modelData.economicCashFlow && 
-                                   modelData.economicCashFlow.metrics &&
-                                   Object.keys(modelData.economicCashFlow).some(key => !isNaN(key));
-            
-            if (hasEconomicData) {
-                console.log('✅ Datos del modelo disponibles, usando datos reales');
-                this.collectData();
-            } else {
-                console.log('⚠️ Datos del modelo no disponibles, usando datos por defecto y reintentando...');
-                this.setDefaultData();
-                // Reintentar en 200ms para dar tiempo a que se calculen los datos
-                setTimeout(() => {
-                    if (!this.initialized) {
-                        this.init();
-                    }
-                }, 200);
-                return;
-            }
-            
+            this.collectData();
             this.updateKPIs();
             this.createCharts();
             this.updateMarketMetrics();
             this.updateCashflowSummary();
             this.initialized = true;
-            console.log('🎉 Dashboard inicializado exitosamente');
         } else {
             // Reintentar en 100ms si los módulos no están listos
-            console.log('⏳ Módulos no disponibles, reintentando...');
             setTimeout(() => this.init(), 100);
         }
     }
 
     // Recopilar datos de todos los módulos
     collectData() {
-        console.log('📊 Dashboard: Recopilando datos de todos los módulos...');
         try {
             // Datos de inversiones
             this.data.capex = this.getCapexData();
-            console.log('✅ Datos CAPEX recopilados:', this.data.capex);
             
             // Datos de ingresos
             this.data.revenues = this.getRevenueData();
-            console.log('✅ Datos de ingresos recopilados:', this.data.revenues);
             
             // Datos de costos
             this.data.costs = this.getCostData();
-            console.log('✅ Datos de costos recopilados:', this.data.costs);
             
             // Datos de flujo de caja
-            console.log('🔄 Llamando a getCashflowData()...');
             this.data.cashflow = this.getCashflowData();
-            console.log('✅ Datos de flujo de caja recopilados:', this.data.cashflow);
             
             // Calcular métricas derivadas
             this.calculateDerivedMetrics();
             
         } catch (error) {
-            console.error('❌ Error en collectData():', error);
-            console.error('❌ Stack trace:', error.stack);
             console.log('Usando datos por defecto');
             this.setDefaultData();
         }
@@ -98,25 +57,19 @@ class Dashboard {
             console.log('📊 Dashboard usando CAPEX optimizado del modelo');
             
             const capexData = calculateOptimizedCapex();
-            console.log('🔍 capexData resultado:', capexData);
+            const params = getFinancialParams();
             
-            if (capexData && capexData.total) {
-                const params = getFinancialParams();
-                
-                return {
-                    totalCapex: capexData.total,
-                    totalDebt: capexData.total * params.debtRatio,
-                    totalEquity: capexData.total * params.equityRatio,
-                    debtRatio: params.debtRatio * 100, // Convertir a porcentaje para display
-                    equityRatio: params.equityRatio * 100,
-                    originalCapex: 800000, // CAPEX original para comparación
-                    savings: 800000 - capexData.total,
-                    savingsPercentage: ((800000 - capexData.total) / 800000) * 100,
-                    params: params
-                };
-            } else {
-                console.log('⚠️ capexData no válido, usando fallback');
-            }
+            return {
+                totalCapex: capexData.total,
+                totalDebt: capexData.total * params.debtRatio,
+                totalEquity: capexData.total * params.equityRatio,
+                debtRatio: params.debtRatio * 100, // Convertir a porcentaje para display
+                equityRatio: params.equityRatio * 100,
+                originalCapex: 800000, // CAPEX original para comparación
+                savings: 800000 - capexData.total,
+                savingsPercentage: ((800000 - capexData.total) / 800000) * 100,
+                params: params
+            };
         }
         
         // PRIORIDAD 2: Fallback al CAPEX optimizado estático
@@ -138,12 +91,12 @@ class Dashboard {
 
     // Obtener datos de ingresos usando los datos reales del modelo (solo Chile y México)
     getRevenueData() {
-        // Solo usar Chile y México según el nuevo scope
-        const activeMarkets = ['chile', 'mexico'];
-        
         // PRIORIDAD 1: Usar datos reales del modelo si están disponibles
         if (modelData.revenues) {
             console.log('📊 Dashboard usando datos reales del modelo de ingresos (Chile y México)');
+            
+            // Solo usar Chile y México según el nuevo scope
+            const activeMarkets = ['chile', 'mexico'];
             
             // Calcular totales usando solo los mercados activos
             const revenue2030 = activeMarkets.reduce((sum, market) => {
@@ -195,10 +148,12 @@ class Dashboard {
                 activeMarkets: activeMarkets
             };
         }
+        
         // PRIORIDAD 2: Si no hay datos del modelo, calcular usando solo Chile y México
         console.log('⚠️ Dashboard calculando datos propios (solo Chile y México)');
         const params = getBusinessParams();
         const revenues = {};
+        const activeMarkets = ['chile', 'mexico']; // Solo estos mercados
         
         // Usar exactamente el mismo cálculo que revenues.js pero solo para mercados activos
         for (let year = 2025; year <= 2030; year++) {
@@ -221,7 +176,6 @@ class Dashboard {
 
             revenues[year] = {};
             
-            // Solo procesar mercados activos
             activeMarkets.forEach(market => {
                 const marketData = marketDistribution[market];
                 
@@ -305,40 +259,19 @@ class Dashboard {
 
     // Obtener datos de flujo de caja usando los datos reales del modelo
     getCashflowData() {
-        console.log('📊 Dashboard: Obteniendo datos de flujo de caja...');
-        console.log('🔍 modelData.economicCashFlow disponible:', !!modelData.economicCashFlow);
-        console.log('🔍 modelData.economicCashFlow.metrics disponible:', !!(modelData.economicCashFlow && modelData.economicCashFlow.metrics));
-        console.log('🔍 modelData.economicCashFlow completo:', modelData.economicCashFlow);
-        
         // Si ya tenemos datos del modelo, usarlos
         if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
-            console.log('✅ ENTRANDO AL BRANCH DEL MODELO ECONÓMICO');
             const economicFlow = modelData.economicCashFlow;
-            console.log('🔍 Estructura de economicFlow:', economicFlow);
-            console.log('🔍 Años disponibles en economicFlow:', Object.keys(economicFlow));
-            
             let accumulatedFCF = 0;
             const yearlyFCF = {};
             
-            // Calcular FCF para todos los años disponibles (no solo 2026-2030)
-            const availableYears = Object.keys(economicFlow).filter(key => 
-                !isNaN(key) && economicFlow[key] && typeof economicFlow[key].fcf !== 'undefined'
-            );
-            
-            console.log('📅 Años disponibles con FCF:', availableYears);
-            
-            availableYears.forEach(year => {
-                const yearNum = parseInt(year);
-                console.log(`🔍 Verificando año ${yearNum}:`, economicFlow[yearNum]);
-                if (economicFlow[yearNum] && typeof economicFlow[yearNum].fcf !== 'undefined') {
-                    yearlyFCF[yearNum] = economicFlow[yearNum].fcf;
-                    accumulatedFCF += economicFlow[yearNum].fcf;
-                    console.log(`✅ Año ${yearNum} - FCF: ${economicFlow[yearNum].fcf}`);
+            // Calcular FCF acumulado de los años operativos
+            for (let year = 2026; year <= 2030; year++) {
+                if (economicFlow[year]) {
+                    yearlyFCF[year] = economicFlow[year].fcf;
+                    accumulatedFCF += economicFlow[year].fcf;
                 }
-            });
-            
-            console.log('📈 yearlyFCF del modelo:', yearlyFCF);
-            console.log('💰 accumulatedFCF:', accumulatedFCF);
+            }
             
             // Usar métricas financieras del modelo si están disponibles
             let financialNPV = null;
@@ -360,11 +293,10 @@ class Dashboard {
             };
         }
         
-        // Fallback: calcular basado en revenues si no hay datos del modelo (usar solo mercados activos)
+        // Fallback: calcular basado en revenues si no hay datos del modelo
         const revenues = this.data.revenues?.yearlyData || {};
         const params = getFinancialParams();
-        const years = [2025, 2026, 2027, 2028, 2029, 2030]; // Incluir 2025 para CAPEX
-        const activeMarkets = ['chile', 'mexico'];
+        const years = [2026, 2027, 2028, 2029, 2030];
         
         let accumulatedFCF = 0;
         const yearlyFCF = {};
@@ -372,8 +304,7 @@ class Dashboard {
         years.forEach(year => {
             let yearRevenue = 0;
             if (revenues[year]) {
-                // Solo sumar ingresos de mercados activos
-                activeMarkets.forEach(market => {
+                Object.keys(marketDistribution).forEach(market => {
                     if (revenues[year][market]) {
                         yearRevenue += revenues[year][market].netRevenue;
                     }
@@ -386,43 +317,26 @@ class Dashboard {
             const operatingExpenses = yearRevenue * params.operatingExpensesPct;
             const ebitda = grossProfit - operatingExpenses;
             
-            // Depreciación simplificada usando CAPEX optimizado
-            const optimizedCapex = this.data.capex?.totalCapex || 565000;
-            const depreciation = optimizedCapex / params.depreciationYears; // CAPEX optimizado / años
+            // Depreciación simplificada
+            const depreciation = 800000 / params.depreciationYears; // CAPEX total / años
             const ebit = ebitda - depreciation;
             const taxes = Math.max(0, ebit * params.taxRate);
             const nopat = ebit - taxes;
             
-            // CAPEX del año (usar distribución optimizada)
-            let capex = 0;
-            if (year === 2025) {
-                capex = optimizedCapex * 0.60; // 60% en 2025
-            } else if (year === 2026) {
-                capex = optimizedCapex * 0.30; // 30% en 2026
-            } else if (year === 2027) {
-                capex = optimizedCapex * 0.10; // 10% en 2027
-            } // 0% en años posteriores
+            // CAPEX del año
+            const capexData = capexDistribution[year];
+            const capex = capexData ? 800000 * capexData.pct : 0;
             
             const fcf = nopat + depreciation - capex;
             yearlyFCF[year] = fcf;
-            
-            // Solo acumular FCF operativos (desde 2026)
-            if (year >= 2026) {
-                accumulatedFCF += fcf;
-            }
-            
-            console.log(`📊 FCF ${year}: $${(fcf/1000).toFixed(0)}K (Revenue: $${(yearRevenue/1000).toFixed(0)}K, CAPEX: $${(capex/1000).toFixed(0)}K)`);
+            accumulatedFCF += fcf;
         });
 
         return {
             accumulatedFCF,
             yearlyFCF,
             paybackPeriod: this.calculatePaybackPeriod(yearlyFCF),
-            irr: this.calculateSimpleIRR(yearlyFCF),
-            economicIRR: this.calculateSimpleIRR(yearlyFCF), // Usar el mismo para fallback
-            npv: this.calculateNPV(),
-            financialNPV: this.calculateFinancialNPV(),
-            financialIRR: this.calculateFinancialIRR()
+            irr: this.calculateSimpleIRR(yearlyFCF)
         };
     }
     
@@ -736,8 +650,8 @@ class Dashboard {
                         mexico: {revenue: 1200000, orders: 25000, avgTicket: 48, netRevenue: 1200000}
                     },
                     2030: { 
-                        chile: {revenue: 2200000, orders: 27797, avgTicket: 79, netRevenue: 2200000},
-                        mexico: {revenue: 1300000, orders: 14968, avgTicket: 87, netRevenue: 1300000}
+                        chile: {revenue: 2400000, orders: 34000, avgTicket: 71, netRevenue: 2400000},
+                        mexico: {revenue: 1500000, orders: 30000, avgTicket: 50, netRevenue: 1500000}
                     }
                 }
             },
@@ -748,15 +662,7 @@ class Dashboard {
                 npv: 1800000, // VAN más conservador
                 economicIRR: 35,
                 financialNPV: 1200000, // VAN financiero
-                financialIRR: 28, // TIR financiera
-                yearlyFCF: {
-                    2025: -511476, // Año de inversión, FCF negativo
-                    2026: 156849,  // Primer año operativo
-                    2027: 724652,  // Crecimiento
-                    2028: 1438591, // Expansión
-                    2029: 2198456, // Consolidación  
-                    2030: 2992847  // Año final con valor residual
-                }
+                financialIRR: 28 // TIR financiera
             },
             roi: 95 // ROI más conservador pero aún atractivo
         };
@@ -1040,32 +946,18 @@ class Dashboard {
 
     // Crear gráfico de evolución de flujos de caja
     createRevenueChart() {
-        console.log('🎨 Dashboard: Creando gráfico de flujos de caja...');
         const ctx = document.getElementById('revenueChart');
         if (!ctx) {
-            console.log('⚠️ Canvas revenueChart no encontrado, creando...');
             // Crear canvas si no existe
             this.createRevenueChartCanvas();
             return;
         }
 
-        console.log('✅ Canvas encontrado, preparando datos...');
-        console.log('🔍 Datos de cashflow disponibles:', this.data.cashflow);
-        console.log('🔍 yearlyFCF disponible:', this.data.cashflow.yearlyFCF);
-        
         const years = Object.keys(this.data.cashflow.yearlyFCF || {});
         const cashflows = years.map(year => {
             const fcf = this.data.cashflow.yearlyFCF[year] || 0;
             return fcf / 1000000; // Convertir a millones
         });
-
-        console.log('📊 Años:', years);
-        console.log('💰 Flujos de caja (millones):', cashflows);
-        
-        if (years.length === 0) {
-            console.warn('⚠️ No hay años en yearlyFCF, revisando datos del modelo...');
-            console.log('🔍 modelData.economicCashFlow:', modelData.economicCashFlow);
-        }
 
         if (this.charts.revenue) {
             this.charts.revenue.destroy();
@@ -1125,31 +1017,14 @@ class Dashboard {
 
     // Crear canvas para gráfico de revenue
     createRevenueChartCanvas() {
-        console.log('🎨 Dashboard: Creando canvas para gráfico de flujos de caja...');
-        
-        // Buscar específicamente la sección de flujos de caja por el texto del h3
-        const chartSections = document.querySelectorAll('.chart-section');
-        let targetSection = null;
-        
-        chartSections.forEach(section => {
-            const h3 = section.querySelector('h3');
-            if (h3 && h3.textContent.includes('Evolución de Flujos de Caja')) {
-                targetSection = section.querySelector('.chart-placeholder');
-            }
-        });
-        
-        console.log('🔍 Sección de flujos de caja encontrada:', !!targetSection);
-        
-        if (targetSection) {
-            console.log('✅ Reemplazando placeholder con canvas...');
-            targetSection.innerHTML = '<canvas id="revenueChart" style="max-height: 200px;"></canvas>';
+        const chartSection = document.querySelector('.chart-section .chart-placeholder');
+        if (chartSection) {
+            chartSection.innerHTML = '<canvas id="revenueChart" style="max-height: 200px;"></canvas>';
             setTimeout(() => this.createRevenueChart(), 100);
-        } else {
-            console.error('❌ No se encontró la sección de flujos de caja');
         }
     }
 
-    // Crear gráfico de distribución por mercado mejorado
+    // Crear gráfico de distribución por mercado optimizado (solo Chile y México)
     createMarketDistributionChart() {
         const ctx = document.getElementById('marketChart');
         if (!ctx) {
@@ -1157,15 +1032,37 @@ class Dashboard {
             return;
         }
 
-        const countries = Object.keys(marketDistribution);
-        const labels = countries.map(market => marketDistribution[market].label);
-        const shares = countries.map(market => marketDistribution[market].weight * 100);
+        // Solo mostrar mercados activos
+        const activeMarkets = ['chile', 'mexico'];
+        const labels = activeMarkets.map(market => marketDistribution[market].label);
+        
+        // Calcular participaciones basadas en datos reales si están disponibles
+        let shares;
+        if (this.data.revenues?.yearlyData?.[2030]) {
+            const marketData2030 = this.data.revenues.yearlyData[2030];
+            const totalRevenue = activeMarkets.reduce((sum, market) => {
+                return sum + (marketData2030[market]?.netRevenue || 0);
+            }, 0);
+            
+            shares = activeMarkets.map(market => {
+                const revenue = marketData2030[market]?.netRevenue || 0;
+                return totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
+            });
+        } else {
+            // Fallback: redistribuir pesos originales solo entre mercados activos
+            const totalActiveWeight = activeMarkets.reduce((sum, market) => {
+                return sum + marketDistribution[market].weight;
+            }, 0);
+            
+            shares = activeMarkets.map(market => {
+                return (marketDistribution[market].weight / totalActiveWeight) * 100;
+            });
+        }
+        
+        // Solo dos colores para los mercados activos
         const colors = [
             '#dc2626', // Chile - Rojo
-            '#15803d', // México - Verde
-            '#1e3a8a', // Brasil - Azul
-            '#7c3aed', // Canadá - Púrpura
-            '#f59e0b'  // USA - Amarillo/Naranja
+            '#15803d'  // México - Verde
         ];
 
         if (this.charts.market) {
@@ -1203,6 +1100,15 @@ class Dashboard {
                                 weight: '500'
                             },
                             color: '#311333',
+                }
+            }
+        });
+        
+        console.log('📊 Gráfico de mercados actualizado (solo Chile y México):', {
+            'Chile': `${shares[0]?.toFixed(1)}%`,
+            'México': `${shares[1]?.toFixed(1)}%`
+        });
+    }
                             generateLabels: function(chart) {
                                 const data = chart.data;
                                 return data.labels.map((label, index) => ({
@@ -1265,9 +1171,6 @@ class Dashboard {
             'mexico': 'mexico'      // México
         };
         
-        // Mercados inactivos para marcar como inactivos
-        const inactiveMarkets = ['usa', 'brasil', 'brazil', 'canada'];
-        
         console.log('🌍 Actualizando métricas por mercado (Chile y México)...');
         console.log('- Datos de ingresos disponibles:', this.data.revenues?.yearlyData?.[2030] ? 'Sí' : 'No');
         
@@ -1290,12 +1193,6 @@ class Dashboard {
                         stats[1].textContent = this.formatNumber(marketData.orders);
                         stats[2].textContent = '$' + Math.round(marketData.avgTicket);
                         
-                        // Remover clase de inactivo si existe
-                        card.classList.remove('market-inactive');
-                        stats.forEach(stat => {
-                            stat.style.color = '';
-                        });
-                        
                         console.log(`✅ ${marketKey} actualizado:`, {
                             revenue: this.formatCurrency(marketData.netRevenue),
                             orders: this.formatNumber(marketData.orders),
@@ -1309,13 +1206,22 @@ class Dashboard {
                 }
             } else {
                 console.warn(`⚠️ No hay datos para ${marketKey} en 2030`);
+                
+                // Ocultar o mostrar mensaje de "sin datos" para mercados inactivos
+                const card = document.querySelector(`.market-card.${cssClass}`);
+                if (card) {
+                    const stats = card.querySelectorAll('.stat-value');
+                    stats.forEach(stat => stat.textContent = '$0');
+                }
             }
         });
 
-        // Marcar mercados inactivos
+        // Ocultar o mostrar mensaje para mercados inactivos (Brasil, USA, Canadá)
+        const inactiveMarkets = ['usa', 'brasil', 'brazil', 'canada'];
         inactiveMarkets.forEach(marketClass => {
             const card = document.querySelector(`.market-card.${marketClass}`);
             if (card) {
+                // Agregar clase para indicar que está inactivo
                 card.classList.add('market-inactive');
                 const stats = card.querySelectorAll('.stat-value');
                 stats.forEach(stat => {
@@ -1329,7 +1235,7 @@ class Dashboard {
                     inactiveMsg = document.createElement('div');
                     inactiveMsg.className = 'inactive-message';
                     inactiveMsg.style.cssText = 'text-align: center; color: #999; font-size: 0.8em; margin-top: 5px;';
-                    inactiveMsg.textContent = 'Fuera del scope optimizado';
+                    inactiveMsg.textContent = 'Mercado no incluido en scope optimizado';
                     card.appendChild(inactiveMsg);
                 }
             }
@@ -1341,7 +1247,7 @@ class Dashboard {
 
     // Actualizar tabla de métricas por mercado 2030 (tabla principal del dashboard)
     updateMarketTable() {
-        console.log('📊 Actualizando tabla de métricas por mercado 2030...');
+        console.log('📊 Actualizando tabla de métricas por mercado 2030 (Chile y México)...');
         
         if (!this.data.revenues?.yearlyData?.[2030]) {
             console.warn('⚠️ No hay datos de ingresos 2030 para actualizar la tabla');
@@ -1351,20 +1257,25 @@ class Dashboard {
         const marketData2030 = this.data.revenues.yearlyData[2030];
         console.log('- Datos disponibles para 2030:', Object.keys(marketData2030));
         
-        // Calcular totales
+        // Calcular totales solo para mercados activos
         let totalRevenue = 0;
         let totalOrders = 0;
-        let totalTicketWeighted = 0;
         
-        // Mapeo de mercados a IDs de la tabla
-        const marketTableMapping = {
+        // Solo mapear mercados activos (Chile y México)
+        const activeMarketTableMapping = {
             'chile': { revenue: 'chile-revenue', orders: 'chile-orders', aov: 'chile-aov', share: 'chile-share' },
-            'mexico': { revenue: 'mexico-revenue', orders: 'mexico-orders', aov: 'mexico-aov', share: 'mexico-share' },
-
+            'mexico': { revenue: 'mexico-revenue', orders: 'mexico-orders', aov: 'mexico-aov', share: 'mexico-share' }
         };
         
-        // Actualizar cada mercado
-        Object.entries(marketTableMapping).forEach(([marketKey, ids]) => {
+        // Mercados inactivos para marcar como N/A
+        const inactiveMarketTableMapping = {
+            'brasil': { revenue: 'brasil-revenue', orders: 'brasil-orders', aov: 'brasil-aov', share: 'brasil-share' },
+            'canada': { revenue: 'canada-revenue', orders: 'canada-orders', aov: 'canada-aov', share: 'canada-share' },
+            'usa': { revenue: 'usa-revenue', orders: 'usa-orders', aov: 'usa-aov', share: 'usa-share' }
+        };
+        
+        // Actualizar mercados activos
+        Object.entries(activeMarketTableMapping).forEach(([marketKey, ids]) => {
             const data = marketData2030[marketKey];
             
             if (data) {
@@ -1372,16 +1283,23 @@ class Dashboard {
                 const revenueElement = document.getElementById(ids.revenue);
                 const ordersElement = document.getElementById(ids.orders);
                 const aovElement = document.getElementById(ids.aov);
-                const shareElement = document.getElementById(ids.share);
                 
-                if (revenueElement) revenueElement.textContent = this.formatCurrency(data.netRevenue);
-                if (ordersElement) ordersElement.textContent = this.formatNumber(data.orders);
-                if (aovElement) aovElement.textContent = '$' + Math.round(data.avgTicket);
+                if (revenueElement) {
+                    revenueElement.textContent = this.formatCurrency(data.netRevenue);
+                    revenueElement.style.color = '#28a745'; // Verde para activos
+                }
+                if (ordersElement) {
+                    ordersElement.textContent = this.formatNumber(data.orders);
+                    ordersElement.style.color = '#28a745';
+                }
+                if (aovElement) {
+                    aovElement.textContent = '$' + Math.round(data.avgTicket);
+                    aovElement.style.color = '#28a745';
+                }
                 
                 // Acumular totales
                 totalRevenue += data.netRevenue;
                 totalOrders += data.orders;
-                totalTicketWeighted += data.netRevenue; // Para calcular AOV promedio ponderado
                 
                 console.log(`✅ Tabla ${marketKey} actualizada:`, {
                     revenue: this.formatCurrency(data.netRevenue),
@@ -1393,14 +1311,44 @@ class Dashboard {
             }
         });
         
-        // Calcular y actualizar participaciones de mercado
-        Object.entries(marketTableMapping).forEach(([marketKey, ids]) => {
+        // Marcar mercados inactivos como N/A
+        Object.entries(inactiveMarketTableMapping).forEach(([marketKey, ids]) => {
+            const revenueElement = document.getElementById(ids.revenue);
+            const ordersElement = document.getElementById(ids.orders);
+            const aovElement = document.getElementById(ids.aov);
+            const shareElement = document.getElementById(ids.share);
+            
+            if (revenueElement) {
+                revenueElement.textContent = 'N/A';
+                revenueElement.style.color = '#999';
+                revenueElement.title = 'Mercado no incluido en scope optimizado';
+            }
+            if (ordersElement) {
+                ordersElement.textContent = 'N/A';
+                ordersElement.style.color = '#999';
+                ordersElement.title = 'Mercado no incluido en scope optimizado';
+            }
+            if (aovElement) {
+                aovElement.textContent = 'N/A';
+                aovElement.style.color = '#999';
+                aovElement.title = 'Mercado no incluido en scope optimizado';
+            }
+            if (shareElement) {
+                shareElement.textContent = 'N/A';
+                shareElement.style.color = '#999';
+                shareElement.title = 'Mercado no incluido en scope optimizado';
+            }
+        });
+        
+        // Calcular y actualizar participaciones de mercado solo para activos
+        Object.entries(activeMarketTableMapping).forEach(([marketKey, ids]) => {
             const data = marketData2030[marketKey];
             if (data && totalRevenue > 0) {
                 const shareElement = document.getElementById(ids.share);
                 if (shareElement) {
                     const marketShare = (data.netRevenue / totalRevenue) * 100;
                     shareElement.textContent = `${marketShare.toFixed(1)}%`;
+                    shareElement.style.color = '#28a745';
                 }
             }
         });
@@ -1410,17 +1358,31 @@ class Dashboard {
         const totalOrdersElement = document.getElementById('total-orders-table');
         const totalAovElement = document.getElementById('total-aov-table');
         
-        if (totalRevenueElement) totalRevenueElement.textContent = this.formatCurrency(totalRevenue);
-        if (totalOrdersElement) totalOrdersElement.textContent = this.formatNumber(totalOrders);
+        if (totalRevenueElement) {
+            totalRevenueElement.textContent = this.formatCurrency(totalRevenue);
+            totalRevenueElement.style.fontWeight = 'bold';
+        }
+        if (totalOrdersElement) {
+            totalOrdersElement.textContent = this.formatNumber(totalOrders);
+            totalOrdersElement.style.fontWeight = 'bold';
+        }
         if (totalAovElement && totalOrders > 0) {
             const avgAOV = totalRevenue / totalOrders;
             totalAovElement.textContent = '$' + Math.round(avgAOV);
+            totalAovElement.style.fontWeight = 'bold';
         }
         
-        console.log('✅ Tabla de métricas actualizada:', {
+        console.log('✅ Tabla de métricas actualizada (solo Chile y México):', {
             'Total Revenue': this.formatCurrency(totalRevenue),
             'Total Orders': this.formatNumber(totalOrders),
-            'Avg AOV': totalOrders > 0 ? '$' + Math.round(totalRevenue / totalOrders) : '$0'
+            'Avg AOV': totalOrders > 0 ? '$' + Math.round(totalRevenue / totalOrders) : '$0',
+            'Active Markets': Object.keys(activeMarketTableMapping)
+        });
+        console.log('✅ Tabla de métricas actualizada (solo Chile y México):', {
+            'Total Revenue': this.formatCurrency(totalRevenue),
+            'Total Orders': this.formatNumber(totalOrders),
+            'Avg AOV': totalOrders > 0 ? '$' + Math.round(totalRevenue / totalOrders) : '$0',
+            'Active Markets': Object.keys(activeMarketTableMapping)
         });
     }
 
@@ -1573,7 +1535,9 @@ class Dashboard {
         const marketNames = {
             'chile': 'Chile',
             'mexico': 'México',
-
+            'brasil': 'Brasil',
+            'canada': 'Canadá',
+            'usa': 'Estados Unidos'
         };
         
         // Actualizar elementos en el DOM
@@ -1609,11 +1573,10 @@ window.vsptDashboard = new Dashboard();
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar más tiempo para que todos los cálculos estén completos
+    // Esperar un poco para que otros scripts se carguen
     setTimeout(() => {
-        console.log('🎯 Inicializando dashboard...');
         window.vsptDashboard.init();
-    }, 1500); // Aumentar el tiempo para asegurar que los cálculos estén completos
+    }, 500);
 });
 
 // Función para actualizar dashboard desde otros módulos

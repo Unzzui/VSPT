@@ -11,10 +11,10 @@ const exchangeRates = {
     USD: 1.0
 };
 
-// Distribución de mercados con configuración de working capital
+// Distribución de mercados optimizada (eliminados: Brasil, Canadá, USA)
 const marketDistribution = {
     chile: { 
-        weight: 0.40, 
+        weight: 0.65, // Aumentado de 40% a 65%
         currency: 'CLP', 
         tax: 0.27, 
         premium: 1.0, 
@@ -23,40 +23,13 @@ const marketDistribution = {
         label: 'Chile'
     },
     mexico: { 
-        weight: 0.25, 
+        weight: 0.35, // Aumentado de 25% a 35%
         currency: 'MXN', 
         tax: 0.16, 
         premium: 1.1, 
         paymentDays: 0, 
         inventoryDays: 45,
         label: 'México'
-    },
-    brasil: { 
-        weight: 0.15, 
-        currency: 'BRL', 
-        tax: 0.18, 
-        premium: 1.2, 
-        paymentDays: 30, 
-        inventoryDays: 60,
-        label: 'Brasil'
-    },
-    canada: { 
-        weight: 0.10, 
-        currency: 'CAD', 
-        tax: 0.13, 
-        premium: 1.3, 
-        paymentDays: 0, 
-        inventoryDays: 45,
-        label: 'Canadá'
-    },
-    usa: { 
-        weight: 0.10, 
-        currency: 'USD', 
-        tax: 0.08, 
-        premium: 1.4, 
-        paymentDays: 0, 
-        inventoryDays: 45,
-        label: 'Estados Unidos'
     }
 };
 
@@ -78,10 +51,10 @@ const defaultFinancialParams = {
 
 // Distribución de CAPEX por años (total $800K)
 const capexDistribution = {
-    2025: { pct: 0.45, label: '45%' }, // $360K
-    2026: { pct: 0.30, label: '30%' }, // $240K
-    2027: { pct: 0.20, label: '20%' }, // $160K
-    2028: { pct: 0.05, label: '5%' }   // $40K
+    2025: { pct: 0.45, label: '45%' }, 
+    2026: { pct: 0.30, label: '30%' }, 
+    2027: { pct: 0.20, label: '20%' }, 
+    2028: { pct: 0.05, label: '5%' }   
 };
 
 // ============================================================================
@@ -143,23 +116,28 @@ function getInventoryParams() {
 
 function getBusinessParams() {
     const initialTrafficElement = document.getElementById('initialTraffic');
-    const trafficGrowthElement = document.getElementById('trafficGrowth');
     const initialConversionElement = document.getElementById('initialConversion');
-    const conversionGrowthElement = document.getElementById('conversionGrowthRate');
     const avgTicketElement = document.getElementById('avgTicket');
     const salesSalaryElement = document.getElementById('salesSalary');
     const marketingPctElement = document.getElementById('marketingPct');
     const inflationElement = document.getElementById('inflation');
     
+    // Patrones de crecimiento decreciente predefinidos
+    const trafficGrowthPattern = [1.00, 0.80, 0.50, 0.30, 0.20]; // Para años 2025-2030
+    const conversionGrowthPattern = [0.40, 0.25, 0.15, 0.10, 0.05]; // Para años 2025-2030
 
     return {
         initialTraffic: initialTrafficElement ? parseInt(initialTrafficElement.value) : 9100,
-        trafficGrowth: trafficGrowthElement ? parseFloat(trafficGrowthElement.value) / 100 : 1,
+        trafficGrowthPattern: trafficGrowthPattern, // Nuevo: patrón de crecimiento
         initialConversion: initialConversionElement ? parseFloat(initialConversionElement.value) / 100 : 0.02,
-        conversionGrowthRate: conversionGrowthElement ? parseFloat(conversionGrowthElement.value) / 100 : 0.4,
+        conversionGrowthPattern: conversionGrowthPattern, // Nuevo: patrón de mejora
         avgTicket: avgTicketElement ? parseInt(avgTicketElement.value) : 50,
         salesSalary: salesSalaryElement ? parseInt(salesSalaryElement.value) : 50000,
         marketingPct: marketingPctElement ? parseFloat(marketingPctElement.value) / 100 : 0.1,
-        inflation: inflationElement ? parseFloat(inflationElement.value) / 100 : 0.02
+        inflation: inflationElement ? parseFloat(inflationElement.value) / 100 : 0.02,
+        
+        // Mantener compatibilidad con código existente (valores promedio)
+        trafficGrowth: 0.60, // Promedio aproximado del patrón decreciente
+        conversionGrowthRate: 0.20 // Promedio aproximado del patrón decreciente
     };
 }

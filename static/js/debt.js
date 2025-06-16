@@ -7,22 +7,24 @@ function calculateDebtStructure() {
     
     const params = getFinancialParams();
     
-    // Obtener CAPEX total dinámico (incluyendo inventario)
+    // Obtener CAPEX total optimizado dinámico (incluyendo inventario)
     const inventoryParams = getInventoryParams();
     const totalBottlesNeeded = (inventoryParams.initialStockMonths || 3) * 1000;
     const containersNeeded = Math.ceil(totalBottlesNeeded / (inventoryParams.bottlesPerContainer || 1200));
     const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
     
-    const baseCapex = 800000; // CAPEX base
-    const totalCapex = baseCapex + inventoryInvestment; // CAPEX total incluyendo inventario
+    // CAPEX OPTIMIZADO - Reducido de $800K a $565K (-29.4%)
+    const optimizedCapex = 565000; // CAPEX optimizado base
+    const totalCapex = optimizedCapex + inventoryInvestment; // CAPEX total incluyendo inventario
     
     const debtAmount = totalCapex * params.debtRatio;
     const equityAmount = totalCapex * params.equityRatio;
     
-    console.log('📊 Parámetros de deuda dinámicos:', {
-        'CAPEX Base': `$${(baseCapex/1000).toFixed(0)}K`,
+    console.log('📊 Parámetros de deuda optimizados:', {
+        'CAPEX Optimizado': `$${(optimizedCapex/1000).toFixed(0)}K`,
         'Inventario': `$${(inventoryInvestment/1000).toFixed(0)}K`,
         'CAPEX Total': `$${(totalCapex/1000).toFixed(0)}K`,
+        'Ahorro vs Original': `$${((800000 - optimizedCapex)/1000).toFixed(0)}K (-29.4%)`,
         'Monto Deuda': `$${(debtAmount/1000).toFixed(0)}K`,
         'Ratio Deuda': `${(params.debtRatio * 100).toFixed(1)}%`,
         'Tasa Interés': `${(params.interestRate * 100).toFixed(1)}%`,
@@ -86,10 +88,12 @@ function calculateDebtStructure() {
     updateDebtMetrics(debt);
     modelData.debt = debt;
     
-    console.log('✅ Cronograma de deuda calculado:', {
-        'Monto Total': `$${(debtAmount/1000).toFixed(0)}K`,
+    console.log('✅ Cronograma de deuda optimizado calculado:', {
+        'CAPEX Optimizado': `$${(optimizedCapex/1000).toFixed(0)}K (era $800K)`,
+        'Monto Total Deuda': `$${(debtAmount/1000).toFixed(0)}K`,
         'Cuota Mensual': `$${(monthlyPayment).toFixed(0)}`,
-        'Plazo': `${params.debtTermYears} años`
+        'Plazo': `${params.debtTermYears} años`,
+        'Ahorro en Deuda': `$${((800000 - optimizedCapex) * params.debtRatio / 1000).toFixed(0)}K`
     });
 }
 
@@ -138,15 +142,15 @@ function updateDebtScheduleTable(debt) {
     
     const endYear = 2025 + debt.termYears;
     
-    // Header informativo con parámetros dinámicos
+    // Header informativo con parámetros optimizados
     const infoRow = tbody.insertRow();
     infoRow.className = 'category-header';
-    infoRow.insertCell(0).innerHTML = 'CRONOGRAMA AMORTIZACIÓN FRANCESA';
+    infoRow.insertCell(0).innerHTML = 'CRONOGRAMA AMORTIZACIÓN FRANCESA (CAPEX OPTIMIZADO)';
     infoRow.insertCell(1).innerHTML = `Deuda: $${(debt.debtAmount/1000).toFixed(0)}K de $${(debt.totalCapex/1000).toFixed(0)}K`;
     infoRow.insertCell(2).innerHTML = `Tasa: ${(debt.interestRate*100).toFixed(1)}% anual`;
     infoRow.insertCell(3).innerHTML = `Plazo: ${debt.termYears} años`;
     infoRow.insertCell(4).innerHTML = `Cuota: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}/mes`;
-    infoRow.insertCell(5).innerHTML = '';
+    infoRow.insertCell(5).innerHTML = `Ahorro: $${((800000 - 565000)/1000).toFixed(0)}K (-29.4%)`;
     
     // Headers de columnas
     const headerRow = tbody.insertRow();
@@ -240,13 +244,14 @@ function createDebtSheet() {
         const debt = modelData.debt;
         const endYear = 2025 + debt.termYears;
         
-        // Información del préstamo
+        // Información del préstamo optimizado
         data.push([
-            `Monto: $${(debt.debtAmount/1000).toFixed(0)}K`,
+            `CAPEX Optimizado: $${(565000/1000).toFixed(0)}K (era $800K, -29.4%)`,
+            `Monto Deuda: $${(debt.debtAmount/1000).toFixed(0)}K`,
             `Tasa: ${(debt.interestRate*100).toFixed(1)}%`,
             `Plazo: ${debt.termYears} años`,
             `Cuota Mensual: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}`,
-            '', ''
+            `Ahorro en Deuda: $${((800000 - 565000) * (debt.debtAmount/debt.totalCapex) / 1000).toFixed(0)}K`
         ]);
         data.push([]);
         
@@ -280,9 +285,9 @@ function createDebtSheet() {
     return XLSX.utils.aoa_to_sheet(data);
 }
 
-// Función de debug para cronograma de deuda
+// Función de debug para cronograma de deuda optimizado
 function debugDebt() {
-    console.log('🔍 Debug del cronograma de deuda:');
+    console.log('🔍 Debug del cronograma de deuda optimizado:');
     
     const params = getFinancialParams();
     console.log('📊 Parámetros financieros:', params);
@@ -294,15 +299,20 @@ function debugDebt() {
     const containersNeeded = Math.ceil(totalBottlesNeeded / (inventoryParams.bottlesPerContainer || 1200));
     const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
     
-    const baseCapex = 800000;
-    const totalCapex = baseCapex + inventoryInvestment;
+    const optimizedCapex = 565000; // CAPEX optimizado
+    const originalCapex = 800000; // CAPEX original
+    const totalCapex = optimizedCapex + inventoryInvestment;
     const debtAmount = totalCapex * params.debtRatio;
+    const savings = originalCapex - optimizedCapex;
     
-    console.log('💰 Cálculos de deuda:');
-    console.log('- CAPEX Base:', `$${(baseCapex/1000).toFixed(0)}K`);
+    console.log('💰 Cálculos de deuda optimizada:');
+    console.log('- CAPEX Original:', `$${(originalCapex/1000).toFixed(0)}K`);
+    console.log('- CAPEX Optimizado:', `$${(optimizedCapex/1000).toFixed(0)}K`);
+    console.log('- Ahorro CAPEX:', `$${(savings/1000).toFixed(0)}K (-29.4%)`);
     console.log('- Inventario:', `$${(inventoryInvestment/1000).toFixed(0)}K`);
     console.log('- CAPEX Total:', `$${(totalCapex/1000).toFixed(0)}K`);
     console.log('- Monto Deuda:', `$${(debtAmount/1000).toFixed(0)}K`);
+    console.log('- Ahorro en Deuda:', `$${(savings * params.debtRatio / 1000).toFixed(0)}K`);
     console.log('- Ratio Deuda:', `${(params.debtRatio * 100).toFixed(1)}%`);
     console.log('- Tasa Interés:', `${(params.interestRate * 100).toFixed(1)}%`);
     console.log('- Plazo:', `${params.debtTermYears} años`);
@@ -320,6 +330,9 @@ function debugDebt() {
     return {
         params,
         inventoryParams,
+        optimizedCapex,
+        originalCapex,
+        savings,
         totalCapex,
         debtAmount,
         monthlyPayment

@@ -56,7 +56,7 @@ function calculateRevenues() {
         Object.keys(marketDistribution).forEach(market => {
             const marketData = marketDistribution[market];
             
-            // En 2025, solo Chile tiene ingresos (México inicia en 2026)
+            // En 2025, solo Chile tiene ingresos
             if (year === 2025 && market !== 'chile') {
                 revenues[year][market] = {
                     traffic: 0,
@@ -75,7 +75,7 @@ function calculateRevenues() {
                 // En 2025, Chile recibe TODO el tráfico (100%)
                 marketTraffic = market === 'chile' ? yearlyTraffic * monthsOfOperation : 0;
             } else {
-                // En años posteriores, distribución entre Chile (65%) y México (35%)
+                // En años posteriores, distribución normal por peso de mercado
                 marketTraffic = yearlyTraffic * marketData.weight * monthsOfOperation;
             }
             
@@ -99,12 +99,11 @@ function calculateRevenues() {
     updateRevenueMetrics(revenues);
     modelData.revenues = revenues;
     
-    console.log('✅ Ingresos calculados OPTIMIZADOS - Solo Chile (2025) + México (2026+):', {
+    console.log('✅ Ingresos calculados con crecimiento decreciente - Solo Chile en 2025:', {
         '2025 Chile (6 meses)': `$${(revenues[2025].chile.netRevenue/1000).toFixed(0)}K`,
-        '2026 Chile + México (+100% tráfico, +40% conversión)': `$${(Object.values(revenues[2026]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        '2027 Chile + México (+80% tráfico, +25% conversión)': `$${(Object.values(revenues[2027]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        '2030 Chile + México (+20% tráfico, +5% conversión)': `$${(Object.values(revenues[2030]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        'Distribución 2030': 'Chile 65% | México 35%'
+        '2026 Total (+100% tráfico, +40% conversión)': `$${(Object.values(revenues[2026]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
+        '2027 Total (+80% tráfico, +25% conversión)': `$${(Object.values(revenues[2027]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
+        '2030 Total (+20% tráfico, +5% conversión)': `$${(Object.values(revenues[2030]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`
     });
 }
 
@@ -153,7 +152,6 @@ function updateRevenuesTable(revenues) {
                         if (year === 2025 && market !== 'chile') {
                             cell.innerHTML = '-';
                             cell.style.color = '#6b7280';
-                            cell.style.fontStyle = 'italic';
                         } else {
                             cell.innerHTML = Math.round(value).toLocaleString();
                         }
@@ -162,7 +160,6 @@ function updateRevenuesTable(revenues) {
                         if (year === 2025 && market !== 'chile') {
                             cell.innerHTML = '-';
                             cell.style.color = '#6b7280';
-                            cell.style.fontStyle = 'italic';
                         } else {
                             cell.innerHTML = `${value.toFixed(2)}%`;
                             if (year > 2025) {
@@ -175,17 +172,15 @@ function updateRevenuesTable(revenues) {
                         if (year === 2025 && market !== 'chile') {
                             cell.innerHTML = '-';
                             cell.style.color = '#6b7280';
-                            cell.style.fontStyle = 'italic';
                         } else {
                             cell.innerHTML = `$${Math.round(value)}`;
                         }
                         break;
                     case 'revenue':
                         if (year === 2025 && market !== 'chile') {
-                            cell.innerHTML = market === 'mexico' ? 'Inicia 2026' : '-';
+                            cell.innerHTML = '-';
                             cell.style.color = '#6b7280';
                             cell.style.fontStyle = 'italic';
-                            cell.style.fontSize = '0.85em';
                         } else {
                             cell.innerHTML = `$${(value/1000).toFixed(0)}K`;
                             if (year === 2025) {
@@ -203,10 +198,10 @@ function updateRevenuesTable(revenues) {
         separator.style.height = '10px';
     });
 
-    // Total consolidado optimizado
+    // Total consolidado
     const totalRow = tbody.insertRow();
     totalRow.className = 'total-row';
-    totalRow.insertCell(0).innerHTML = 'TOTAL REVENUE OPTIMIZADO (USD)';
+    totalRow.insertCell(0).innerHTML = 'TOTAL REVENUE (USD)';
     
     for (let year = 2025; year <= 2030; year++) {
         const yearTotal = Object.keys(marketDistribution).reduce((sum, market) => {
@@ -215,13 +210,9 @@ function updateRevenuesTable(revenues) {
         const cell = totalRow.insertCell();
         cell.innerHTML = `$${(yearTotal/1000000).toFixed(1)}M`;
         if (year === 2025) {
-            cell.innerHTML += ' (Solo Chile)';
+            cell.innerHTML += ' (Chile)';
             cell.style.fontStyle = 'italic';
             cell.style.color = '#dc2626'; // Color rojo para Chile
-        } else if (year === 2026) {
-            cell.innerHTML += ' (Chile + México)';
-            cell.style.fontStyle = 'italic';
-            cell.style.color = '#059669'; // Color verde para expansión
         }
     }
 }
