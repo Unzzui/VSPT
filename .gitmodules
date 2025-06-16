@@ -1,0 +1,3 @@
+[submodule "static/js"]
+    path = static/js
+    url = <url-del-repositorio-del-submodulo>
