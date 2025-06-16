@@ -81,6 +81,12 @@ function showTab(tabName) {
         switch (tabName) {
             case 'dashboard':
                 if (typeof updateDashboard === 'function') updateDashboard();
+                // Forzar evaluación de viabilidad cuando se activa el dashboard
+                setTimeout(() => {
+                    if (typeof evaluateProjectViability === 'function') {
+                        evaluateProjectViability();
+                    }
+                }, 500);
                 break;
             case 'inversiones':
                 if (typeof calculateOptimizedCapex === 'function') calculateOptimizedCapex();
@@ -228,6 +234,14 @@ function updateCalculations() {
             updateDashboard();
             console.log('✅ Dashboard actualizado');
         }
+        
+        // 11. Evaluar viabilidad del proyecto
+        setTimeout(() => {
+            if (typeof evaluateProjectViability === 'function') {
+                evaluateProjectViability();
+                console.log('✅ Evaluación de viabilidad ejecutada');
+            }
+        }, 1000);
         
         console.log('🎉 Modelo financiero actualizado completamente');
         
