@@ -1,0 +1,488 @@
+// ============================================================================
+// VSPT DIGITAL EXPANSION - MODELO FINANCIERO PRINCIPAL (ORQUESTADOR)
+// ============================================================================
+// Este archivo contiene solo la lógica de orquestación y navegación
+// Todas las funciones específicas están en módulos separados:
+// - config.js: Constantes y parámetros
+// - investments.js: CAPEX progresivo y financiamiento
+// - revenues.js: Proyección de ingresos por país
+// - costs.js: Costos operativos
+// - workingCapital.js: Working capital por país
+// - debt.js: Cronograma de deuda
+// - cashflow.js: Flujos económico y financiero
+// - sensitivity.js: Análisis de sensibilidad
+// - utils.js: Utilitarios, métricas y validaciones
+// ============================================================================
+
+// Variables globales para almacenar datos del modelo
+let modelData = {
+    investments: {},
+    revenues: {},
+    costs: {},
+    workingCapital: {},
+    debt: {},
+    economicCashFlow: {},
+    financialCashFlow: {},
+    sensitivity: {}
+};
+
+// ============================================================================
+// FUNCIÓN PRINCIPAL DE NAVEGACIÓN
+// ============================================================================
+
+function showTab(tabName) {
+    try {
+        console.log(`🔄 Cambiando a tab: ${tabName}`);
+        
+        // Ocultar todos los contenidos
+        document.querySelectorAll('.content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        // Mostrar el contenido seleccionado
+        const targetContent = document.getElementById(tabName);
+        if (targetContent) {
+            targetContent.classList.remove('hidden');
+            console.log(`✅ Tab ${tabName} mostrado`);
+        } else {
+            console.error(`❌ Elemento con ID ${tabName} no encontrado`);
+            return;
+        }
+        
+        // Actualizar tabs activos
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Marcar el tab activo (usar event.target si existe, sino buscar por onclick)
+        if (event && event.target) {
+            event.target.classList.add('active');
+        } else {
+            // Buscar el botón que corresponde a este tab
+            const buttons = document.querySelectorAll('.tab');
+            buttons.forEach(button => {
+                if (button.onclick && button.onclick.toString().includes(tabName)) {
+                    button.classList.add('active');
+                }
+            });
+        }
+        
+        // Actualizar cálculos si es necesario
+        updateCalculations();
+        
+    } catch (error) {
+        console.error('❌ Error en navegación:', error);
+    }
+}
+
+// ============================================================================
+// FUNCIÓN PRINCIPAL DE ACTUALIZACIÓN DE CÁLCULOS
+// ============================================================================
+
+function updateCalculations() {
+    try {
+        console.log('🚀 Iniciando actualización completa del modelo financiero...');
+        
+        // 1. CAPEX Progresivo y Financiamiento (investments.js)
+        if (typeof calculateProgressiveCapex === 'function') {
+            calculateProgressiveCapex();
+            console.log('✅ CAPEX progresivo y financiamiento calculados');
+        } else {
+            console.warn('⚠️ calculateProgressiveCapex no disponible');
+        }
+        
+        // 2. Proyección de Ingresos (revenues.js)
+        if (typeof calculateRevenues === 'function') {
+            calculateRevenues();
+            console.log('✅ Ingresos por país calculados');
+        } else {
+            console.warn('⚠️ calculateRevenues no disponible');
+        }
+        
+        // 3. Costos Operativos (costs.js)
+        if (typeof calculateCosts === 'function') {
+            calculateCosts();
+            console.log('✅ Costos operativos calculados');
+        } else {
+            console.warn('⚠️ calculateCosts no disponible');
+        }
+        
+        // 4. Working Capital por País (workingCapital.js)
+        if (typeof calculateWorkingCapital === 'function') {
+            calculateWorkingCapital();
+            console.log('✅ Working Capital calculado');
+        } else {
+            console.warn('⚠️ calculateWorkingCapital no disponible');
+        }
+        
+        // 5. Estructura y Cronograma de Deuda (debt.js)
+        if (typeof calculateDebtStructure === 'function') {
+            calculateDebtStructure();
+            console.log('✅ Cronograma de deuda calculado');
+        } else {
+            console.warn('⚠️ calculateDebtStructure no disponible');
+        }
+        
+        // 6. Cronograma de Depreciaciones (depreciation.js)
+        if (typeof calculateDepreciations === 'function') {
+            calculateDepreciations();
+            console.log('✅ Cronograma de depreciaciones calculado');
+        } else {
+            console.warn('⚠️ calculateDepreciations no disponible');
+        }
+        
+        // 7. Flujo de Caja Económico (cashflow.js)
+        if (typeof calculateEconomicCashFlow === 'function') {
+            calculateEconomicCashFlow();
+            console.log('✅ Flujo económico calculado');
+        } else {
+            console.warn('⚠️ calculateEconomicCashFlow no disponible');
+        }
+        
+        // 8. Flujo de Caja Financiero (cashflow.js)
+        if (typeof calculateFinancialCashFlow === 'function') {
+            calculateFinancialCashFlow();
+            console.log('✅ Flujo financiero calculado');
+        } else {
+            console.warn('⚠️ calculateFinancialCashFlow no disponible');
+        }
+        
+        // 9. Análisis de Sensibilidad (sensitivity.js) - Solo ejecutar si estamos en la pestaña de sensibilidad
+        setTimeout(() => {
+            const sensitivityTab = document.querySelector('[onclick="showTab(\'sensitivity\')"]');
+            const isSensitivityTabActive = sensitivityTab && sensitivityTab.classList.contains('active');
+            
+            if (isSensitivityTabActive && typeof updateSensitivity === 'function') {
+                updateSensitivity();
+                console.log('✅ Análisis de sensibilidad actualizado');
+            } else if (!isSensitivityTabActive) {
+                console.log('ℹ️ Análisis de sensibilidad omitido (no está en la pestaña activa)');
+            } else {
+                console.warn('⚠️ updateSensitivity no disponible');
+            }
+        }, 100);
+        
+        // 9. Métricas adicionales e indicadores (utils.js)
+        if (typeof updateImpactMetrics === 'function') {
+            updateImpactMetrics();
+        }
+        if (typeof updatePerformanceIndicators === 'function') {
+            updatePerformanceIndicators();
+        }
+        if (typeof trackChanges === 'function') {
+            trackChanges();
+        }
+        
+        // 10. Actualizar Dashboard (dashboard.js)
+        if (typeof updateDashboard === 'function') {
+            updateDashboard();
+            console.log('✅ Dashboard actualizado');
+        }
+        
+        console.log('🎉 Modelo financiero actualizado completamente');
+        
+    } catch (error) {
+        console.error('❌ Error en updateCalculations:', error);
+        if (typeof showAlert === 'function') {
+            showAlert('Error en los cálculos. Verifique los datos ingresados.', 'error');
+        }
+    }
+}
+
+// ============================================================================
+// INICIALIZACIÓN AL CARGAR LA PÁGINA
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📊 Inicializando modelo financiero VSPT...');
+    
+    // Verificar que todos los módulos estén cargados
+    const requiredFunctions = [
+        'calculateProgressiveCapex',    // investments.js
+        'calculateRevenues',            // revenues.js
+        'calculateCosts',               // costs.js
+        'calculateWorkingCapital',      // workingCapital.js
+        'calculateDebtStructure',       // debt.js
+        'calculateEconomicCashFlow',    // cashflow.js
+        'calculateFinancialCashFlow',   // cashflow.js
+        'updateSensitivity'             // sensitivity.js
+    ];
+    
+    const missingFunctions = requiredFunctions.filter(fn => typeof window[fn] !== 'function');
+    if (missingFunctions.length > 0) {
+        console.warn('⚠️ Funciones faltantes:', missingFunctions);
+        console.log('🔍 Verificar que todos los archivos JS están cargados en el HTML');
+    } else {
+        console.log('✅ Todos los módulos están disponibles');
+    }
+    
+    // Agregar event listeners a todos los inputs para actualización automática
+    const inputs = document.querySelectorAll('input, select');
+    console.log(`🎛️ Configurando ${inputs.length} controles interactivos...`);
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', () => {
+            console.log(`🔄 Cambio detectado en: ${input.id || input.name}`);
+            updateCalculations();
+        });
+        input.addEventListener('input', () => {
+            // Debounce para inputs de texto
+            clearTimeout(input.debounceTimer);
+            input.debounceTimer = setTimeout(() => {
+                console.log(`⚡ Input actualizado: ${input.id || input.name}`);
+                updateCalculations();
+            }, 300);
+        });
+    });
+    
+    // Ejecutar cálculos iniciales
+    setTimeout(() => {
+        updateCalculations();
+        console.log('🎯 Modelo inicializado correctamente');
+        
+        // Mostrar tab inicial
+        const firstTab = document.querySelector('.tab.active');
+        if (!firstTab) {
+            const firstTabButton = document.querySelector('.tab');
+            if (firstTabButton) {
+                firstTabButton.classList.add('active');
+                // Activar el primer contenido
+                const firstContent = document.querySelector('.content');
+                if (firstContent) {
+                    firstContent.classList.remove('hidden');
+                }
+            }
+        }
+    }, 500);
+});
+
+// ============================================================================
+// FUNCIONES DE DESCARGA DELEGADAS A UTILS.JS
+// ============================================================================
+
+function downloadExcel() {
+    try {
+        if (typeof exportToExcel === 'function') {
+            console.log('📥 Iniciando exportación a Excel...');
+            exportToExcel();
+        } else {
+            console.error('❌ Función exportToExcel no disponible en utils.js');
+            alert('Error: módulo de exportación no disponible');
+        }
+    } catch (error) {
+        console.error('❌ Error en downloadExcel:', error);
+        if (typeof showAlert === 'function') {
+            showAlert('Error al generar archivo Excel', 'error');
+        } else {
+            alert('Error al generar archivo Excel');
+        }
+    }
+}
+
+// ============================================================================
+// FUNCIONES DE UTILIDAD PARA DEBUG
+// ============================================================================
+
+function debugModel() {
+    console.log('🔍 Estado actual del modelo:', modelData);
+    console.log('📊 Módulos disponibles:', {
+        investments: typeof calculateProgressiveCapex !== 'undefined',
+        revenues: typeof calculateRevenues !== 'undefined',
+        costs: typeof calculateCosts !== 'undefined',
+        workingCapital: typeof calculateWorkingCapital !== 'undefined',
+        debt: typeof calculateDebtStructure !== 'undefined',
+        depreciation: typeof calculateDepreciations !== 'undefined',
+        cashflow: typeof calculateEconomicCashFlow !== 'undefined',
+        sensitivity: typeof updateSensitivity !== 'undefined',
+        utils: typeof exportToExcel !== 'undefined'
+    });
+}
+
+function resetModel() {
+    console.log('🔄 Reiniciando modelo...');
+    modelData = {
+        investments: {},
+        revenues: {},
+        costs: {},
+        workingCapital: {},
+        debt: {},
+        depreciation: {},
+        economicCashFlow: {},
+        financialCashFlow: {},
+        sensitivity: {}
+    };
+    updateCalculations();
+}
+
+// Función de debug específica para inventario
+function debugInventory() {
+    console.log('🔍 Debug de inventario:');
+    
+    const inventoryParams = getInventoryParams();
+    console.log('📦 Parámetros de inventario:', inventoryParams);
+    
+    const totalBottlesNeeded = inventoryParams.initialStockMonths * 1000;
+    const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer);
+    const inventoryInvestment = containersNeeded * inventoryParams.containerCost;
+    
+    console.log('📊 Cálculos:');
+    console.log('- Botellas necesarias:', totalBottlesNeeded);
+    console.log('- Contenedores necesarios:', containersNeeded);
+    console.log('- Inversión total:', inventoryInvestment);
+    console.log('- Inversión formateada:', `$${(inventoryInvestment/1000).toFixed(0)}K`);
+    
+    return {
+        params: inventoryParams,
+        totalBottlesNeeded,
+        containersNeeded,
+        inventoryInvestment
+    };
+}
+
+// Función de debug específica para depreciaciones
+function debugDepreciations() {
+    if (typeof debugDepreciation === 'function') {
+        return debugDepreciation();
+    } else {
+        console.warn('⚠️ debugDepreciation no disponible');
+        return null;
+    }
+}
+
+// Alias para función de exportación Excel
+function downloadExcel() {
+    if (typeof exportToExcel === 'function') {
+        exportToExcel();
+    } else {
+        console.error('❌ exportToExcel no disponible');
+    }
+}
+
+// Función para restaurar valores por defecto
+function resetToDefaults() {
+    console.log('🔄 Restaurando valores por defecto...');
+    
+    try {
+        // Confirmar con el usuario
+        const confirmReset = confirm('¿Está seguro de que desea restaurar todos los valores por defecto? Esta acción no se puede deshacer.');
+        
+        if (!confirmReset) {
+            console.log('❌ Reset cancelado por el usuario');
+            return;
+        }
+        
+        // Valores por defecto según especificación del usuario
+        const defaultValues = {
+            // CAPEX & Financing
+            'bottlesPerContainer': 12000,
+            'containerCost': 5000,
+            'initialStock': 3,
+            'debtRatio': 50,
+            'interestRate': 6,
+            'debtTerm': 5,
+            
+            // Ingresos
+            'initialTraffic': 9100,
+            'trafficGrowth': 60,
+            'initialConversion': 2,
+            'conversionGrowthRate': 30,
+            'avgTicket': 50,
+            
+            // Costos
+            'salesSalary': 35000,
+            'marketingPct': 8,
+            'inflation': 3,
+            
+            // Depreciaciones
+            'residualValue': 10,
+            'depreciationMethod': 'linear'
+        };
+        
+        // Aplicar valores por defecto a todos los inputs
+        Object.keys(defaultValues).forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (element.type === 'select-one') {
+                    element.value = defaultValues[elementId];
+                } else {
+                    element.value = defaultValues[elementId];
+                }
+                console.log(`✅ ${elementId}: ${defaultValues[elementId]}`);
+            } else {
+                console.warn(`⚠️ Elemento ${elementId} no encontrado`);
+            }
+        });
+        
+        // Resetear selects de sensibilidad
+        const sensitivitySelects = {
+            'conversionScenario': 'base',
+            'trafficScenario': 'base',
+            'logisticsScenario': 'base'
+        };
+        
+        Object.keys(sensitivitySelects).forEach(selectId => {
+            const element = document.getElementById(selectId);
+            if (element) {
+                element.value = sensitivitySelects[selectId];
+                console.log(`✅ ${selectId}: ${sensitivitySelects[selectId]}`);
+            }
+        });
+        
+        // Resetear modelo de datos
+        modelData = {
+            investments: {},
+            revenues: {},
+            costs: {},
+            workingCapital: {},
+            debt: {},
+            depreciation: {},
+            economicCashFlow: {},
+            financialCashFlow: {},
+            sensitivity: {}
+        };
+        
+        // Recalcular todo el modelo con los nuevos valores
+        setTimeout(() => {
+            updateCalculations();
+            console.log('✅ Modelo restaurado a valores por defecto');
+            
+            // Mostrar mensaje de confirmación
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-weight: 600;
+                font-size: 16px;
+            `;
+            notification.innerHTML = '<i class="fas fa-check-circle"></i> Valores restaurados correctamente';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+            
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Error restaurando valores por defecto:', error);
+        alert('Error al restaurar valores por defecto. Ver consola para más detalles.');
+    }
+}
+
+// Exponer funciones de debug globalmente
+window.debugModel = debugModel;
+window.resetModel = resetModel;
+window.debugInventory = debugInventory;
+window.debugDepreciations = debugDepreciations;
+window.downloadExcel = downloadExcel;
+window.resetToDefaults = resetToDefaults;
+
+// Exponer función de navegación globalmente para que esté disponible en onclick
+window.showTab = showTab;
