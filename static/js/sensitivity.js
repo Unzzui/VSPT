@@ -1341,17 +1341,7 @@ function calculateRealSensitivities(baseMetrics) {
         drivers: ['USD/CLP', 'Hedging', 'FX Exposure']
     };
     
-    // Factor 6: Velocidad de Expansión (±25% → impacto en VAN)
-    const expansionVariation = 0.25; // ±25%
-    const expansionImpact = calculateExpansionImpact(baseMetrics, expansionVariation);
-    sensitivities.expansion = {
-        name: 'Velocidad de Expansión',
-        variation: '±25%',
-        npvImpact: expansionImpact.npvChange,
-        impactLevel: classifyImpactLevel(Math.abs(expansionImpact.npvChange)),
-        description: 'Ritmo de penetración en nuevos mercados. Solo Chile en 2025, expansión completa desde 2026.',
-        drivers: ['Market Entry', 'Regulatory', 'Investment']
-    };
+
     
     return sensitivities;
 }

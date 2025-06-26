@@ -497,6 +497,20 @@ function exportToExcel() {
     try {
         console.log('📥 Generando archivo Excel completo...');
         
+        // Validar datos antes de exportar
+        const validation = validateExcelData();
+        if (!validation.isValid) {
+            console.error('❌ Datos inválidos para exportación:', validation.errors);
+            if (typeof showAlert === 'function') {
+                showAlert('Error: Datos inconsistentes detectados. Verifique el modelo.', 'error');
+            }
+            return;
+        }
+        
+        if (validation.warnings.length > 0) {
+            console.warn('⚠️ Advertencias en datos:', validation.warnings);
+        }
+        
         // Crear workbook
         const wb = XLSX.utils.book_new();
         
@@ -603,7 +617,7 @@ function createInvestmentsSheet() {
                 'Optimización de Plataforma': 40000
             },
             2028: {
-                'Optimizaciones Finales': 15000,
+                'Optimizaciones Finales': 10000,
                 'Contingencia y Ajustes': 5000
             }
         };
@@ -636,7 +650,7 @@ function createInvestmentsSheet() {
         const inv = modelData.investments;
         const params = getFinancialParams();
         
-        // CAPEX Total
+        // CAPEX Total - usar datos dinámicos del modelo
         const capexRow = ['TOTAL CAPEX'];
         let total = 0;
         for (let year = 2025; year <= 2028; year++) {
@@ -646,6 +660,12 @@ function createInvestmentsSheet() {
         }
         capexRow.push(total);
         data.push(capexRow);
+        
+        // Verificar que el total coincida con el modelo
+        const modelTotal = inv.total || 565000;
+        if (Math.abs(total - modelTotal) > 1000) {
+            console.warn(`⚠️ Discrepancia en CAPEX: Calculado ${total}, Modelo ${modelTotal}`);
+        }
         
         // Separador financiamiento
         data.push(['', '', '', '', '', '']);
@@ -1024,12 +1044,30 @@ function createMetricsSheet() {
         ['MÉTRICAS CLAVE DEL PROYECTO', ''],
         ['', ''],
         ['INVERSIÓN', ''],
-        ['CAPEX Total', 565000],
-        ['Financiamiento Deuda', 280000],
-        ['Financiamiento Equity', 520000],
-        ['', ''],
-        ['RESULTADOS PROYECTADOS', ''],
     ];
+    
+    // Crear los datos de métricas usando la misma lógica que createMetricsSheet
+    const capexTotal = modelData.investments?.total || 565000;
+    const debtRatio = getFinancialParams()?.debtRatio || 0.5;
+    const debtAmount = Math.round(capexTotal * debtRatio);
+    const equityAmount = capexTotal - debtAmount;
+    
+    const metricsData = {
+        investment: {
+            capexTotal: capexTotal,
+            debt: debtAmount,
+            equity: equityAmount
+        },
+        economic: {},
+        financial: {},
+        revenues: {}
+    };
+    
+    data.push(['CAPEX Total', capexTotal]);
+    data.push(['Financiamiento Deuda', debtAmount]);
+    data.push(['Financiamiento Equity', equityAmount]);
+    data.push(['', '']);
+    data.push(['RESULTADOS PROYECTADOS', '']);
     
     // Agregar métricas económicas del modelo si están disponibles
     if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
@@ -1171,11 +1209,16 @@ function updateMetricsDisplay() {
     
     try {
         // Crear los datos de métricas usando la misma lógica que createMetricsSheet
+        const capexTotal = modelData.investments?.total || 565000;
+        const debtRatio = getFinancialParams()?.debtRatio || 0.5;
+        const debtAmount = Math.round(capexTotal * debtRatio);
+        const equityAmount = capexTotal - debtAmount;
+        
         const metricsData = {
             investment: {
-                capexTotal: 565000,
-                debt: 280000,
-                equity: 285000
+                capexTotal: capexTotal,
+                debt: debtAmount,
+                equity: equityAmount
             },
             economic: {},
             financial: {},
@@ -1304,4 +1347,79 @@ function updateMetricsElements(metricsData) {
             }
         }
     });
+}
+
+// ============================================================================
+// FUNCIÓN DE VALIDACIÓN DE DATOS PARA EXCEL
+// ============================================================================
+
+function validateExcelData() {
+    const errors = [];
+    const warnings = [];
+    
+    try {
+        // Validar CAPEX
+        if (modelData.investments) {
+            const total = modelData.investments.total || 565000;
+            const calculatedTotal = Object.values(modelData.investments.distribution || {}).reduce((sum, year) => sum + (year.amount || 0), 0);
+            
+            if (Math.abs(total - calculatedTotal) > 1000) {
+                errors.push(`CAPEX total (${total}) no coincide con distribución (${calculatedTotal})`);
+            }
+            
+            // Validar financiamiento
+            const debtRatio = getFinancialParams()?.debtRatio || 0.5;
+            const expectedDebt = Math.round(total * debtRatio);
+            const actualDebt = Object.values(modelData.investments.distribution || {}).reduce((sum, year) => sum + (year.debt || 0), 0);
+            
+            if (Math.abs(expectedDebt - actualDebt) > 1000) {
+                warnings.push(`Deuda esperada (${expectedDebt}) vs actual (${actualDebt})`);
+            }
+        }
+        
+        // Validar ingresos
+        if (modelData.revenues) {
+            for (let year = 2025; year <= 2030; year++) {
+                if (modelData.revenues[year]) {
+                    Object.keys(marketDistribution).forEach(market => {
+                        const revenue = modelData.revenues[year][market];
+                        if (revenue) {
+                            const calculatedRevenue = (revenue.orders || 0) * (revenue.avgTicket || 0);
+                            if (Math.abs(calculatedRevenue - (revenue.netRevenue || 0)) > 100) {
+                                warnings.push(`Revenue ${year} ${market}: calculado ${calculatedRevenue} vs ${revenue.netRevenue}`);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Validar flujos de caja
+        if (modelData.economicCashFlow && modelData.financialCashFlow) {
+            for (let year = 2025; year <= 2030; year++) {
+                const economic = modelData.economicCashFlow[year];
+                const financial = modelData.financialCashFlow[year];
+                
+                if (economic && financial) {
+                    // Verificar que NOPAT sea consistente
+                    if (Math.abs((economic.nopat || 0) - (financial.nopat || 0)) > 100) {
+                        warnings.push(`NOPAT ${year}: económico ${economic.nopat} vs financiero ${financial.nopat}`);
+                    }
+                }
+            }
+        }
+        
+        if (errors.length > 0) {
+            console.error('❌ Errores de validación:', errors);
+        }
+        if (warnings.length > 0) {
+            console.warn('⚠️ Advertencias de validación:', warnings);
+        }
+        
+        return { errors, warnings, isValid: errors.length === 0 };
+        
+    } catch (error) {
+        console.error('❌ Error en validación:', error);
+        return { errors: ['Error en validación'], warnings: [], isValid: false };
+    }
 }

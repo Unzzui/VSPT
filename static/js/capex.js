@@ -31,9 +31,9 @@ function calculateOptimizedCapex() {
             total: 100000 // 18% del CAPEX optimizado
         },
         2028: {
-            'Optimizaciones Finales': 15000,
+            'Optimizaciones Finales': 10000,
             'Contingencia y Ajustes': 5000,
-            total: 20000 // 2% del CAPEX optimizado
+            total: 15000 // 2% del CAPEX optimizado
         }
     };
 
@@ -62,13 +62,7 @@ function calculateOptimizedCapex() {
     modelData.investments = progressiveCapex;
     modelData.capexFinancing = capexFinancing;
     
-    // Calcular total CAPEX para el log
-    const totalCapex = Object.values(progressiveCapex).reduce((sum, year) => sum + year.total, 0);
-    console.log('✅ CAPEX optimizado calculado:', {
-        total: `$${(totalCapex/1000).toFixed(0)}K`,
-        ahorro: `$${((800000 - totalCapex)/1000).toFixed(0)}K`,
-        reduccion: `${((800000 - totalCapex)/800000*100).toFixed(1)}%`
-    });
+
 }
 
 function updateOptimizedCapexMetrics(capex, financing) {
