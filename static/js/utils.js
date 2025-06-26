@@ -787,30 +787,46 @@ function createWorkingCapitalSheet() {
             }
             data.push(countryRow);
             
-            // Componentes
-            if (market === 'mexico') {
-                const components = [
-                    { key: 'accountsReceivable', label: 'Cuentas por Cobrar' },
-                    { key: 'inventory', label: 'Inventario' },
-                    { key: 'accountsPayable', label: 'Cuentas por Pagar' }
-                ];
-                
-                components.forEach(comp => {
-                    const row = [`  ${comp.label}`];
-                    for (let year = 2025; year <= 2030; year++) {
-                        const value = modelData.workingCapital[year].byCountry[market] ? 
-                            modelData.workingCapital[year].byCountry[market][comp.key] : 0;
-                        row.push(value);
-                    }
-                    data.push(row);
-                });
-            }
+            // Componentes detallados para TODOS los países
+            const components = [
+                { key: 'accountsReceivable', label: 'Cuentas por Cobrar' },
+                { key: 'inventory', label: 'Inventario' },
+                { key: 'accountsPayable', label: 'Cuentas por Pagar' }
+            ];
+            
+            components.forEach(comp => {
+                const row = [`  ${marketLabel} ${comp.label}`];
+                for (let year = 2025; year <= 2030; year++) {
+                    const value = modelData.workingCapital[year].byCountry[market] ? 
+                        modelData.workingCapital[year].byCountry[market][comp.key] : 0;
+                    row.push(value);
+                }
+                data.push(row);
+            });
             
             data.push([]); // Separador
         });
         
         // Consolidado
         data.push(['CONSOLIDADO', '', '', '', '', '', '']);
+        
+        // Componentes consolidados
+        const consolidatedComponents = [
+            { key: 'accountsReceivable', label: 'Total Cuentas por Cobrar' },
+            { key: 'inventory', label: 'Total Inventario' },
+            { key: 'accountsPayable', label: 'Total Cuentas por Pagar' }
+        ];
+        
+        consolidatedComponents.forEach(comp => {
+            const row = [`  ${comp.label}`];
+            for (let year = 2025; year <= 2030; year++) {
+                const value = modelData.workingCapital[year].consolidated[comp.key] || 0;
+                row.push(value);
+            }
+            data.push(row);
+        });
+        
+        data.push([]); // Separador
         
         const totalRow = ['Working Capital Total'];
         for (let year = 2025; year <= 2030; year++) {
@@ -823,6 +839,13 @@ function createWorkingCapitalSheet() {
             deltaRow.push(modelData.workingCapital[year].deltaWC || 0);
         }
         data.push(deltaRow);
+        
+        // Información adicional
+        data.push([]);
+        data.push(['INFORMACIÓN ADICIONAL', '', '', '', '', '', '']);
+        data.push(['Nota 2025', 'Solo 6 meses de operación (Chile únicamente)', '', '', '', '', '']);
+        data.push(['Nota 2026+', 'Operación completa (Chile + México)', '', '', '', '', '']);
+        data.push(['Fórmula WC', 'Cuentas por Cobrar + Inventario - Cuentas por Pagar', '', '', '', '', '']);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
