@@ -549,30 +549,32 @@
             
         
             
-            <div class="controls">
-                <div class="control-group">
-                    <label>Botellas por Contenedor:</label>
-                    <input type="number" id="bottlesPerContainer" value="12000" onchange="updateCalculations()" class="w-full lg:w-auto">
-                </div>
-                <div class="control-group">
-                    <label>Costo Contenedor (USD):</label>
-                    <input type="number" id="containerCost" value="5000" onchange="updateCalculations()" class="w-full lg:w-auto">
-                </div>
-                <div class="control-group">
-                    <label>Stock Inicial (meses):</label>
-                    <input type="number" id="initialStock" value="6" onchange="updateCalculations()" class="w-full lg:w-auto">
-                </div>
-                <div class="control-group">
-                    <label>Proporción Deuda (%):</label>
-                    <input type="number" id="debtRatio" value="50" min="0" max="70" onchange="updateCalculations()" class="w-full lg:w-auto">%
-                </div>
-                <div class="control-group">
-                    <label>Tasa de Interés:</label>
-                    <input type="number" id="interestRate" value="6" step="0.5" min="3" max="15" onchange="updateCalculations()" class="w-full lg:w-auto">%
-                </div>
-                <div class="control-group">
-                    <label>Plazo Deuda (años):</label>
-                    <input type="number" id="debtTerm" value="5" min="3" max="10" onchange="updateCalculations()" class="w-full lg:w-auto">
+            <div class="controls bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">
+                    <i class="fas fa-chart-pie"></i> Estructura de Financiamiento
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="control-group">
+                        <label class="text-sm font-medium text-gray-700">Proporción Deuda:</label>
+                        <div class="flex items-center">
+                            <input type="number" id="debtRatio" value="50" min="0" max="70" onchange="updateCalculations()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <span class="ml-2 text-gray-600">%</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="text-sm font-medium text-gray-700">Tasa de Interés:</label>
+                        <div class="flex items-center">
+                            <input type="number" id="interestRate" value="6" step="0.5" min="3" max="15" onchange="updateCalculations()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <span class="ml-2 text-gray-600">%</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="text-sm font-medium text-gray-700">Plazo Deuda:</label>
+                        <div class="flex items-center">
+                            <input type="number" id="debtTerm" value="5" min="3" max="10" onchange="updateCalculations()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <span class="ml-2 text-gray-600">años</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -947,9 +949,10 @@
                     <div class="metric-value" id="economicPayback">0</div>
                     <div class="metric-label">Payback (años)</div>
                 </div>
+       
                 <div class="metric-cards">
-                    <div class="metric-value" id="economicROI">0%</div>
-                    <div class="metric-label">ROI Acumulado</div>
+                    <div class="metric-value" id="economicFCF">$0M</div>
+                    <div class="metric-label">FCF Promedio</div>
                 </div>
             </div>
             
@@ -989,10 +992,7 @@
                     <div class="metric-value" id="financialPayback">0</div>
                     <div class="metric-label">Payback (años)</div>
                 </div>
-                <div class="metric-cards">
-                    <div class="metric-value" id="financialROE">0%</div>
-                    <div class="metric-label">ROE Promedio</div>
-                </div>
+        
             </div>
             
             <div class="table-container">

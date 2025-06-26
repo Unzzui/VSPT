@@ -583,17 +583,110 @@ function createInvestmentsSheet() {
     ];
     
     if (modelData.investments) {
-        const years = Object.keys(modelData.investments).sort();
-        let totalInvestment = 0;
+        // Desglose detallado del CAPEX por componentes
+        const capexComponents = {
+            2025: {
+                'Plataforma Digital Core': 120000,
+                'Desarrollo Web Base': 80000,
+                'Configuración SEO/SEM': 35000,
+                'Setup México y Certificaciones': 60000,
+                'Base Legal y Compliance': 20000
+            },
+            2026: {
+                'Expansión Internacional': 40000,
+                'Expansión Mercado México': 55000,
+                'Desarrollo Almacenes (Reducido)': 25000,
+                'Mejoras de Plataforma': 15000
+            },
+            2027: {
+                'Upgrades Tecnológicos': 60000,
+                'Optimización de Plataforma': 40000
+            },
+            2028: {
+                'Optimizaciones Finales': 15000,
+                'Contingencia y Ajustes': 5000
+            }
+        };
         
-        years.forEach(year => {
-            const yearData = modelData.investments[year];
-            totalInvestment += yearData.total || 0;
+        // Agregar cada componente
+        const allComponents = new Set();
+        Object.keys(capexComponents).forEach(year => {
+            Object.keys(capexComponents[year]).forEach(component => {
+                allComponents.add(component);
+            });
         });
         
-        data.push(['Total CAPEX', '', '', '', '', totalInvestment]);
-        data.push(['Financiamiento - Deuda (35%)', '', '', '', '', totalInvestment * 0.35]);
-        data.push(['Financiamiento - Equity (65%)', '', '', '', '', totalInvestment * 0.65]);
+        allComponents.forEach(component => {
+            const row = [component];
+            let totalComponent = 0;
+            for (let year = 2025; year <= 2028; year++) {
+                const amount = capexComponents[year] && capexComponents[year][component] ? 
+                              capexComponents[year][component] : 0;
+                row.push(amount);
+                totalComponent += amount;
+            }
+            row.push(totalComponent);
+            data.push(row);
+        });
+        
+        // Separador
+        data.push(['', '', '', '', '', '']);
+        
+        // Totales del modelo
+        const inv = modelData.investments;
+        const params = getFinancialParams();
+        
+        // CAPEX Total
+        const capexRow = ['TOTAL CAPEX'];
+        let total = 0;
+        for (let year = 2025; year <= 2028; year++) {
+            const amount = inv.distribution && inv.distribution[year] ? inv.distribution[year].amount : 0;
+            capexRow.push(amount);
+            total += amount;
+        }
+        capexRow.push(total);
+        data.push(capexRow);
+        
+        // Separador financiamiento
+        data.push(['', '', '', '', '', '']);
+        data.push(['ESTRUCTURA DE FINANCIAMIENTO', '', '', '', '', '']);
+        
+        // Deuda
+        const debtRow = [`Financiado con Deuda (${(params.debtRatio * 100).toFixed(0)}%)`];
+        total = 0;
+        for (let year = 2025; year <= 2028; year++) {
+            const amount = inv.distribution && inv.distribution[year] ? inv.distribution[year].debt : 0;
+            debtRow.push(amount);
+            total += amount;
+        }
+        debtRow.push(total);
+        data.push(debtRow);
+        
+        // Equity
+        const equityRow = [`Aporte Capital (${(params.equityRatio * 100).toFixed(0)}%)`];
+        total = 0;
+        for (let year = 2025; year <= 2028; year++) {
+            const amount = inv.distribution && inv.distribution[year] ? inv.distribution[year].equity : 0;
+            equityRow.push(amount);
+            total += amount;
+        }
+        equityRow.push(total);
+        data.push(equityRow);
+        
+        // Separador acumulado
+        data.push(['', '', '', '', '', '']);
+        data.push(['INVERSIÓN ACUMULADA', '', '', '', '', '']);
+        
+        // CAPEX acumulado
+        const cumulativeRow = ['CAPEX Acumulado'];
+        let cumulativeTotal = 0;
+        for (let year = 2025; year <= 2028; year++) {
+            const amount = inv.cumulative && inv.cumulative[year] ? inv.cumulative[year].capex : 0;
+            cumulativeTotal += amount;
+            cumulativeRow.push(cumulativeTotal);
+        }
+        cumulativeRow.push(cumulativeTotal);
+        data.push(cumulativeRow);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -601,20 +694,51 @@ function createInvestmentsSheet() {
 
 function createRevenuesSheet() {
     const data = [
-        ['INGRESOS POR PAÍS - VSPT DIGITAL', '', '', '', '', ''],
-        ['País/Métrica', '2026', '2027', '2028', '2029', '2030']
+        ['PROYECCIÓN DE INGRESOS POR PAÍS', '', '', '', '', '', ''],
+        ['País/Métrica', '2025', '2026', '2027', '2028', '2029', '2030'],
+        []
     ];
     
     if (modelData.revenues) {
         Object.keys(marketDistribution).forEach(market => {
-            const row = [market];
-            for (let year = 2026; year <= 2030; year++) {
-                const yearData = modelData.revenues[year];
-                const revenue = yearData && yearData[market] ? yearData[market].netRevenue : 0;
-                row.push(revenue);
-            }
-            data.push(row);
+            const marketLabel = marketDistribution[market].label;
+            
+            // Header del mercado
+            data.push([marketLabel.toUpperCase(), '', '', '', '', '', '']);
+            
+            // Métricas
+            const metrics = [
+                { key: 'traffic', label: 'Tráfico Anual' },
+                { key: 'conversionRate', label: 'Tasa Conversión (%)' },
+                { key: 'orders', label: 'Órdenes' },
+                { key: 'avgTicket', label: 'Ticket Promedio' },
+                { key: 'netRevenue', label: 'Revenue Neto' }
+            ];
+            
+            metrics.forEach(metric => {
+                const row = [metric.label];
+                for (let year = 2025; year <= 2030; year++) {
+                    const value = modelData.revenues[year] && modelData.revenues[year][market] ? 
+                        modelData.revenues[year][market][metric.key] : 0;
+                    row.push(value);
+                }
+                data.push(row);
+            });
+            
+            data.push([]); // Separador
         });
+        
+        // Total
+        data.push(['TOTAL REVENUE (USD)', '', '', '', '', '', '']);
+        const totalRow = ['Total'];
+        for (let year = 2025; year <= 2030; year++) {
+            const yearTotal = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[year] && modelData.revenues[year][market] ? 
+                    modelData.revenues[year][market].netRevenue : 0);
+            }, 0);
+            totalRow.push(yearTotal);
+        }
+        data.push(totalRow);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -622,20 +746,79 @@ function createRevenuesSheet() {
 
 function createCostsSheet() {
     const data = [
-        ['COSTOS OPERATIVOS - VSPT DIGITAL', '', '', '', '', ''],
-        ['Concepto', '2026', '2027', '2028', '2029', '2030']
+        ['ESTRUCTURA DE COSTOS', '', '', '', '', '', ''],
+        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
+        []
     ];
     
     if (modelData.costs) {
-        Object.keys(modelData.costs).forEach(year => {
-            const yearData = modelData.costs[year];
-            if (yearData) {
-                data.push(['Personal', yearData.personal || 0]);
-                data.push(['Marketing Digital', yearData.marketing || 0]);
-                data.push(['Logística', yearData.logistics || 0]);
-                data.push(['Total Costos', yearData.total || 0]);
+        // COGS
+        const cogsRow = ['Costo de Ventas (COGS)'];
+        for (let year = 2025; year <= 2030; year++) {
+            cogsRow.push(modelData.costs[year].cogs);
+        }
+        data.push(cogsRow);
+        data.push([]);
+        
+        // Gastos Operativos
+        data.push(['GASTOS OPERATIVOS', '', '', '', '', '', '']);
+        
+        const opexItems = [
+            { key: 'salesSalary', label: 'Salarios Ventas' },
+            { key: 'marketing', label: 'Marketing & Publicidad' },
+            { key: 'administrative', label: 'Administrativos' },
+            { key: 'logistics', label: 'Logística' },
+            { key: 'technology', label: 'Tecnología' }
+        ];
+        
+        opexItems.forEach(item => {
+            const row = [item.label];
+            for (let year = 2025; year <= 2030; year++) {
+                row.push(modelData.costs[year].operatingExpenses[item.key]);
             }
+            data.push(row);
         });
+        
+        // Total Opex
+        const opexTotalRow = ['Total Gastos Operativos'];
+        for (let year = 2025; year <= 2030; year++) {
+            opexTotalRow.push(modelData.costs[year].operatingExpenses.total);
+        }
+        data.push(opexTotalRow);
+        data.push([]);
+        
+        // Costos Fijos
+        data.push(['COSTOS FIJOS', '', '', '', '', '', '']);
+        
+        const fixedItems = [
+            { key: 'personnel', label: 'Personal Base' },
+            { key: 'infrastructure', label: 'Infraestructura' },
+            { key: 'compliance', label: 'Cumplimiento' },
+            { key: 'insurance', label: 'Seguros' }
+        ];
+        
+        fixedItems.forEach(item => {
+            const row = [item.label];
+            for (let year = 2025; year <= 2030; year++) {
+                row.push(modelData.costs[year].fixedCosts[item.key]);
+            }
+            data.push(row);
+        });
+        
+        // Total Fixed
+        const fixedTotalRow = ['Total Costos Fijos'];
+        for (let year = 2025; year <= 2030; year++) {
+            fixedTotalRow.push(modelData.costs[year].fixedCosts.total);
+        }
+        data.push(fixedTotalRow);
+        data.push([]);
+        
+        // Total General
+        const totalRow = ['TOTAL COSTOS'];
+        for (let year = 2025; year <= 2030; year++) {
+            totalRow.push(modelData.costs[year].totalCosts);
+        }
+        data.push(totalRow);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -643,20 +826,61 @@ function createCostsSheet() {
 
 function createWorkingCapitalSheet() {
     const data = [
-        ['WORKING CAPITAL POR PAÍS', '', '', '', '', ''],
-        ['País', '2026', '2027', '2028', '2029', '2030']
+        ['WORKING CAPITAL POR PAÍS', '', '', '', '', '', ''],
+        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
+        []
     ];
     
     if (modelData.workingCapital) {
+        // Por país
         Object.keys(marketDistribution).forEach(market => {
-            const row = [market];
-            for (let year = 2026; year <= 2030; year++) {
-                const wc = modelData.workingCapital[year] && modelData.workingCapital[year][market] 
-                    ? modelData.workingCapital[year][market].total : 0;
-                row.push(wc);
+            const marketLabel = marketDistribution[market].label;
+            
+            // WC total del país
+            const countryRow = [`${marketLabel} WC Total`];
+            for (let year = 2025; year <= 2030; year++) {
+                const value = modelData.workingCapital[year].byCountry[market] ? 
+                    modelData.workingCapital[year].byCountry[market].total : 0;
+                countryRow.push(value);
             }
-            data.push(row);
+            data.push(countryRow);
+            
+            // Componentes
+            if (market === 'mexico') {
+                const components = [
+                    { key: 'accountsReceivable', label: 'Cuentas por Cobrar' },
+                    { key: 'inventory', label: 'Inventario' },
+                    { key: 'accountsPayable', label: 'Cuentas por Pagar' }
+                ];
+                
+                components.forEach(comp => {
+                    const row = [`  ${comp.label}`];
+                    for (let year = 2025; year <= 2030; year++) {
+                        const value = modelData.workingCapital[year].byCountry[market] ? 
+                            modelData.workingCapital[year].byCountry[market][comp.key] : 0;
+                        row.push(value);
+                    }
+                    data.push(row);
+                });
+            }
+            
+            data.push([]); // Separador
         });
+        
+        // Consolidado
+        data.push(['CONSOLIDADO', '', '', '', '', '', '']);
+        
+        const totalRow = ['Working Capital Total'];
+        for (let year = 2025; year <= 2030; year++) {
+            totalRow.push(modelData.workingCapital[year].consolidated.total);
+        }
+        data.push(totalRow);
+        
+        const deltaRow = ['Δ Working Capital'];
+        for (let year = 2025; year <= 2030; year++) {
+            deltaRow.push(modelData.workingCapital[year].deltaWC || 0);
+        }
+        data.push(deltaRow);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -664,22 +888,51 @@ function createWorkingCapitalSheet() {
 
 function createDebtSheet() {
     const data = [
-        ['CRONOGRAMA DE DEUDA - AMORTIZACIÓN FRANCESA', '', '', '', '', ''],
-        ['Año', 'Saldo Inicial', 'Interés', 'Amortización', 'Cuota', 'Saldo Final']
+        ['CRONOGRAMA DE DEUDA', '', '', '', '', ''],
+        ['Año', 'Saldo Inicial', 'Intereses', 'Principal', 'Cuota Anual', 'Saldo Final'],
+        []
     ];
     
     if (modelData.debt && modelData.debt.schedule) {
-        Object.keys(modelData.debt.schedule).forEach(year => {
-            const payment = modelData.debt.schedule[year];
-            data.push([
-                year,
-                payment.initialBalance || 0,
-                payment.interest || 0,
-                payment.principal || 0,
-                payment.totalPayment || 0,
-                payment.finalBalance || 0
-            ]);
-        });
+        const debt = modelData.debt;
+        const endYear = 2025 + debt.termYears;
+        
+        // Información del préstamo optimizado
+        data.push([
+            `CAPEX Optimizado: $${(565000/1000).toFixed(0)}K (era $800K, -29.4%)`,
+            `Monto Deuda: $${(debt.debtAmount/1000).toFixed(0)}K`,
+            `Tasa: ${(debt.interestRate*100).toFixed(1)}%`,
+            `Plazo: ${debt.termYears} años`,
+            `Cuota Mensual: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}`,
+            `Ahorro en Deuda: $${((800000 - 565000) * (debt.debtAmount/debt.totalCapex) / 1000).toFixed(0)}K`
+        ]);
+        data.push([]);
+        
+        // Cronograma
+        for (let year = 2025; year <= endYear; year++) {
+            const schedule = debt.schedule[year];
+            if (schedule && (schedule.beginningBalance > 0 || year === 2025)) {
+                data.push([
+                    year,
+                    schedule.beginningBalance,
+                    schedule.interestPayment,
+                    schedule.principalPayment,
+                    schedule.totalPayment,
+                    schedule.endingBalance
+                ]);
+            }
+        }
+        
+        // Totales
+        data.push([]);
+        data.push([
+            'TOTALES',
+            '',
+            debt.metrics.totalInterestPaid,
+            debt.debtAmount,
+            debt.metrics.totalPayments,
+            0
+        ]);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -688,26 +941,40 @@ function createDebtSheet() {
 function createEconomicFlowSheet() {
     const data = [
         ['FLUJO DE CAJA ECONÓMICO', '', '', '', '', '', ''],
-        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030']
+        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
+        []
     ];
     
     if (modelData.economicCashFlow) {
-        const flow = modelData.economicCashFlow;
-        data.push(['EBITDA', flow[2025]?.ebitda || 0, flow[2026]?.ebitda || 0, 
-                  flow[2027]?.ebitda || 0, flow[2028]?.ebitda || 0, 
-                  flow[2029]?.ebitda || 0, flow[2030]?.ebitda || 0]);
-        data.push(['CAPEX', flow[2025]?.capex || 0, flow[2026]?.capex || 0,
-                  flow[2027]?.capex || 0, flow[2028]?.capex || 0,
-                  flow[2029]?.capex || 0, flow[2030]?.capex || 0]);
-        data.push(['Flujo Libre', flow[2025]?.freeCashFlow || 0, flow[2026]?.freeCashFlow || 0,
-                  flow[2027]?.freeCashFlow || 0, flow[2028]?.freeCashFlow || 0,
-                  flow[2029]?.freeCashFlow || 0, flow[2030]?.freeCashFlow || 0]);
+        const metrics = [
+            { key: 'revenues', label: 'Ingresos' },
+            { key: 'cogs', label: 'COGS' },
+            { key: 'grossProfit', label: 'Margen Bruto' },
+            { key: 'operatingExpenses', label: 'Gastos Operativos' },
+            { key: 'ebitda', label: 'EBITDA' },
+            { key: 'depreciation', label: 'Depreciación' },
+            { key: 'ebit', label: 'EBIT' },
+            { key: 'taxes', label: 'Impuestos' },
+            { key: 'nopat', label: 'NOPAT' },
+            { key: 'capex', label: 'CAPEX' },
+            { key: 'deltaWC', label: 'Δ Working Capital' },
+            { key: 'fcf', label: 'Flujo Libre' }
+        ];
         
-        if (flow.metrics) {
-            data.push(['', '', '', '', '', '', '']);
-            data.push(['VAN Proyecto', '', '', '', '', '', flow.metrics.projectNPV || 0]);
-            data.push(['TIR Proyecto', '', '', '', '', '', flow.metrics.projectIRR ? (flow.metrics.projectIRR * 100).toFixed(1) + '%' : '0%']);
-        }
+        metrics.forEach(metric => {
+            const row = [metric.label];
+            for (let year = 2025; year <= 2030; year++) {
+                const value = modelData.economicCashFlow[year] ? 
+                    modelData.economicCashFlow[year][metric.key] : 0;
+                row.push(value);
+            }
+            data.push(row);
+        });
+        
+        // Métricas
+        data.push([]);
+        data.push(['VAN Económico', '', '', '', '', '', modelData.economicCashFlow.metrics?.npv || 0]);
+        data.push(['TIR Económica', '', '', '', '', '', (modelData.economicCashFlow.metrics?.irr || 0) * 100]);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -716,60 +983,37 @@ function createEconomicFlowSheet() {
 function createFinancialFlowSheet() {
     const data = [
         ['FLUJO DE CAJA FINANCIERO', '', '', '', '', '', ''],
-        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030']
+        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
+        []
     ];
     
     if (modelData.financialCashFlow) {
-        const flow = modelData.financialCashFlow;
+        const metrics = [
+            { key: 'nopat', label: 'NOPAT' },
+            { key: 'depreciation', label: 'Depreciación' },
+            { key: 'taxShield', label: 'Escudo Fiscal' },
+            { key: 'capex', label: 'CAPEX' },
+            { key: 'deltaWC', label: 'Δ Working Capital' },
+            { key: 'interestExpense', label: 'Gastos Financieros (Intereses)' },
+            { key: 'debtService', label: 'Amortización Capital' },
+            { key: 'equityContribution', label: 'Aporte Capital' },
+            { key: 'fcfe', label: 'Flujo al Accionista' }
+        ];
         
-        // Agregar todas las líneas del flujo financiero con desglose completo
-        data.push(['NOPAT', flow[2025]?.nopat || 0, flow[2026]?.nopat || 0,
-                  flow[2027]?.nopat || 0, flow[2028]?.nopat || 0,
-                  flow[2029]?.nopat || 0, flow[2030]?.nopat || 0]);
+        metrics.forEach(metric => {
+            const row = [metric.label];
+            for (let year = 2025; year <= 2030; year++) {
+                const value = modelData.financialCashFlow[year] ? 
+                    modelData.financialCashFlow[year][metric.key] : 0;
+                row.push(value);
+            }
+            data.push(row);
+        });
         
-        data.push(['Depreciación', flow[2025]?.depreciation || 0, flow[2026]?.depreciation || 0,
-                  flow[2027]?.depreciation || 0, flow[2028]?.depreciation || 0,
-                  flow[2029]?.depreciation || 0, flow[2030]?.depreciation || 0]);
-        
-        data.push(['Escudo Fiscal', flow[2025]?.taxShield || 0, flow[2026]?.taxShield || 0,
-                  flow[2027]?.taxShield || 0, flow[2028]?.taxShield || 0,
-                  flow[2029]?.taxShield || 0, flow[2030]?.taxShield || 0]);
-        
-        data.push(['CAPEX', flow[2025]?.capex || 0, flow[2026]?.capex || 0,
-                  flow[2027]?.capex || 0, flow[2028]?.capex || 0,
-                  flow[2029]?.capex || 0, flow[2030]?.capex || 0]);
-        
-        data.push(['Δ Working Capital', flow[2025]?.deltaWC || 0, flow[2026]?.deltaWC || 0,
-                  flow[2027]?.deltaWC || 0, flow[2028]?.deltaWC || 0,
-                  flow[2029]?.deltaWC || 0, flow[2030]?.deltaWC || 0]);
-        
-        // DESGLOSE DEL SERVICIO DE LA DEUDA
-        data.push(['Gastos Financieros (Intereses)', flow[2025]?.interestExpense || 0, flow[2026]?.interestExpense || 0,
-                  flow[2027]?.interestExpense || 0, flow[2028]?.interestExpense || 0,
-                  flow[2029]?.interestExpense || 0, flow[2030]?.interestExpense || 0]);
-        
-        data.push(['Amortización Capital', flow[2025]?.debtService || 0, flow[2026]?.debtService || 0,
-                  flow[2027]?.debtService || 0, flow[2028]?.debtService || 0,
-                  flow[2029]?.debtService || 0, flow[2030]?.debtService || 0]);
-        
-        data.push(['Aporte Equity', flow[2025]?.equityContribution || 0, flow[2026]?.equityContribution || 0,
-                  flow[2027]?.equityContribution || 0, flow[2028]?.equityContribution || 0,
-                  flow[2029]?.equityContribution || 0, flow[2030]?.equityContribution || 0]);
-        
-        data.push(['Valor Residual', flow[2025]?.residualValue || 0, flow[2026]?.residualValue || 0,
-                  flow[2027]?.residualValue || 0, flow[2028]?.residualValue || 0,
-                  flow[2029]?.residualValue || 0, flow[2030]?.residualValue || 0]);
-        
-        data.push(['FCFE', flow[2025]?.fcfe || 0, flow[2026]?.fcfe || 0,
-                  flow[2027]?.fcfe || 0, flow[2028]?.fcfe || 0,
-                  flow[2029]?.fcfe || 0, flow[2030]?.fcfe || 0]);
-        
-        if (flow.metrics) {
-            data.push(['', '', '', '', '', '', '']);
-            data.push(['VAN Equity', '', '', '', '', '', flow.metrics.equityNPV || 0]);
-            data.push(['TIR Proyecto', '', '', '', '', '', flow.metrics.projectIRR ? (flow.metrics.projectIRR * 100).toFixed(1) + '%' : '0%']);
-            data.push(['Costo Equity', '', '', '', '', '', flow.metrics.equityCost ? (flow.metrics.equityCost * 100).toFixed(1) + '%' : 'N/A']);
-        }
+        // Métricas
+        data.push([]);
+        data.push(['VAN del Equity', '', '', '', '', '', modelData.financialCashFlow.metrics?.equityNPV || 0]);
+        data.push(['TIR del Proyecto', '', '', '', '', '', (modelData.financialCashFlow.metrics?.projectIRR || 0) * 100]);
     }
     
     return XLSX.utils.aoa_to_sheet(data);

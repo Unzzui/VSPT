@@ -1,7 +1,7 @@
-// Funciones para calcular y mostrar CAPEX optimizado e inventario inicial
+// Funciones para calcular y mostrar CAPEX optimizado
 // CAPEX OPTIMIZADO: Reducido de $800K a $565K (-29.4%)
 // Eliminaciones: Brasil ($45K), Canadá ($50K), USA ($60K), Países Adicionales ($35K)
-// Reducciones: Warehouses ($25K), Expansión Internacional ($40K), Inventario Adicional ($1K)
+// Reducciones: Warehouses ($25K), Expansión Internacional ($40K)
 
 function calculateOptimizedCapex() {
     console.log('🏗️ Calculando CAPEX optimizado...');
@@ -16,14 +16,14 @@ function calculateOptimizedCapex() {
             'Configuración SEO/SEM': 35000,
             'Setup México y Certificaciones': 60000,
             'Base Legal y Compliance': 20000,
-            total: 315000 // 53% del CAPEX optimizado
+            total: 315000 // 56% del CAPEX optimizado
         },
         2026: {
             'Expansión Internacional': 40000, // Reducido de 80K
             'Expansión Mercado México': 55000,
             'Desarrollo Almacenes (Reducido)': 25000, // Reducido de 50K
-            'Mejoras de Plataforma': 20000,
-            total: 140000 // 25% del CAPEX optimizado
+            'Mejoras de Plataforma': 15000,
+            total: 135000 // 24% del CAPEX optimizado
         },
         2027: {
             'Upgrades Tecnológicos': 60000,
@@ -32,8 +32,8 @@ function calculateOptimizedCapex() {
         },
         2028: {
             'Optimizaciones Finales': 15000,
-            'Contingencia y Ajustes': 10000,
-            total: 25000 // 4% del CAPEX optimizado
+            'Contingencia y Ajustes': 5000,
+            total: 20000 // 2% del CAPEX optimizado
         }
     };
 
@@ -64,8 +64,11 @@ function calculateOptimizedCapex() {
     
     // Calcular total CAPEX para el log
     const totalCapex = Object.values(progressiveCapex).reduce((sum, year) => sum + year.total, 0);
-    
-
+    console.log('✅ CAPEX optimizado calculado:', {
+        total: `$${(totalCapex/1000).toFixed(0)}K`,
+        ahorro: `$${((800000 - totalCapex)/1000).toFixed(0)}K`,
+        reduccion: `${((800000 - totalCapex)/800000*100).toFixed(1)}%`
+    });
 }
 
 function updateOptimizedCapexMetrics(capex, financing) {
@@ -103,10 +106,10 @@ function updateOptimizedCapexTable(capex, financing) {
     const headerRow = tbody.insertRow();
     headerRow.className = 'category-header';
     headerRow.insertCell(0).innerHTML = 'CAPEX';
-    headerRow.insertCell(1).innerHTML = '2025 (53%)';
-    headerRow.insertCell(2).innerHTML = '2026 (25%)';
+    headerRow.insertCell(1).innerHTML = '2025 (56%)';
+    headerRow.insertCell(2).innerHTML = '2026 (24%)';
     headerRow.insertCell(3).innerHTML = '2027 (18%)';
-    headerRow.insertCell(4).innerHTML = '2028 (4%)';
+    headerRow.insertCell(4).innerHTML = '2028 (2%)';
     headerRow.insertCell(5).innerHTML = 'TOTAL';
 
     // Items por año

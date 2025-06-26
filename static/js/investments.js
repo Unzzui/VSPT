@@ -80,24 +80,21 @@ function updateCapexTable(investments) {
             'Desarrollo Web Base': 80000,
             'Configuración SEO/SEM': 35000,
             'Setup México y Certificaciones': 60000,
-            'Setup Brasil Inicial': 45000,
             'Base Legal y Compliance': 20000
         },
         2026: {
-            'Expansión Internacional': 80000,
-            'Setup Mercado Canadá': 50000,
-            'Setup Mercado USA': 60000,
-            'Desarrollo Almacenes': 50000
+            'Expansión Internacional': 40000,
+            'Expansión Mercado México': 55000,
+            'Desarrollo Almacenes (Reducido)': 25000,
+            'Mejoras de Plataforma': 15000
         },
         2027: {
             'Upgrades Tecnológicos': 60000,
-            'Optimización de Plataforma': 40000,
-            'Preparación Países Adicionales': 35000,
-            'Infraestructura de Escalamiento': 25000
+            'Optimización de Plataforma': 40000
         },
         2028: {
-            'Optimizaciones Finales': 25000,
-            'Contingencia y Ajustes': 15000
+            'Optimizaciones Finales': 15000,
+            'Contingencia y Ajustes': 5000
         }
     };
     
@@ -263,30 +260,12 @@ function updateCapexTable(investments) {
 }
 
 function updateFinancingMetrics(investments) {
-    // Calcular inversión en inventario
-    const inventoryParams = getInventoryParams();
-    
-    // Calcular contenedores necesarios con validación
-    const totalBottlesNeeded = (inventoryParams.initialStockMonths || 3) * 1000; // meses * 1000 botellas
-    const containersNeeded = Math.ceil(totalBottlesNeeded / (inventoryParams.bottlesPerContainer || 1200));
-    const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
-    
-    console.log('💰 Cálculo de inventario:', {
-        'Stock (meses)': inventoryParams.initialStockMonths,
-        'Botellas por contenedor': inventoryParams.bottlesPerContainer,
-        'Costo por contenedor': inventoryParams.containerCost,
-        'Botellas necesarias': totalBottlesNeeded,
-        'Contenedores necesarios': containersNeeded,
-        'Inversión total': inventoryInvestment
-    });
-    
     // Actualizar métricas en el dashboard
     const elements = {
         'totalCapex': `$${(investments.totalCapex/1000).toFixed(0)}K`,
         'totalDebt': `$${(investments.financing.debt/1000).toFixed(0)}K`,
         'totalEquity': `$${(investments.financing.equity/1000).toFixed(0)}K`,
-        'debtRatioDisplay': `${(investments.financing.debtRatio * 100).toFixed(0)}%`,
-        'inventoryInvestment': `$${(inventoryInvestment/1000).toFixed(0)}K`
+        'debtRatioDisplay': `${(investments.financing.debtRatio * 100).toFixed(0)}%`
     };
     
     Object.keys(elements).forEach(id => {
@@ -298,7 +277,6 @@ function updateFinancingMetrics(investments) {
     
     console.log('📊 Métricas de financiamiento actualizadas:', {
         'Total CAPEX': elements.totalCapex,
-        'Inventario': elements.inventoryInvestment,
         'Debt Ratio': elements.debtRatioDisplay
     });
 }
@@ -316,128 +294,4 @@ function getAccumulatedCapex(currentYear) {
 }
 
 // Función para exportar datos de inversiones a Excel
-function createInvestmentsSheet() {
-    const data = [
-        ['CAPEX DETALLADO & FINANCIAMIENTO', '', '', '', '', ''],
-        ['Concepto de Inversión', '2025', '2026', '2027', '2028', 'Total'],
-        []
-    ];
-    
-    // Obtener parámetros de inventario
-    const inventoryParams = getInventoryParams();
-    const totalBottlesNeeded = inventoryParams.initialStockMonths * 1000; // meses * 1000 botellas
-    const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer);
-    const inventoryInvestment = containersNeeded * inventoryParams.containerCost;
-    
-    // Desglose detallado del CAPEX por componentes (SIN inventario - va en Working Capital)
-    const capexComponents = {
-        2025: {
-            'Plataforma Digital Core': 120000,
-            'Desarrollo Web Base': 80000,
-            'Configuración SEO/SEM': 35000,
-            'Setup México y Certificaciones': 60000,
-            'Setup Brasil Inicial': 45000,
-            'Base Legal y Compliance': 20000
-        },
-        2026: {
-            'Expansión Internacional': 80000,
-            'Setup Mercado Canadá': 50000,
-            'Setup Mercado USA': 60000,
-            'Desarrollo Almacenes': 50000
-        },
-        2027: {
-            'Upgrades Tecnológicos': 60000,
-            'Optimización de Plataforma': 40000,
-            'Preparación Países Adicionales': 35000,
-            'Infraestructura de Escalamiento': 25000
-        },
-        2028: {
-            'Optimizaciones Finales': 25000,
-            'Contingencia y Ajustes': 15000
-        }
-    };
-    
-    // Agregar cada componente
-    const allComponents = new Set();
-    Object.keys(capexComponents).forEach(year => {
-        Object.keys(capexComponents[year]).forEach(component => {
-            allComponents.add(component);
-        });
-    });
-    
-    allComponents.forEach(component => {
-        const row = [component];
-        let totalComponent = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = capexComponents[year] && capexComponents[year][component] ? 
-                          capexComponents[year][component] : 0;
-            row.push(amount);
-            totalComponent += amount;
-        }
-        row.push(totalComponent);
-        data.push(row);
-    });
-    
-    // Separador
-    data.push(['', '', '', '', '', '']);
-    
-    // Totales si hay datos del modelo
-    if (modelData.investments) {
-        const inv = modelData.investments;
-        const params = getFinancialParams();
-        
-        // CAPEX Total
-        const capexRow = ['TOTAL CAPEX'];
-        let total = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = inv[year] ? inv[year].total : 0;
-            capexRow.push(amount);
-            total += amount;
-        }
-        capexRow.push(total);
-        data.push(capexRow);
-        
-        // Separador financiamiento
-        data.push(['', '', '', '', '', '']);
-        data.push(['ESTRUCTURA DE FINANCIAMIENTO', '', '', '', '', '']);
-        
-        // Deuda
-        const debtRow = [`Financiado con Deuda (${(params.debtRatio * 100).toFixed(0)}%)`];
-        total = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = inv[year] ? inv[year].total * params.debtRatio : 0;
-            debtRow.push(amount);
-            total += amount;
-        }
-        debtRow.push(total);
-        data.push(debtRow);
-        
-        // Equity
-        const equityRow = [`Aporte Capital (${(params.equityRatio * 100).toFixed(0)}%)`];
-        total = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = inv[year] ? inv[year].total * params.equityRatio : 0;
-            equityRow.push(amount);
-            total += amount;
-        }
-        equityRow.push(total);
-        data.push(equityRow);
-        
-        // Separador acumulado
-        data.push(['', '', '', '', '', '']);
-        data.push(['INVERSIÓN ACUMULADA', '', '', '', '', '']);
-        
-        // CAPEX acumulado
-        const cumulativeRow = ['CAPEX Acumulado'];
-        let cumulativeTotal = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = inv[year] ? inv[year].total : 0;
-            cumulativeTotal += amount;
-            cumulativeRow.push(cumulativeTotal);
-        }
-        cumulativeRow.push(cumulativeTotal);
-        data.push(cumulativeRow);
-    }
-    
-    return XLSX.utils.aoa_to_sheet(data);
-}
+// REMOVIDO: Esta función está implementada en utils.js para evitar duplicados

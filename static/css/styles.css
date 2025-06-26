@@ -1965,7 +1965,70 @@ tbody tr:hover {
         transform: scaleY(1);
     }
 }
-
+/* Mostrar botón hamburguesa en móviles */
+@media (max-width: 430px) {
+    .mobile-menu-toggle {
+        display: block !important;
+    }
+    
+    .tabs {
+        flex-direction: column;
+        position: relative;
+        padding-top: 50px; /* Espacio para el botón hamburguesa */
+        max-height: 50px; /* Solo mostrar el área del botón por defecto */
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .tabs.mobile-open {
+        max-height: 85vh; /* Mostrar todas las pestañas cuando está abierto */
+        overflow-y: auto; /* Permitir scroll si es necesario */
+    }
+    
+    .tab {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+        border-bottom: 1px solid var(--gray);
+        border-radius: 0;
+        opacity: 0;
+        transform: translateX(-20px);
+        transition: all 0.3s ease;
+        padding: 6px 12px; /* Padding reducido para pantallas muy pequeñas */
+        min-height: 20px; /* Altura mínima reducida */
+        font-size: 13px; /* Texto más pequeño */
+    }
+    
+    .tabs.mobile-open .tab {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .tab:last-child {
+        border-bottom: none;
+    }
+    
+    .tab i {
+        display: none !important; /* Ocultar iconos en pantallas muy pequeñas */
+    }
+    
+    .tab::after {
+        left: 0;
+        width: 4px;
+        height: 100%;
+        top: 0;
+        bottom: auto;
+        transform: scaleY(0);
+    }
+    
+    .tab:hover::after {
+        transform: scaleY(0.5);
+    }
+    
+    .tab.active::after {
+        transform: scaleY(1);
+    }
+}
 /* Estilos para la evaluación de viabilidad */
 .project-viability {
     margin-bottom: 2rem;
@@ -2957,4 +3020,9 @@ tbody tr:hover {
     .parameter-unit {
         font-size: 0.5625rem;
     }
+}
+
+.tabs.mobile-open {
+    max-height: 100vh; /* Usar toda la altura de la ventana para mostrar todas las pestañas */
+    overflow-y: auto; /* Permitir scroll si es necesario */
 }

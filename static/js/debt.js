@@ -225,59 +225,6 @@ function updateDebtMetrics(debt) {
     });
 }
 
-// Función para exportar cronograma de deuda a Excel
-function createDebtSheet() {
-    const data = [
-        ['CRONOGRAMA DE DEUDA', '', '', '', '', ''],
-        ['Año', 'Saldo Inicial', 'Intereses', 'Principal', 'Cuota Anual', 'Saldo Final'],
-        []
-    ];
-    
-    if (modelData.debt && modelData.debt.schedule) {
-        const debt = modelData.debt;
-        const endYear = 2025 + debt.termYears;
-        
-        // Información del préstamo optimizado
-        data.push([
-            `CAPEX Optimizado: $${(565000/1000).toFixed(0)}K (era $800K, -29.4%)`,
-            `Monto Deuda: $${(debt.debtAmount/1000).toFixed(0)}K`,
-            `Tasa: ${(debt.interestRate*100).toFixed(1)}%`,
-            `Plazo: ${debt.termYears} años`,
-            `Cuota Mensual: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}`,
-            `Ahorro en Deuda: $${((800000 - 565000) * (debt.debtAmount/debt.totalCapex) / 1000).toFixed(0)}K`
-        ]);
-        data.push([]);
-        
-        // Cronograma
-        for (let year = 2025; year <= endYear; year++) {
-            const schedule = debt.schedule[year];
-            if (schedule && (schedule.beginningBalance > 0 || year === 2025)) {
-                data.push([
-                    year,
-                    schedule.beginningBalance,
-                    schedule.interestPayment,
-                    schedule.principalPayment,
-                    schedule.totalPayment,
-                    schedule.endingBalance
-                ]);
-            }
-        }
-        
-        // Totales
-        data.push([]);
-        data.push([
-            'TOTALES',
-            '',
-            debt.metrics.totalInterestPaid,
-            debt.debtAmount,
-            debt.metrics.totalPayments,
-            0
-        ]);
-    }
-    
-    return XLSX.utils.aoa_to_sheet(data);
-}
-
 // Función de debug para cronograma de deuda optimizado
 function debugDebt() {
     console.log('🔍 Debug del cronograma de deuda optimizado:');

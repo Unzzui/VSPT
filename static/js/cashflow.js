@@ -348,17 +348,27 @@ function updateEconomicFlowTable(economicFlow) {
         if (economicNPVElement) {
             economicNPVElement.innerHTML = `$${(economicFlow.metrics.npv/1000000).toFixed(1)}M`;
         }
-        
         // Actualizar TIR Económica
         const economicIRRElement = document.getElementById('economicIRR');
         if (economicIRRElement) {
             economicIRRElement.innerHTML = `${(economicFlow.metrics.irr * 100).toFixed(1)}%`;
         }
-        
         // Actualizar label de WACC dinámicamente
         const economicWACCLabel = document.querySelector('#economicFlow .metric-label');
         if (economicWACCLabel && economicFlow.metrics.wacc) {
             economicWACCLabel.innerHTML = `VAN Económico (WACC ${(economicFlow.metrics.wacc * 100).toFixed(1)}%)`;
+        }
+        // Calcular y mostrar FCF promedio
+        const fcfYears = [];
+        for (let year = 2025; year <= 2030; year++) {
+            if (economicFlow[year] && typeof economicFlow[year].fcf === 'number') {
+                fcfYears.push(economicFlow[year].fcf);
+            }
+        }
+        const avgFCF = fcfYears.length > 0 ? fcfYears.reduce((a, b) => a + b, 0) / fcfYears.length : 0;
+        const economicFCFElement = document.getElementById('economicFCF');
+        if (economicFCFElement) {
+            economicFCFElement.innerHTML = `$${(avgFCF/1000000).toFixed(2)}M`;
         }
     }
 }
@@ -523,86 +533,4 @@ function calculateIRR(cashFlows) {
     // Si no converge, usar 0%
     console.warn('⚠️ TIR no convergió, usando 0%');
     return 0; // 0% por defecto
-}
-
-// Funciones para exportar a Excel
-function createEconomicFlowSheet() {
-    const data = [
-        ['FLUJO DE CAJA ECONÓMICO', '', '', '', '', '', ''],
-        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
-        []
-    ];
-    
-    if (modelData.economicCashFlow) {
-        const metrics = [
-            { key: 'revenues', label: 'Ingresos' },
-            { key: 'cogs', label: 'COGS' },
-            { key: 'grossProfit', label: 'Margen Bruto' },
-            { key: 'operatingExpenses', label: 'Gastos Operativos' },
-            { key: 'ebitda', label: 'EBITDA' },
-            { key: 'depreciation', label: 'Depreciación' },
-            { key: 'ebit', label: 'EBIT' },
-            { key: 'taxes', label: 'Impuestos' },
-            { key: 'nopat', label: 'NOPAT' },
-            { key: 'capex', label: 'CAPEX' },
-            { key: 'deltaWC', label: 'Δ Working Capital' },
-            { key: 'fcf', label: 'Flujo Libre' }
-        ];
-        
-        metrics.forEach(metric => {
-            const row = [metric.label];
-            for (let year = 2025; year <= 2030; year++) {
-                const value = modelData.economicCashFlow[year] ? 
-                    modelData.economicCashFlow[year][metric.key] : 0;
-                row.push(value);
-            }
-            data.push(row);
-        });
-        
-        // Métricas
-        data.push([]);
-        data.push(['VAN Económico', '', '', '', '', '', modelData.economicCashFlow.metrics?.npv || 0]);
-        data.push(['TIR Económica', '', '', '', '', '', (modelData.economicCashFlow.metrics?.irr || 0) * 100]);
-    }
-    
-    return XLSX.utils.aoa_to_sheet(data);
-}
-
-function createFinancialFlowSheet() {
-    const data = [
-        ['FLUJO DE CAJA FINANCIERO', '', '', '', '', '', ''],
-        ['Concepto', '2025', '2026', '2027', '2028', '2029', '2030'],
-        []
-    ];
-    
-    if (modelData.financialCashFlow) {
-        const metrics = [
-            { key: 'nopat', label: 'NOPAT' },
-            { key: 'depreciation', label: 'Depreciación' },
-            { key: 'taxShield', label: 'Escudo Fiscal' },
-            { key: 'capex', label: 'CAPEX' },
-            { key: 'deltaWC', label: 'Δ Working Capital' },
-            { key: 'interestExpense', label: 'Gastos Financieros (Intereses)' },
-            { key: 'debtService', label: 'Amortización Capital' },
-            { key: 'equityContribution', label: 'Aporte Capital' },
-            { key: 'fcfe', label: 'Flujo al Accionista' }
-        ];
-        
-        metrics.forEach(metric => {
-            const row = [metric.label];
-            for (let year = 2025; year <= 2030; year++) {
-                const value = modelData.financialCashFlow[year] ? 
-                    modelData.financialCashFlow[year][metric.key] : 0;
-                row.push(value);
-            }
-            data.push(row);
-        });
-        
-        // Métricas
-        data.push([]);
-        data.push(['VAN del Equity', '', '', '', '', '', modelData.financialCashFlow.metrics?.equityNPV || 0]);
-        data.push(['TIR del Proyecto', '', '', '', '', '', (modelData.financialCashFlow.metrics?.projectIRR || 0) * 100]);
-    }
-    
-    return XLSX.utils.aoa_to_sheet(data);
 }
