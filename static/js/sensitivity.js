@@ -798,7 +798,27 @@ class SensitivityAnalysis {
             const taxes = ebit > 0 ? ebit * taxRate : 0;
             
             // Flujo de caja libre
-            const fcf = ebit - taxes + depreciation;
+            let fcf = ebit - taxes + depreciation;
+            
+            // Agregar valor terminal solo en 2030
+            if (year === 2030) {
+                const growthRate = 0.02; // 2% crecimiento perpetuo
+                const wacc = 0.08; // WACC 8%
+                
+                // Calcular valor terminal: TV = FCF × (1+g) / (WACC-g)
+                if (wacc > growthRate) {
+                    const terminalValue = fcf * (1 + growthRate) / (wacc - growthRate);
+                    fcf += terminalValue;
+                    
+                    // Debug del valor terminal en sensibilidad
+                    console.log('🔍 Valor Terminal Sensibilidad 2030:');
+                    console.log(`  FCF sin valor terminal: ${(fcf - terminalValue).toFixed(0)}`);
+                    console.log(`  Growth Rate: ${growthRate}`);
+                    console.log(`  WACC: ${wacc}`);
+                    console.log(`  Valor Terminal: ${terminalValue.toFixed(0)}`);
+                    console.log(`  FCF Final: ${fcf.toFixed(0)}`);
+                }
+            }
             
             cashFlows.push(fcf);
         });

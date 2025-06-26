@@ -34,7 +34,7 @@ function calculateDebtStructure() {
     
     let remainingBalance = debtAmount;
     
-    // Generar cronograma anual
+    // Generar cronograma anual con año de gracia y amortización lineal
     for (let year = 2025; year <= 2025 + params.debtTermYears; year++) {
         debt.schedule[year] = {
             beginningBalance: remainingBalance,
@@ -45,24 +45,50 @@ function calculateDebtStructure() {
             monthlyPayment: monthlyPayment
         };
         
-        if (remainingBalance > 0 && year >= 2025) {
-            let yearlyInterest = 0;
-            let yearlyPrincipal = 0;
-            
-            // Calcular pagos mensuales para el año
-            for (let month = 1; month <= 12 && remainingBalance > 0; month++) {
-                const monthlyInterest = remainingBalance * monthlyRate;
-                const monthlyPrincipal = Math.min(monthlyPayment - monthlyInterest, remainingBalance);
+        if (remainingBalance > 0) {
+            if (year === 2025) {
+                // AÑO DE GRACIA COMPLETO (2025): No se paga nada, intereses se capitalizan
+                const capitalizedInterest = remainingBalance * params.interestRate;
+                debt.schedule[year].interestPayment = 0; // No se paga nada
+                debt.schedule[year].principalPayment = 0;
+                debt.schedule[year].totalPayment = 0;
+                debt.schedule[year].endingBalance = remainingBalance; // El saldo se mantiene igual
                 
-                yearlyInterest += monthlyInterest;
-                yearlyPrincipal += monthlyPrincipal;
-                remainingBalance = Math.max(0, remainingBalance - monthlyPrincipal);
+                console.log(`🔍 Año de Gracia Completo 2025 (Capitalización):`);
+                console.log(`  Saldo inicial: $${remainingBalance.toFixed(0)}`);
+                console.log(`  Intereses capitalizados: $${capitalizedInterest.toFixed(0)}`);
+                console.log(`  Intereses pagados: $0`);
+                console.log(`  Principal pagado: $0`);
+                console.log(`  Saldo final: $${debt.schedule[year].endingBalance.toFixed(0)}`);
+                
+                // El saldo se mantiene igual para el siguiente año
+                // remainingBalance = debt.schedule[year].endingBalance; // Comentado para mantener saldo original
+            } else {
+                // AÑOS NORMALES (2026+): Amortización lineal simple
+                // El principal a amortizar es el capital original más los intereses capitalizados del año de gracia
+                const capitalizedInterest = debt.debtAmount * params.interestRate; // Intereses del año de gracia
+                const totalPrincipalToAmortize = debt.debtAmount + capitalizedInterest; // Capital + intereses capitalizados
+                const yearlyPrincipal = totalPrincipalToAmortize / params.debtTermYears; // Amortización lineal
+                const yearlyInterest = remainingBalance * params.interestRate;
+                
+                debt.schedule[year].interestPayment = yearlyInterest;
+                debt.schedule[year].principalPayment = yearlyPrincipal;
+                debt.schedule[year].totalPayment = yearlyInterest + yearlyPrincipal;
+                debt.schedule[year].endingBalance = remainingBalance - yearlyPrincipal;
+                
+                remainingBalance = debt.schedule[year].endingBalance;
+                
+                if (year === 2026) {
+                    console.log(`🔍 Primer Año de Amortización Lineal 2026:`);
+                    console.log(`  Saldo inicial: $${debt.schedule[year].beginningBalance.toFixed(0)}`);
+                    console.log(`  Intereses capitalizados año gracia: $${capitalizedInterest.toFixed(0)}`);
+                    console.log(`  Principal total a amortizar: $${totalPrincipalToAmortize.toFixed(0)}`);
+                    console.log(`  Amortización anual: $${yearlyPrincipal.toFixed(0)}`);
+                    console.log(`  Intereses pagados: $${yearlyInterest.toFixed(0)}`);
+                    console.log(`  Principal pagado: $${yearlyPrincipal.toFixed(0)}`);
+                    console.log(`  Saldo final: $${remainingBalance.toFixed(0)}`);
+                }
             }
-            
-            debt.schedule[year].interestPayment = yearlyInterest;
-            debt.schedule[year].principalPayment = yearlyPrincipal;
-            debt.schedule[year].totalPayment = yearlyInterest + yearlyPrincipal;
-            debt.schedule[year].endingBalance = remainingBalance;
         }
     }
     
@@ -72,6 +98,13 @@ function calculateDebtStructure() {
     updateDebtScheduleTable(debt);
     updateDebtMetrics(debt);
     modelData.debt = debt;
+    
+    // Debug: Verificar que los datos se guardaron correctamente
+    console.log('🔍 Verificación Datos Deuda Guardados:');
+    console.log('  modelData.debt existe:', !!modelData.debt);
+    console.log('  Cronograma 2025:', modelData.debt?.schedule?.[2025]);
+    console.log('  Cronograma 2026:', modelData.debt?.schedule?.[2026]);
+    console.log('  Total deuda:', modelData.debt?.debtAmount);
     
 
 }
@@ -119,12 +152,12 @@ function updateDebtScheduleTable(debt) {
     // Header informativo con parámetros optimizados
     const infoRow = tbody.insertRow();
     infoRow.className = 'category-header';
-    infoRow.insertCell(0).innerHTML = 'CRONOGRAMA AMORTIZACIÓN FRANCESA (CAPEX OPTIMIZADO)';
+    infoRow.insertCell(0).innerHTML = 'CRONOGRAMA AMORTIZACIÓN LINEAL (CON AÑO DE GRACIA)';
     infoRow.insertCell(1).innerHTML = `Deuda: $${(debt.debtAmount/1000).toFixed(0)}K de $${(debt.totalCapex/1000).toFixed(0)}K`;
     infoRow.insertCell(2).innerHTML = `Tasa: ${(debt.interestRate*100).toFixed(1)}% anual`;
     infoRow.insertCell(3).innerHTML = `Plazo: ${debt.termYears} años`;
-    infoRow.insertCell(4).innerHTML = `Cuota: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}/mes`;
-    infoRow.insertCell(5).innerHTML = `Ahorro: $${((800000 - 565000)/1000).toFixed(0)}K (-29.4%)`;
+    infoRow.insertCell(4).innerHTML = `Amortización: $${(debt.debtAmount/debt.termYears/1000).toFixed(0)}K/año`;
+    infoRow.insertCell(5).innerHTML = `Año Gracia: 2025`;
     
     // Headers de columnas
     const headerRow = tbody.insertRow();
@@ -148,9 +181,19 @@ function updateDebtScheduleTable(debt) {
             row.insertCell(4).innerHTML = `$${(schedule.totalPayment/1000).toFixed(0)}K`;
             row.insertCell(5).innerHTML = `$${(schedule.endingBalance/1000).toFixed(0)}K`;
             
-            // Resaltar primer y último año
-            if (year === 2025) row.className = 'total-row';
-            if (schedule.endingBalance === 0) row.className = 'subcategory';
+            // Resaltar año de gracia y años especiales
+            if (year === 2025) {
+                row.className = 'total-row';
+                row.style.backgroundColor = '#fff3cd'; // Color amarillo para año de gracia
+                row.cells[0].innerHTML = `${year} (Gracia)`;
+                row.cells[3].innerHTML = '$0K (Solo Intereses)';
+            } else if (year === 2026) {
+                row.className = 'subcategory';
+                row.style.backgroundColor = '#d1ecf1'; // Color azul para primer año de amortización
+                row.cells[0].innerHTML = `${year} (Inicia Amort.)`;
+            } else if (schedule.endingBalance === 0) {
+                row.className = 'subcategory';
+            }
         }
     }
     
@@ -167,25 +210,25 @@ function updateDebtScheduleTable(debt) {
 
 function updateDebtMetrics(debt) {
     // Actualizar métricas de deuda en el dashboard y controles dinámicos
-    const monthlyPayment = debt.schedule[2025]?.monthlyPayment || 0;
+    const yearlyPrincipal = debt.debtAmount / debt.termYears; // Amortización anual lineal
     const debtToEquityRatio = debt.equityAmount > 0 ? (debt.debtAmount / debt.equityAmount) * 100 : 0;
     
     const elements = {
         // Controles dinámicos en la parte superior
         'dynamicDebtAmount': `$${(debt.debtAmount/1000).toFixed(0)}K (${(debt.debtAmount/debt.totalCapex*100).toFixed(0)}% del CAPEX)`,
-        'dynamicDebtTerm': `${debt.termYears} años`,
+        'dynamicDebtTerm': `${debt.termYears} años (lineal, gracia 2025)`,
         'dynamicInterestRate': `${(debt.interestRate*100).toFixed(1)}% anual`,
-        'dynamicMonthlyPayment': `$${monthlyPayment.toFixed(0)}`,
+        'dynamicMonthlyPayment': `$${(yearlyPrincipal/12).toFixed(0)}/mes (desde 2026)`,
         
         // Banners de métricas
         'totalDebtAmount': `$${(debt.debtAmount/1000).toFixed(0)}K`,
-        'monthlyPaymentAmount': `$${monthlyPayment.toFixed(0)}`,
+        'monthlyPaymentAmount': `$${(yearlyPrincipal/12).toFixed(0)}`,
         'totalInterestPaid': `$${(debt.metrics.totalInterestPaid/1000).toFixed(0)}K`,
         'debtServiceRatio': `${debtToEquityRatio.toFixed(0)}%`,
         
         // IDs alternativos por si existen en otros lugares
         'totalDebt': `$${(debt.debtAmount/1000).toFixed(0)}K`,
-        'monthlyPayment': `$${monthlyPayment.toFixed(0)}`,
+        'monthlyPayment': `$${(yearlyPrincipal/12).toFixed(0)}`,
         'totalInterest': `$${(debt.metrics.totalInterestPaid/1000).toFixed(0)}K`,
         'effectiveRate': `${debt.metrics.effectiveRate.toFixed(1)}%`,
         'debtToEquity': `${debtToEquityRatio.toFixed(0)}%`

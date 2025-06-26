@@ -117,23 +117,55 @@ function calculateEconomicCashFlow() {
             economicFlow[year].deltaWC = revenueGrowth * 0.15; // 15% del crecimiento de ingresos
         }
         
-        // Valor residual en el último año (2030) usando CAPEX OPTIMIZADO REAL
+        // Valor residual en el último año (2030) usando fórmula del valor terminal
         economicFlow[year].residualValue = 0;
         if (year === 2030) {
-            // Calcular valor residual como % del CAPEX total optimizado REAL
-            const totalCapex = modelData.investments ? 
-                Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
-                565000; // CAPEX optimizado base como fallback
+            // Fórmula del valor terminal: TV = FCFn × (1+g) / (WACC-g)
+            const lastFCF = economicFlow[year].nopat + economicFlow[year].depreciation - 
+                           economicFlow[year].capex - economicFlow[year].deltaWC;
             
-            // Usar parámetro real de valor residual o 10% por defecto
-            const residualValuePct = modelData.depreciation?.residualValuePct || 0.1;
-            economicFlow[year].residualValue = totalCapex * residualValuePct;
+            // Parámetros para el valor terminal
+            const growthRate = 0.02; // 2% crecimiento perpetuo (conservador para vinos premium)
+            const wacc = params.wacc;
+            
+            // Calcular valor terminal
+            if (wacc > growthRate) {
+                economicFlow[year].residualValue = lastFCF * (1 + growthRate) / (wacc - growthRate);
+            } else {
+                // Fallback si WACC <= growth rate
+                console.warn('⚠️ WACC <= growth rate, usando valor residual alternativo');
+                const totalCapex = modelData.investments ? 
+                    Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+                    565000;
+                economicFlow[year].residualValue = totalCapex * 0.1; // 10% del CAPEX como fallback
+            }
+            
+            // Debug del valor terminal
+            console.log('🔍 Valor Terminal 2030 (Máxima Precisión):');
+            console.log(`  Último FCF: ${lastFCF}`);
+            console.log(`  Growth Rate: ${growthRate}`);
+            console.log(`  WACC: ${wacc}`);
+            console.log(`  Valor Terminal (precisión completa): ${economicFlow[year].residualValue}`);
+            console.log(`  Valor Terminal (formateado): $${economicFlow[year].residualValue.toFixed(0)}`);
         }
         
         // Free Cash Flow (incluyendo valor residual en 2030)
         economicFlow[year].fcf = economicFlow[year].nopat + economicFlow[year].depreciation - 
                                  economicFlow[year].capex - economicFlow[year].deltaWC +
                                  economicFlow[year].residualValue;
+        
+        // Debug adicional del FCF final
+        if (year === 2030) {
+            console.log('🔍 Verificación FCF Final 2030 (Máxima Precisión):');
+            console.log(`  NOPAT: ${economicFlow[year].nopat}`);
+            console.log(`  Depreciación: ${economicFlow[year].depreciation}`);
+            console.log(`  CAPEX: ${economicFlow[year].capex}`);
+            console.log(`  ΔWC: ${economicFlow[year].deltaWC}`);
+            console.log(`  Valor Terminal: ${economicFlow[year].residualValue}`);
+            console.log(`  Cálculo: ${economicFlow[year].nopat} + ${economicFlow[year].depreciation} - ${economicFlow[year].capex} - ${economicFlow[year].deltaWC} + ${economicFlow[year].residualValue}`);
+            console.log(`  FCF Final (precisión completa): ${economicFlow[year].fcf}`);
+            console.log(`  FCF Final (formateado): $${economicFlow[year].fcf.toFixed(0)}`);
+        }
     }
     
     // Calcular VAN y TIR
@@ -143,6 +175,20 @@ function calculateEconomicCashFlow() {
     
     const npv = calculateNPV(cashFlows, params.wacc);
     const irr = calculateIRR(cashFlows);
+    
+    // Comparar con método alternativo
+    const npvExcel = calculateNPVExcel(cashFlows, params.wacc);
+    
+    // Debug del VAN y TIR
+    console.log('🔍 Cálculo VAN y TIR Económico:');
+    console.log(`  WACC: ${(params.wacc * 100).toFixed(1)}%`);
+    console.log(`  Flujos de caja (precisión completa):`, cashFlows.map(fcf => fcf));
+    console.log(`  Flujos de caja (formateados):`, cashFlows.map(fcf => `$${fcf.toFixed(0)}`));
+    console.log(`  VAN (método principal): ${npv}`);
+    console.log(`  VAN (método Excel): ${npvExcel}`);
+    console.log(`  Diferencia: ${npv - npvExcel}`);
+    console.log(`  VAN (formateado): $${npv.toFixed(0)}`);
+    console.log(`  TIR: ${(irr * 100).toFixed(1)}%`);
     
     economicFlow.metrics = { npv, irr, wacc: params.wacc };
     
@@ -176,12 +222,29 @@ function calculateEconomicCashFlow() {
 }
 
 function calculateFinancialCashFlow() {
-
+    console.log('🔍 Iniciando cálculo flujo financiero...');
+    
+    // Verificar que el módulo de deuda esté disponible
+    if (!modelData.debt || !modelData.debt.schedule) {
+        console.warn('⚠️ Módulo de deuda no disponible, ejecutando calculateDebtStructure...');
+        if (typeof calculateDebtStructure === 'function') {
+            calculateDebtStructure();
+            console.log('✅ calculateDebtStructure ejecutado');
+        } else {
+            console.error('❌ calculateDebtStructure no disponible');
+        }
+    } else {
+        console.log('✅ Módulo de deuda ya disponible');
+        console.log('  Datos deuda:', modelData.debt);
+    }
     
     const params = getFinancialParams();
     const financialFlow = {};
     
     for (let year = 2025; year <= 2030; year++) {
+        console.log(`🔍 Procesando año ${year} - Verificación deuda:`);
+        console.log(`  modelData.debt existe:`, !!modelData.debt);
+        console.log(`  modelData.debt.schedule existe:`, !!modelData.debt?.schedule);
         // Comenzar con el flujo económico
         const economicData = modelData.economicCashFlow && modelData.economicCashFlow[year] ? 
             modelData.economicCashFlow[year] : {};
@@ -214,6 +277,11 @@ function calculateFinancialCashFlow() {
         if (modelData.debt && modelData.debt.schedule && modelData.debt.schedule[year]) {
             financialFlow[year].interestExpense = modelData.debt.schedule[year].interestPayment || 0;
             financialFlow[year].debtService = modelData.debt.schedule[year].principalPayment || 0;
+            
+            // Debug del cronograma de deuda
+            console.log(`🔍 Cronograma Deuda ${year}:`);
+            console.log(`  Intereses: $${financialFlow[year].interestExpense.toFixed(0)}`);
+            console.log(`  Principal: $${financialFlow[year].debtService.toFixed(0)}`);
         } else {
             // Fallback usando parámetros reales de deuda
             const financialParams = getFinancialParams();
@@ -223,11 +291,22 @@ function calculateFinancialCashFlow() {
                 const avgDebt = totalDebt * (1 - (year - 2025) / 5); // Asumiendo amortización lineal en 5 años
                 financialFlow[year].interestExpense = avgDebt * financialParams.interestRate;
                 financialFlow[year].debtService = totalDebt / 5; // Amortización lineal
+                
+                console.log(`⚠️ Usando fallback para deuda ${year}:`);
+                console.log(`  Intereses: $${financialFlow[year].interestExpense.toFixed(0)}`);
+                console.log(`  Principal: $${financialFlow[year].debtService.toFixed(0)}`);
             }
         }
         
         // Escudo fiscal por intereses
         financialFlow[year].taxShield = financialFlow[year].interestExpense * params.taxRate;
+        
+        // Debug del escudo fiscal
+        console.log(`🔍 Escudo Fiscal ${year}:`);
+        console.log(`  Intereses: $${financialFlow[year].interestExpense.toFixed(0)}`);
+        console.log(`  Tasa de impuestos: ${(params.taxRate * 100).toFixed(1)}%`);
+        console.log(`  Escudo fiscal: $${financialFlow[year].taxShield.toFixed(0)}`);
+        console.log(`  Verificación: $${financialFlow[year].interestExpense.toFixed(0)} × ${params.taxRate} = $${financialFlow[year].taxShield.toFixed(0)}`);
         
         // Aporte de capital (equity) en años de CAPEX
         if (modelData.capexFinancing && modelData.capexFinancing[year]) {
@@ -236,26 +315,137 @@ function calculateFinancialCashFlow() {
             financialFlow[year].equityContribution = 0;
         }
         
-        // Free Cash Flow to Equity
-        financialFlow[year].fcfe = financialFlow[year].nopat + 
-                                   financialFlow[year].depreciation + 
+        // Free Cash Flow to Equity - Usar FCF del flujo económico como base
+        const economicFCF = modelData.economicCashFlow && modelData.economicCashFlow[year] ? 
+                           modelData.economicCashFlow[year].fcf : 0;
+        
+        // Para el flujo financiero, usar FCF económico SIN valor terminal
+        let economicFCFWithoutTerminal = economicFCF;
+        if (year === 2030 && modelData.economicCashFlow && modelData.economicCashFlow[year]) {
+            // Restar el valor terminal del FCF económico para 2030
+            economicFCFWithoutTerminal = economicFCF - (modelData.economicCashFlow[year].residualValue || 0);
+        }
+        
+        // Guardar FCF económico para mostrar en tabla
+        financialFlow[year].economicFCF = economicFCFWithoutTerminal;
+        
+        // FCFE = FCF Económico (sin valor terminal) + Escudo Fiscal - Intereses - Amortización + Préstamos + Aporte Equity
+        financialFlow[year].fcfe = economicFCFWithoutTerminal + 
                                    financialFlow[year].taxShield -
-                                   financialFlow[year].capex - 
-                                   financialFlow[year].deltaWC - 
-                                   financialFlow[year].interestExpense - // Restar intereses explícitamente
-                                   financialFlow[year].debtService + // Restar amortización
-                                   financialFlow[year].debtProceeds + // Sumar ingresos por préstamo
-                                   financialFlow[year].equityContribution +
-                                   financialFlow[year].residualValue;
+                                   financialFlow[year].interestExpense - 
+                                   financialFlow[year].debtService + 
+                                   financialFlow[year].debtProceeds + 
+                                   financialFlow[year].equityContribution;
+        
+        // Guardar FCFE sin valor terminal para todos los años
+        financialFlow[year].fcfeWithoutTerminal = financialFlow[year].fcfe;
+        
+        // Debug del FCFE
+        console.log(`🔍 FCFE ${year} (Método Excel):`);
+        console.log(`  FCF Económico: $${economicFCFWithoutTerminal.toFixed(0)}`);
+        console.log(`  Escudo Fiscal: $${financialFlow[year].taxShield.toFixed(0)}`);
+        console.log(`  Intereses: -$${financialFlow[year].interestExpense.toFixed(0)}`);
+        console.log(`  Amortización: -$${financialFlow[year].debtService.toFixed(0)}`);
+        console.log(`  Préstamos: +$${financialFlow[year].debtProceeds.toFixed(0)}`);
+        console.log(`  Aporte Equity: $${financialFlow[year].equityContribution.toFixed(0)}`);
+        console.log(`  FCFE Final: $${financialFlow[year].fcfe.toFixed(0)}`);
+        
+        // Valor terminal se calculará después de todos los FCFE
+        financialFlow[year].residualValue = 0;
+    }
+    
+    // Calcular valor terminal para 2030 después de todos los FCFE
+    if (financialFlow[2030]) {
+        const lastFCFE = financialFlow[2030].fcfe; // FCFE sin valor terminal
+        const growthRate = 0.02; // 2% crecimiento perpetuo
+        const ke = params.equityCost; // Costo de equity
+        
+        // Calcular valor terminal financiero más conservador
+        if (ke > growthRate) {
+            // Usar un múltiplo más conservador o limitar el valor terminal
+            const maxTerminalMultiple = 10; // Máximo 10x el FCFE
+            const calculatedTerminal = lastFCFE * (1 + growthRate) / (ke - growthRate);
+            financialFlow[2030].residualValue = Math.min(calculatedTerminal, lastFCFE * maxTerminalMultiple);
+        } else {
+            // Fallback si Ke <= growth rate
+            console.warn('⚠️ Ke <= growth rate, usando valor residual alternativo para FCFE');
+            const totalCapex = modelData.investments ? 
+                Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+                565000;
+            financialFlow[2030].residualValue = totalCapex * 0.5; // 50% del CAPEX como fallback más conservador
+        }
+        
+        // Guardar FCFE sin valor terminal para el VAN
+        financialFlow[2030].fcfeWithoutTerminal = lastFCFE;
+        
+        // Debug del valor terminal financiero
+        console.log('🔍 Valor Terminal Financiero 2030 (Corregido):');
+        console.log(`  Último FCFE (sin valor terminal): ${lastFCFE}`);
+        console.log(`  Growth Rate: ${growthRate}`);
+        console.log(`  Ke (Costo de Equity): ${ke}`);
+        console.log(`  Cálculo paso a paso:`);
+        console.log(`    FCFE × (1+g) = ${lastFCFE} × ${(1 + growthRate).toFixed(3)} = ${(lastFCFE * (1 + growthRate)).toFixed(0)}`);
+        console.log(`    Ke - g = ${ke} - ${growthRate} = ${(ke - growthRate).toFixed(3)}`);
+        console.log(`    Valor Terminal = ${(lastFCFE * (1 + growthRate)).toFixed(0)} / ${(ke - growthRate).toFixed(3)} = ${(lastFCFE * (1 + growthRate) / (ke - growthRate)).toFixed(0)}`);
+        console.log(`  Valor Terminal FCFE (precisión completa): ${financialFlow[2030].residualValue}`);
+        console.log(`  Valor Terminal FCFE (formateado): $${financialFlow[2030].residualValue.toFixed(0)}`);
+        console.log(`  Múltiplo del FCFE: ${(financialFlow[2030].residualValue / lastFCFE).toFixed(1)}x`);
+        
+        // Agregar valor terminal al FCFE final
+        financialFlow[2030].fcfe += financialFlow[2030].residualValue;
+        
+        // Debug del FCFE final
+        console.log('🔍 Verificación FCFE Final 2030 (Corregido):');
+        console.log(`  FCFE sin valor terminal: ${lastFCFE}`);
+        console.log(`  Valor Terminal FCFE: ${financialFlow[2030].residualValue}`);
+        console.log(`  FCFE Final (precisión completa): ${financialFlow[2030].fcfe}`);
+        console.log(`  FCFE Final (formateado): $${financialFlow[2030].fcfe.toFixed(0)}`);
     }
     
     // Calcular VAN del equity y TIR del proyecto
+    // Usar SOLO flujos operativos sin valor terminal para el VAN
+    const equityCashFlowsOperational = Object.keys(financialFlow)
+        .filter(year => parseInt(year) >= 2025)
+        .map(year => {
+            // Usar FCFE sin valor terminal para todos los años
+            return financialFlow[year].fcfeWithoutTerminal || financialFlow[year].fcfe;
+        });
+    
+    // Calcular VAN de los flujos operativos SOLO
+    const equityNPVOperational = calculateNPV(equityCashFlowsOperational, params.equityCost);
+    
+    // Calcular valor presente del valor terminal por separado
+    const terminalValue = financialFlow[2030] ? financialFlow[2030].residualValue : 0;
+    const terminalPV = terminalValue / Math.pow(1 + params.equityCost, 6); // Descontar 6 períodos (2025-2030)
+    
+    // VAN total = VAN operacional + VP del valor terminal
+    const equityNPV = equityNPVOperational + terminalPV;
+    
+    // Para TIR, usar flujos completos (con valor terminal)
     const equityCashFlows = Object.keys(financialFlow)
         .filter(year => parseInt(year) >= 2025)
         .map(year => financialFlow[year].fcfe);
     
-    const equityNPV = calculateNPV(equityCashFlows, params.equityCost);
     const projectIRR = calculateIRR(equityCashFlows);
+    
+    // Comparar con método alternativo para VAN financiero
+    const equityNPVExcel = calculateNPVExcel(equityCashFlows, params.equityCost);
+    
+    // Debug del VAN financiero
+    console.log('🔍 Cálculo VAN y TIR Financiero (Completamente Corregido):');
+    console.log(`  Ke (Costo de Equity): ${(params.equityCost * 100).toFixed(1)}%`);
+    console.log(`  Flujos FCFE OPERACIONALES (sin valor terminal):`, equityCashFlowsOperational.map(fcfe => fcfe));
+    console.log(`  Flujos FCFE OPERACIONALES (formateados):`, equityCashFlowsOperational.map(fcfe => `$${fcfe.toFixed(0)}`));
+    console.log(`  VAN Operacional (solo flujos): ${equityNPVOperational.toFixed(0)}`);
+    console.log(`  Valor Terminal: ${terminalValue.toFixed(0)}`);
+    console.log(`  VP Valor Terminal: ${terminalPV.toFixed(0)}`);
+    console.log(`  VAN Total: ${equityNPV.toFixed(0)}`);
+    console.log(`  Flujos FCFE completos (con valor terminal):`, equityCashFlows.map(fcfe => fcfe));
+    console.log(`  Flujos FCFE completos (formateados):`, equityCashFlows.map(fcfe => `$${fcfe.toFixed(0)}`));
+    console.log(`  VAN Financiero (método Excel): ${equityNPVExcel}`);
+    console.log(`  Diferencia: ${equityNPV - equityNPVExcel}`);
+    console.log(`  VAN Financiero (formateado): $${equityNPV.toFixed(0)}`);
+    console.log(`  TIR Financiero: ${(projectIRR * 100).toFixed(1)}%`);
     
     financialFlow.metrics = { 
         equityNPV, 
@@ -405,14 +595,11 @@ function updateFinancialFlowTable(financialFlow) {
     headerRow.insertCell(6).innerHTML = '2030';
     
     const metrics = [
-        { key: 'nopat', label: 'NOPAT', format: 'currency' },
-        { key: 'depreciation', label: 'Depreciación', format: 'currency' },
+        { key: 'economicFCF', label: 'FCF Económico', format: 'currency', highlight: true },
         { key: 'taxShield', label: 'Escudo Fiscal', format: 'currency' },
-        { key: 'debtProceeds', label: 'Ingresos por Préstamo', format: 'currency' },
-        { key: 'capex', label: 'CAPEX', format: 'currency' },
-        { key: 'deltaWC', label: 'Δ Working Capital', format: 'currency' },
         { key: 'interestExpense', label: 'Gastos Financieros (Intereses)', format: 'currency' },
         { key: 'debtService', label: 'Amortización Capital', format: 'currency' },
+        { key: 'debtProceeds', label: 'Ingresos por Préstamo', format: 'currency' },
         { key: 'equityContribution', label: 'Aporte Equity', format: 'currency' },
         { key: 'residualValue', label: 'Valor Residual', format: 'currency', highlight: true },
         { key: 'fcfe', label: 'FCFE', format: 'currency', highlight: true }
@@ -488,9 +675,38 @@ function updateFinancialFlowTable(financialFlow) {
 
 // Funciones auxiliares para cálculos financieros
 function calculateNPV(cashFlows, discountRate) {
-    return cashFlows.reduce((npv, cf, index) => {
-        return npv + cf / Math.pow(1 + discountRate, index);
-    }, 0);
+    // Replicar exactamente el comportamiento de Excel NPV
+    // Excel NPV = CF1/(1+r)^1 + CF2/(1+r)^2 + ... + CFn/(1+r)^n
+    
+    let npv = 0;
+    for (let index = 0; index < cashFlows.length; index++) {
+        const cf = cashFlows[index];
+        const period = index + 1; // Excel usa períodos 1, 2, 3, etc.
+        const discountFactor = Math.pow(1 + discountRate, period);
+        const presentValue = cf / discountFactor;
+        npv += presentValue;
+        
+        // Debug detallado para cada flujo
+        if (index === 0) {
+            console.log('🔍 Debug NPV - Cálculo Detallado:');
+        }
+        console.log(`  Período ${period}: CF=${cf}, Factor=${discountFactor.toFixed(6)}, PV=${presentValue.toFixed(2)}, NPV acumulado=${npv.toFixed(2)}`);
+    }
+    
+    // Redondear a 2 decimales como Excel
+    return Math.round(npv * 100) / 100;
+}
+
+function calculateNPVExcel(cashFlows, discountRate) {
+    // Función alternativa que replica exactamente Excel
+    let npv = 0;
+    for (let i = 0; i < cashFlows.length; i++) {
+        const cf = cashFlows[i];
+        const period = i + 1;
+        const discountFactor = Math.pow(1 + discountRate, period);
+        npv += cf / discountFactor;
+    }
+    return npv;
 }
 
 function calculateIRR(cashFlows) {

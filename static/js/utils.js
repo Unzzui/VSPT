@@ -923,6 +923,7 @@ function createEconomicFlowSheet() {
             { key: 'nopat', label: 'NOPAT' },
             { key: 'capex', label: 'CAPEX' },
             { key: 'deltaWC', label: 'Δ Working Capital' },
+            { key: 'residualValue', label: 'Valor Terminal' },
             { key: 'fcf', label: 'Flujo Libre' }
         ];
         
@@ -935,6 +936,13 @@ function createEconomicFlowSheet() {
             }
             data.push(row);
         });
+        
+        // Información del valor terminal
+        data.push([]);
+        data.push(['INFORMACIÓN VALOR TERMINAL', '', '', '', '', '', '']);
+        data.push(['Fórmula', 'TV = FCFn × (1+g) / (WACC-g)', '', '', '', '', '']);
+        data.push(['Growth Rate (g)', '2.0%', '', '', '', '', '']);
+        data.push(['WACC', `${(modelData.economicCashFlow.metrics?.wacc || 0.08) * 100}%`, '', '', '', '', '']);
         
         // Métricas
         data.push([]);
@@ -961,7 +969,9 @@ function createFinancialFlowSheet() {
             { key: 'deltaWC', label: 'Δ Working Capital' },
             { key: 'interestExpense', label: 'Gastos Financieros (Intereses)' },
             { key: 'debtService', label: 'Amortización Capital' },
+            { key: 'debtProceeds', label: 'Ingresos por Préstamo' },
             { key: 'equityContribution', label: 'Aporte Capital' },
+            { key: 'residualValue', label: 'Valor Terminal' },
             { key: 'fcfe', label: 'Flujo al Accionista' }
         ];
         
