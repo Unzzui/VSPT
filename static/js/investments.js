@@ -3,55 +3,80 @@
 // ============================================================================
 
 function calculateProgressiveCapex() {
-    console.log('💰 Calculando CAPEX progresivo y financiamiento...');
-    
-    const params = getFinancialParams();
-    const totalCapex = 565000; // $565K optimizado total
-    
-    const investments = {
-        totalCapex: totalCapex,
-        distribution: {},
-        financing: {
-            debt: totalCapex * params.debtRatio,
-            equity: totalCapex * params.equityRatio,
-            debtRatio: params.debtRatio,
-            equityRatio: params.equityRatio
-        },
-        cumulative: {}
-    };
-    
-    let cumulativeCapex = 0;
-    
-    // Distribución por años según configuración
-    Object.keys(capexDistribution).forEach(year => {
-        const yearData = capexDistribution[year];
-        const yearlyCapex = totalCapex * yearData.pct;
-        cumulativeCapex += yearlyCapex;
+    try {
+        console.log('💰 Calculando CAPEX progresivo y financiamiento...');
         
-        investments.distribution[year] = {
-            amount: yearlyCapex,
-            percentage: yearData.pct,
-            label: yearData.label,
-            debt: yearlyCapex * params.debtRatio,
-            equity: yearlyCapex * params.equityRatio
+        const params = getFinancialParams();
+        const totalCapex = 565000; // $565K optimizado total
+        
+        console.log('📊 Parámetros financieros:', params);
+        console.log('📊 CAPEX total:', totalCapex);
+        console.log('📊 capexDistribution disponible:', typeof capexDistribution !== 'undefined');
+        console.log('📊 capexDistribution keys:', Object.keys(capexDistribution || {}));
+        
+        const investments = {
+            totalCapex: totalCapex,
+            distribution: {},
+            financing: {
+                debt: totalCapex * params.debtRatio,
+                equity: totalCapex * params.equityRatio,
+                debtRatio: params.debtRatio,
+                equityRatio: params.equityRatio
+            },
+            cumulative: {}
         };
         
-        investments.cumulative[year] = {
-            capex: cumulativeCapex,
-            debt: cumulativeCapex * params.debtRatio,
-            equity: cumulativeCapex * params.equityRatio
-        };
-    });
-    
-    updateCapexTable(investments);
-    updateFinancingMetrics(investments);
-    modelData.investments = investments;
-    
-    console.log('✅ CAPEX y financiamiento calculados:', {
-        total: `$${(totalCapex/1000).toFixed(0)}K`,
-        debt: `$${(investments.financing.debt/1000).toFixed(0)}K`,
-        equity: `$${(investments.financing.equity/1000).toFixed(0)}K`
-    });
+        let cumulativeCapex = 0;
+        
+        // Distribución por años según configuración
+        Object.keys(capexDistribution).forEach(year => {
+            const yearData = capexDistribution[year];
+            const yearlyCapex = totalCapex * yearData.pct;
+            cumulativeCapex += yearlyCapex;
+            
+            console.log(`📅 Año ${year}:`, {
+                percentage: yearData.pct,
+                yearlyCapex: yearlyCapex,
+                cumulativeCapex: cumulativeCapex
+            });
+            
+            investments.distribution[year] = {
+                amount: yearlyCapex,
+                percentage: yearData.pct,
+                label: yearData.label,
+                debt: yearlyCapex * params.debtRatio,
+                equity: yearlyCapex * params.equityRatio
+            };
+            
+            investments.cumulative[year] = {
+                capex: cumulativeCapex,
+                debt: cumulativeCapex * params.debtRatio,
+                equity: cumulativeCapex * params.equityRatio
+            };
+        });
+        
+        console.log('📊 Distribución calculada:', investments.distribution);
+        
+        updateCapexTable(investments);
+        updateFinancingMetrics(investments);
+        modelData.investments = investments;
+        
+        console.log('✅ CAPEX y financiamiento calculados:', {
+            total: `$${(totalCapex/1000).toFixed(0)}K`,
+            debt: `$${(investments.financing.debt/1000).toFixed(0)}K`,
+            equity: `$${(investments.financing.equity/1000).toFixed(0)}K`
+        });
+        
+        console.log('🔍 modelData.investments asignado:', {
+            totalCapex: modelData.investments.totalCapex,
+            distributionKeys: Object.keys(modelData.investments.distribution),
+            distribution: modelData.investments.distribution
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en calculateProgressiveCapex:', error);
+        console.error('❌ Stack trace:', error.stack);
+    }
 }
 
 function updateCapexTable(investments) {
@@ -295,3 +320,43 @@ function getAccumulatedCapex(currentYear) {
 
 // Función para exportar datos de inversiones a Excel
 // REMOVIDO: Esta función está implementada en utils.js para evitar duplicados
+
+// ============================================================================
+// FUNCIÓN DE INICIALIZACIÓN AUTOMÁTICA
+// ============================================================================
+
+// Función para inicializar automáticamente cuando el DOM esté listo
+function initializeInvestments() {
+    console.log('🚀 Inicializando módulo de inversiones...');
+    
+    // Verificar que capexDistribution esté disponible
+    if (typeof capexDistribution === 'undefined') {
+        console.error('❌ capexDistribution no está definida');
+        return;
+    }
+    
+    console.log('✅ capexDistribution disponible:', capexDistribution);
+    
+    // Calcular CAPEX progresivo
+    calculateProgressiveCapex();
+    
+    // Verificar que se haya asignado correctamente
+    if (modelData.investments) {
+        console.log('✅ modelData.investments inicializado correctamente');
+    } else {
+        console.error('❌ modelData.investments no se inicializó');
+    }
+}
+
+// Ejecutar inicialización cuando el DOM esté listo
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeInvestments);
+    } else {
+        // Si el DOM ya está listo, ejecutar inmediatamente
+        setTimeout(initializeInvestments, 100);
+    }
+}
+
+// También ejecutar cuando se carga el módulo
+setTimeout(initializeInvestments, 500);

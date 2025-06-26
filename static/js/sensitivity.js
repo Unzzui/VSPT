@@ -1015,35 +1015,56 @@ class SensitivityAnalysis {
 
     // Actualizar gráfico de barras de sensibilidad
     updateSensitivityChart() {
+        if (!this.sensitivityResults) {
+            console.warn('⚠️ No hay datos de sensibilidad disponibles para actualizar el gráfico');
+            return;
+        }
+        
         const chartItems = document.querySelectorAll('.chart-item');
-        const factorKeys = Object.keys(this.factors);
+        const factors = ['traffic', 'conversion', 'costs', 'ticket', 'exchange'];
         
         // Encontrar el impacto máximo para normalizar las barras
-        const maxImpact = Math.max(...Object.values(this.sensitivityResults).map(r => r.maxNPVImpact));
+        const maxImpact = Math.max(...Object.values(this.sensitivityResults).map(r => Math.abs(r.maxNPVImpact)));
         
-        factorKeys.forEach((factorKey, index) => {
+        factors.forEach((factor, index) => {
             if (chartItems[index]) {
-                const result = this.sensitivityResults[factorKey];
+                const sensitivity = this.sensitivityResults[factor];
+                
+                // Verificar que el factor existe
+                if (!sensitivity) {
+                    console.warn(`⚠️ Factor de sensibilidad '${factor}' no encontrado`);
+                    return;
+                }
+                
                 const chartItem = chartItems[index];
                 
                 // Actualizar nombre del factor
                 const factorName = chartItem.querySelector('.factor-name');
                 if (factorName) {
-                    factorName.textContent = this.factors[factorKey].name;
+                    factorName.textContent = this.factors[factor].name;
                 }
                 
                 // Actualizar barra
                 const barFill = chartItem.querySelector('.bar-fill');
-                if (barFill && result) {
-                    const percentage = (result.maxNPVImpact / maxImpact) * 100;
+                if (barFill) {
+                    const percentage = (Math.abs(sensitivity.maxNPVImpact) / maxImpact) * 100;
                     barFill.style.width = `${percentage}%`;
-                    barFill.className = `bar-fill ${result.impactLevel}`;
+                    
+                    // Actualizar color según nivel de impacto
+                    barFill.className = `bar-fill bg-gradient-to-r ${
+                        sensitivity.impactLevel === 'high' ? 'from-red-400 to-red-600' :
+                        sensitivity.impactLevel === 'medium' ? 'from-orange-400 to-orange-600' : 'from-green-400 to-green-600'
+                    } h-full rounded-full`;
                 }
                 
                 // Actualizar valor de impacto
                 const impactValue = chartItem.querySelector('.impact-value');
-                if (impactValue && result) {
-                    impactValue.textContent = `±$${result.maxNPVImpact.toFixed(1)}M`;
+                if (impactValue) {
+                    impactValue.textContent = `±$${(Math.abs(sensitivity.maxNPVImpact)/1000000).toFixed(1)}M`;
+                    impactValue.className = `impact-value font-bold w-20 text-right ${
+                        sensitivity.impactLevel === 'high' ? 'text-red-600' :
+                        sensitivity.impactLevel === 'medium' ? 'text-orange-600' : 'text-green-600'
+                    }`;
                 }
             }
         });
@@ -1234,7 +1255,6 @@ function updateKeyFactorsDisplay() {
     updateFactorCard('ticket', sensitivities.ticket);
     updateFactorCard('costs', sensitivities.costs);
     updateFactorCard('exchange', sensitivities.exchange);
-    updateFactorCard('expansion', sensitivities.expansion);
     
     // Actualizar gráfico de barras de sensibilidad
     updateSensitivityChart(sensitivities);
@@ -1341,8 +1361,6 @@ function calculateRealSensitivities(baseMetrics) {
         drivers: ['USD/CLP', 'Hedging', 'FX Exposure']
     };
     
-
-    
     return sensitivities;
 }
 
@@ -1396,16 +1414,6 @@ function calculateExchangeImpact(baseMetrics, variation) {
     return { npvChange, revenueChange, ebitdaChange };
 }
 
-function calculateExpansionImpact(baseMetrics, variation) {
-    // Impacto en revenue por expansión de mercados
-    const expansionRevenue = baseMetrics.revenue2030 * 0.35; // Revenue de mercados nuevos
-    const revenueChange = expansionRevenue * variation;
-    const ebitdaChange = revenueChange * 0.5; // Menor margen en mercados nuevos
-    const npvChange = ebitdaChange * 3;
-    
-    return { npvChange, revenueChange, ebitdaChange };
-}
-
 // Clasificar nivel de impacto
 function classifyImpactLevel(npvImpact) {
     if (Math.abs(npvImpact) >= 2000000) return 'high'; // ±$2M o más
@@ -1423,8 +1431,7 @@ function updateFactorCard(factorType, sensitivity) {
         'conversion': 1,
         'ticket': 2,
         'costs': 3,
-        'exchange': 4,
-        'expansion': 5
+        'exchange': 4
     };
     
     const cardIndex = cardIndexMap[factorType];
@@ -1458,8 +1465,13 @@ function updateFactorCard(factorType, sensitivity) {
 
 // Actualizar gráfico de barras de sensibilidad
 function updateSensitivityChart(sensitivities) {
+    if (!sensitivities) {
+        console.warn('⚠️ No hay datos de sensibilidad disponibles para actualizar el gráfico');
+        return;
+    }
+    
     const chartItems = document.querySelectorAll('.chart-item');
-    const factors = ['traffic', 'conversion', 'costs', 'ticket', 'exchange', 'expansion'];
+    const factors = ['traffic', 'conversion', 'costs', 'ticket', 'exchange'];
     
     // Encontrar el impacto máximo para normalizar las barras
     const maxImpact = Math.max(...Object.values(sensitivities).map(s => Math.abs(s.npvImpact)));
@@ -1467,6 +1479,13 @@ function updateSensitivityChart(sensitivities) {
     factors.forEach((factor, index) => {
         if (chartItems[index]) {
             const sensitivity = sensitivities[factor];
+            
+            // Verificar que el factor existe
+            if (!sensitivity) {
+                console.warn(`⚠️ Factor de sensibilidad '${factor}' no encontrado`);
+                return;
+            }
+            
             const chartItem = chartItems[index];
             
             // Actualizar nombre del factor

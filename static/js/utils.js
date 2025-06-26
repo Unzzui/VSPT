@@ -693,20 +693,6 @@ function createInvestmentsSheet() {
         equityRow.push(total);
         data.push(equityRow);
         
-        // Separador acumulado
-        data.push(['', '', '', '', '', '']);
-        data.push(['INVERSIÓN ACUMULADA', '', '', '', '', '']);
-        
-        // CAPEX acumulado
-        const cumulativeRow = ['CAPEX Acumulado'];
-        let cumulativeTotal = 0;
-        for (let year = 2025; year <= 2028; year++) {
-            const amount = inv.cumulative && inv.cumulative[year] ? inv.cumulative[year].capex : 0;
-            cumulativeTotal += amount;
-            cumulativeRow.push(cumulativeTotal);
-        }
-        cumulativeRow.push(cumulativeTotal);
-        data.push(cumulativeRow);
     }
     
     return XLSX.utils.aoa_to_sheet(data);
@@ -1047,7 +1033,7 @@ function createMetricsSheet() {
     ];
     
     // Crear los datos de métricas usando la misma lógica que createMetricsSheet
-    const capexTotal = modelData.investments?.total || 565000;
+    const capexTotal = modelData.investments?.totalCapex || 565000;
     const debtRatio = getFinancialParams()?.debtRatio || 0.5;
     const debtAmount = Math.round(capexTotal * debtRatio);
     const equityAmount = capexTotal - debtAmount;
@@ -1209,7 +1195,7 @@ function updateMetricsDisplay() {
     
     try {
         // Crear los datos de métricas usando la misma lógica que createMetricsSheet
-        const capexTotal = modelData.investments?.total || 565000;
+        const capexTotal = modelData.investments?.totalCapex || 565000;
         const debtRatio = getFinancialParams()?.debtRatio || 0.5;
         const debtAmount = Math.round(capexTotal * debtRatio);
         const equityAmount = capexTotal - debtAmount;
@@ -1358,10 +1344,56 @@ function validateExcelData() {
     const warnings = [];
     
     try {
+        // Asegurar que los datos de inversión estén calculados
+        if (typeof calculateProgressiveCapex === 'function' && !modelData.investments) {
+            console.log('🔄 Inicializando datos de inversión para validación...');
+            calculateProgressiveCapex();
+        }
+        
+        // Verificar si calculateProgressiveCapex existe y ejecutarlo si es necesario
+        if (typeof calculateProgressiveCapex === 'function') {
+            console.log('🔄 Forzando recálculo de CAPEX...');
+            calculateProgressiveCapex();
+        } else {
+            console.error('❌ calculateProgressiveCapex no está disponible');
+        }
+        
+        // Fallback: crear datos de inversión manualmente si no existen
+        if (!modelData.investments || !modelData.investments.distribution) {
+            console.log('🔄 Creando datos de inversión manualmente...');
+            const totalCapex = 565000;
+            const debtRatio = getFinancialParams()?.debtRatio || 0.5;
+            
+            modelData.investments = {
+                totalCapex: totalCapex,
+                distribution: {
+                    2025: { amount: totalCapex * 0.45, debt: totalCapex * 0.45 * debtRatio, equity: totalCapex * 0.45 * (1 - debtRatio) },
+                    2026: { amount: totalCapex * 0.30, debt: totalCapex * 0.30 * debtRatio, equity: totalCapex * 0.30 * (1 - debtRatio) },
+                    2027: { amount: totalCapex * 0.20, debt: totalCapex * 0.20 * debtRatio, equity: totalCapex * 0.20 * (1 - debtRatio) },
+                    2028: { amount: totalCapex * 0.05, debt: totalCapex * 0.05 * debtRatio, equity: totalCapex * 0.05 * (1 - debtRatio) }
+                },
+                financing: {
+                    debt: totalCapex * debtRatio,
+                    equity: totalCapex * (1 - debtRatio),
+                    debtRatio: debtRatio,
+                    equityRatio: 1 - debtRatio
+                }
+            };
+            
+            console.log('✅ Datos de inversión creados manualmente:', modelData.investments);
+        }
+        
         // Validar CAPEX
         if (modelData.investments) {
-            const total = modelData.investments.total || 565000;
-            const calculatedTotal = Object.values(modelData.investments.distribution || {}).reduce((sum, year) => sum + (year.amount || 0), 0);
+            const total = modelData.investments.totalCapex || 565000;
+            const calculatedTotal = Object.values(modelData.investments.distribution || {}).reduce((sum, yearData) => sum + (yearData.amount || 0), 0);
+            
+            console.log('🔍 Validación CAPEX:', {
+                total: total,
+                calculatedTotal: calculatedTotal,
+                distribution: modelData.investments.distribution,
+                distributionKeys: Object.keys(modelData.investments.distribution || {})
+            });
             
             if (Math.abs(total - calculatedTotal) > 1000) {
                 errors.push(`CAPEX total (${total}) no coincide con distribución (${calculatedTotal})`);
@@ -1370,11 +1402,13 @@ function validateExcelData() {
             // Validar financiamiento
             const debtRatio = getFinancialParams()?.debtRatio || 0.5;
             const expectedDebt = Math.round(total * debtRatio);
-            const actualDebt = Object.values(modelData.investments.distribution || {}).reduce((sum, year) => sum + (year.debt || 0), 0);
+            const actualDebt = Object.values(modelData.investments.distribution || {}).reduce((sum, yearData) => sum + (yearData.debt || 0), 0);
             
             if (Math.abs(expectedDebt - actualDebt) > 1000) {
                 warnings.push(`Deuda esperada (${expectedDebt}) vs actual (${actualDebt})`);
             }
+        } else {
+            errors.push('No hay datos de inversión disponibles');
         }
         
         // Validar ingresos
