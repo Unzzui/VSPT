@@ -604,6 +604,7 @@ if (typeof window !== 'undefined') {
     window.getSensitivityData = getSensitivityData;
     window.debugSensitivity = debugSensitivity;
     window.testSensitivityLogic = testSensitivityLogic;
+    window.updateKeyFactorsDisplay = updateKeyFactorsDisplay;
 }
 
 // Ejecutar análisis inicial cuando se carga el módulo
@@ -613,6 +614,13 @@ if (typeof window !== 'undefined') {
         if (typeof modelData !== 'undefined' && document.getElementById('sensibilidadBody')) {
             updateSensitivity();
         }
+        
+        // Actualizar factores clave cuando estén disponibles los datos del modelo
+        setTimeout(() => {
+            if (typeof modelData !== 'undefined' && modelData.economicCashFlow) {
+                updateKeyFactorsDisplay();
+            }
+        }, 2000); // Esperar un poco más para que se calculen los flujos de caja
     }, 1000);
 }
 
@@ -1203,4 +1211,302 @@ function updateBaseParametersDisplay() {
     } catch (error) {
         console.error('❌ Error actualizando parámetros base:', error);
     }
+}
+
+// Función para actualizar dinámicamente los Factores Clave que Impactan los Flujos de Caja
+function updateKeyFactorsDisplay() {
+    console.log('🎯 Actualizando Factores Clave con datos reales...');
+    
+    // Obtener datos reales del modelo
+    const baseMetrics = getBaseMetricsFromModel();
+    
+    if (!baseMetrics) {
+        console.warn('⚠️ No hay datos del modelo disponibles para calcular factores clave');
+        return;
+    }
+    
+    // Calcular sensibilidades reales para cada factor
+    const sensitivities = calculateRealSensitivities(baseMetrics);
+    
+    // Actualizar cada tarjeta de factor
+    updateFactorCard('traffic', sensitivities.traffic);
+    updateFactorCard('conversion', sensitivities.conversion);
+    updateFactorCard('ticket', sensitivities.ticket);
+    updateFactorCard('costs', sensitivities.costs);
+    updateFactorCard('exchange', sensitivities.exchange);
+    updateFactorCard('expansion', sensitivities.expansion);
+    
+    // Actualizar gráfico de barras de sensibilidad
+    updateSensitivityChart(sensitivities);
+    
+    console.log('✅ Factores Clave actualizados con datos reales:', sensitivities);
+}
+
+// Obtener métricas base del modelo
+function getBaseMetricsFromModel() {
+    if (!modelData.economicCashFlow || !modelData.economicCashFlow.metrics) {
+        return null;
+    }
+    
+    const economicFlow = modelData.economicCashFlow;
+    const financialFlow = modelData.financialCashFlow;
+    
+    // Calcular revenue 2030
+    let revenue2030 = 0;
+    if (modelData.revenues && modelData.revenues[2030]) {
+        revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+            return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
+        }, 0);
+    }
+    
+    // Calcular EBITDA 2030
+    let ebitda2030 = 0;
+    if (economicFlow[2030]) {
+        ebitda2030 = economicFlow[2030].ebitda || 0;
+    }
+    
+    return {
+        economicNPV: economicFlow.metrics.npv || 0,
+        financialNPV: financialFlow?.metrics?.equityNPV || 0,
+        economicIRR: (economicFlow.metrics.irr || 0) * 100,
+        financialIRR: (financialFlow?.metrics?.projectIRR || 0) * 100,
+        revenue2030: revenue2030,
+        ebitda2030: ebitda2030,
+        totalCapex: modelData.investments ? 
+            Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 565000
+    };
+}
+
+// Calcular sensibilidades reales
+function calculateRealSensitivities(baseMetrics) {
+    const sensitivities = {};
+    
+    // Factor 1: Tráfico Web (±50% → impacto en VAN)
+    const trafficVariation = 0.5; // ±50%
+    const trafficImpact = calculateTrafficImpact(baseMetrics, trafficVariation);
+    sensitivities.traffic = {
+        name: 'Tráfico Web',
+        variation: '±50%',
+        npvImpact: trafficImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(trafficImpact.npvChange)),
+        description: 'Base del modelo de ingresos con crecimiento decreciente. Variaciones significativas impactan directamente el revenue y FCF.',
+        drivers: ['SEO/SEM', 'Marketing Digital', 'Expansión Geográfica']
+    };
+    
+    // Factor 2: Tasa de Conversión (±40% → impacto en VAN)
+    const conversionVariation = 0.4; // ±40%
+    const conversionImpact = calculateConversionImpact(baseMetrics, conversionVariation);
+    sensitivities.conversion = {
+        name: 'Tasa de Conversión',
+        variation: '±40%',
+        npvImpact: conversionImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(conversionImpact.npvChange)),
+        description: 'Eficiencia de conversión con mejora decreciente anual. Crítico para la rentabilidad del modelo.',
+        drivers: ['UX/UI', 'Pricing', 'Trust & Security']
+    };
+    
+    // Factor 3: Ticket Promedio (±15% → impacto en VAN)
+    const ticketVariation = 0.15; // ±15%
+    const ticketImpact = calculateTicketImpact(baseMetrics, ticketVariation);
+    sensitivities.ticket = {
+        name: 'Ticket Promedio',
+        variation: '±15%',
+        npvImpact: ticketImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(ticketImpact.npvChange)),
+        description: 'Valor promedio por transacción. Influenciado por mix de productos y estrategia de precios premium.',
+        drivers: ['Mix Productos', 'Upselling', 'Premium Wines']
+    };
+    
+    // Factor 4: Costos Operativos (±20% → impacto en VAN)
+    const costsVariation = 0.2; // ±20%
+    const costsImpact = calculateCostsImpact(baseMetrics, costsVariation);
+    sensitivities.costs = {
+        name: 'Costos Operativos',
+        variation: '±20%',
+        npvImpact: costsImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(costsImpact.npvChange)),
+        description: 'Costos variables y fijos operacionales. Control crítico para mantener márgenes y rentabilidad.',
+        drivers: ['Logística', 'Personal', 'Marketing']
+    };
+    
+    // Factor 5: Tipo de Cambio (±10% → impacto en VAN)
+    const exchangeVariation = 0.1; // ±10%
+    const exchangeImpact = calculateExchangeImpact(baseMetrics, exchangeVariation);
+    sensitivities.exchange = {
+        name: 'Tipo de Cambio',
+        variation: '±10%',
+        npvImpact: exchangeImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(exchangeImpact.npvChange)),
+        description: 'Fluctuaciones cambiarias afectan ingresos en mercados internacionales y costos de importación.',
+        drivers: ['USD/CLP', 'Hedging', 'FX Exposure']
+    };
+    
+    // Factor 6: Velocidad de Expansión (±25% → impacto en VAN)
+    const expansionVariation = 0.25; // ±25%
+    const expansionImpact = calculateExpansionImpact(baseMetrics, expansionVariation);
+    sensitivities.expansion = {
+        name: 'Velocidad de Expansión',
+        variation: '±25%',
+        npvImpact: expansionImpact.npvChange,
+        impactLevel: classifyImpactLevel(Math.abs(expansionImpact.npvChange)),
+        description: 'Ritmo de penetración en nuevos mercados. Solo Chile en 2025, expansión completa desde 2026.',
+        drivers: ['Market Entry', 'Regulatory', 'Investment']
+    };
+    
+    return sensitivities;
+}
+
+// Funciones de cálculo de impacto para cada factor
+function calculateTrafficImpact(baseMetrics, variation) {
+    // Impacto en revenue = variación directa
+    const revenueChange = baseMetrics.revenue2030 * variation;
+    // Impacto en EBITDA = 70% del cambio en revenue (asumiendo costos variables)
+    const ebitdaChange = revenueChange * 0.7;
+    // Impacto en VAN = múltiplo de EBITDA (conservador: 3x)
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, revenueChange, ebitdaChange };
+}
+
+function calculateConversionImpact(baseMetrics, variation) {
+    // Similar al tráfico pero con menor impacto en costos
+    const revenueChange = baseMetrics.revenue2030 * variation;
+    const ebitdaChange = revenueChange * 0.75; // Menos costos variables
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, revenueChange, ebitdaChange };
+}
+
+function calculateTicketImpact(baseMetrics, variation) {
+    // Impacto directo en revenue
+    const revenueChange = baseMetrics.revenue2030 * variation;
+    const ebitdaChange = revenueChange * 0.8; // Mayor margen
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, revenueChange, ebitdaChange };
+}
+
+function calculateCostsImpact(baseMetrics, variation) {
+    // Impacto directo en EBITDA
+    const costBase = baseMetrics.revenue2030 - baseMetrics.ebitda2030;
+    const costChange = costBase * variation;
+    const ebitdaChange = -costChange; // Costos suben, EBITDA baja
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, costChange, ebitdaChange };
+}
+
+function calculateExchangeImpact(baseMetrics, variation) {
+    // Impacto en revenue internacional (35% del total)
+    const internationalRevenue = baseMetrics.revenue2030 * 0.35;
+    const revenueChange = internationalRevenue * variation;
+    const ebitdaChange = revenueChange * 0.6; // Menor impacto por costos en USD
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, revenueChange, ebitdaChange };
+}
+
+function calculateExpansionImpact(baseMetrics, variation) {
+    // Impacto en revenue por expansión de mercados
+    const expansionRevenue = baseMetrics.revenue2030 * 0.35; // Revenue de mercados nuevos
+    const revenueChange = expansionRevenue * variation;
+    const ebitdaChange = revenueChange * 0.5; // Menor margen en mercados nuevos
+    const npvChange = ebitdaChange * 3;
+    
+    return { npvChange, revenueChange, ebitdaChange };
+}
+
+// Clasificar nivel de impacto
+function classifyImpactLevel(npvImpact) {
+    if (Math.abs(npvImpact) >= 2000000) return 'high'; // ±$2M o más
+    if (Math.abs(npvImpact) >= 1000000) return 'medium'; // ±$1M a $2M
+    return 'low'; // Menos de ±$1M
+}
+
+// Actualizar tarjeta de factor individual
+function updateFactorCard(factorType, sensitivity) {
+    const factorCards = document.querySelectorAll('.factor-card');
+    
+    // Mapear factorType a índice de tarjeta
+    const cardIndexMap = {
+        'traffic': 0,
+        'conversion': 1,
+        'ticket': 2,
+        'costs': 3,
+        'exchange': 4,
+        'expansion': 5
+    };
+    
+    const cardIndex = cardIndexMap[factorType];
+    if (cardIndex >= factorCards.length) return;
+    
+    const card = factorCards[cardIndex];
+    
+    // Actualizar métrica de sensibilidad
+    const metricElement = card.querySelector('.factor-metric .text-lg');
+    if (metricElement) {
+        metricElement.textContent = `${sensitivity.variation} → ±$${(Math.abs(sensitivity.npvImpact)/1000000).toFixed(1)}M`;
+    }
+    
+    // Actualizar nivel de impacto
+    const impactBadge = card.querySelector('.bg-red-500, .bg-yellow-500, .bg-green-500');
+    if (impactBadge) {
+        impactBadge.className = `text-white text-xs font-semibold px-3 py-1 rounded-full ${
+            sensitivity.impactLevel === 'high' ? 'bg-red-500' :
+            sensitivity.impactLevel === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+        }`;
+        impactBadge.textContent = `Impacto ${sensitivity.impactLevel === 'high' ? 'Alto' : 
+                                      sensitivity.impactLevel === 'medium' ? 'Medio' : 'Bajo'}`;
+    }
+    
+    // Actualizar descripción
+    const descriptionElement = card.querySelector('.factor-description');
+    if (descriptionElement) {
+        descriptionElement.textContent = sensitivity.description;
+    }
+}
+
+// Actualizar gráfico de barras de sensibilidad
+function updateSensitivityChart(sensitivities) {
+    const chartItems = document.querySelectorAll('.chart-item');
+    const factors = ['traffic', 'conversion', 'costs', 'ticket', 'exchange', 'expansion'];
+    
+    // Encontrar el impacto máximo para normalizar las barras
+    const maxImpact = Math.max(...Object.values(sensitivities).map(s => Math.abs(s.npvImpact)));
+    
+    factors.forEach((factor, index) => {
+        if (chartItems[index]) {
+            const sensitivity = sensitivities[factor];
+            const chartItem = chartItems[index];
+            
+            // Actualizar nombre del factor
+            const factorName = chartItem.querySelector('.factor-name');
+            if (factorName) {
+                factorName.textContent = sensitivity.name;
+            }
+            
+            // Actualizar barra
+            const barFill = chartItem.querySelector('.bar-fill');
+            if (barFill) {
+                const percentage = (Math.abs(sensitivity.npvImpact) / maxImpact) * 100;
+                barFill.style.width = `${percentage}%`;
+                
+                // Actualizar color según nivel de impacto
+                barFill.className = `bar-fill bg-gradient-to-r ${
+                    sensitivity.impactLevel === 'high' ? 'from-red-400 to-red-600' :
+                    sensitivity.impactLevel === 'medium' ? 'from-orange-400 to-orange-600' : 'from-green-400 to-green-600'
+                } h-full rounded-full`;
+            }
+            
+            // Actualizar valor de impacto
+            const impactValue = chartItem.querySelector('.impact-value');
+            if (impactValue) {
+                impactValue.textContent = `±$${(Math.abs(sensitivity.npvImpact)/1000000).toFixed(1)}M`;
+                impactValue.className = `impact-value font-bold w-20 text-right ${
+                    sensitivity.impactLevel === 'high' ? 'text-red-600' :
+                    sensitivity.impactLevel === 'medium' ? 'text-orange-600' : 'text-green-600'
+                }`;
+            }
+        }
+    });
 }

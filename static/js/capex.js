@@ -4,45 +4,35 @@
 // Reducciones: Warehouses ($25K), Expansión Internacional ($40K), Inventario Adicional ($1K)
 
 function calculateOptimizedCapex() {
-    // Obtener parámetros de inventario
-    const bottlesPerContainer = parseInt(document.getElementById('bottlesPerContainer')?.value || 1200);
-    const containerCost = parseInt(document.getElementById('containerCost')?.value || 8500);
-    const initialStock = parseInt(document.getElementById('initialStock')?.value || 3);
-    
-    // Calcular inventario inicial basado en stock requerido
-    const totalBottlesNeeded = initialStock * 1000; // Stock en miles de botellas
-    const containersNeeded = Math.ceil(totalBottlesNeeded / bottlesPerContainer);
-    const inventoryInvestment = containersNeeded * containerCost;
+    console.log('🏗️ Calculando CAPEX optimizado...');
     
     // CAPEX OPTIMIZADO - Reducido 29.4% vs original (eliminando Brasil, Canadá, USA)
     const optimizedCapex = 565000; // CAPEX optimizado total (era 800K)
     
     const progressiveCapex = {
         2025: {
-            'Digital Platform Core': 120000,
-            'Web Development Base': 80000,
-            'SEO/SEM Setup': 35000,
-            'Mexico Setup & Certifications': 60000,
-            'Legal & Compliance Base': 20000,
-            'Initial Inventory Mexico': inventoryInvestment * 0.67, // Solo México ahora
-            total: 300000 + inventoryInvestment * 0.67 // 53% del CAPEX optimizado
+            'Plataforma Digital Core': 120000,
+            'Desarrollo Web Base': 80000,
+            'Configuración SEO/SEM': 35000,
+            'Setup México y Certificaciones': 60000,
+            'Base Legal y Compliance': 20000,
+            total: 315000 // 53% del CAPEX optimizado
         },
         2026: {
-            'International Expansion (Reducido)': 40000, // Reducido de 80K
-            'Mexico Market Expansion': 55000,
-            'Warehouses Development (Reducido)': 25000, // Reducido de 50K
-            'Platform Enhancements': 20000,
-            'Mexico Additional Inventory': inventoryInvestment * 0.33,
-            total: 140000 + inventoryInvestment * 0.33 // 25% del CAPEX optimizado
+            'Expansión Internacional': 40000, // Reducido de 80K
+            'Expansión Mercado México': 55000,
+            'Desarrollo Almacenes (Reducido)': 25000, // Reducido de 50K
+            'Mejoras de Plataforma': 20000,
+            total: 140000 // 25% del CAPEX optimizado
         },
         2027: {
-            'Technology Upgrades': 60000,
-            'Platform Optimization': 40000,
+            'Upgrades Tecnológicos': 60000,
+            'Optimización de Plataforma': 40000,
             total: 100000 // 18% del CAPEX optimizado
         },
         2028: {
-            'Final Optimizations': 15000,
-            'Contingency & Adjustments': 10000,
+            'Optimizaciones Finales': 15000,
+            'Contingencia y Ajustes': 10000,
             total: 25000 // 4% del CAPEX optimizado
         }
     };
@@ -61,7 +51,7 @@ function calculateOptimizedCapex() {
     });
 
     // Actualizar métricas en el UI
-    updateOptimizedCapexMetrics(progressiveCapex, capexFinancing, inventoryInvestment);
+    updateOptimizedCapexMetrics(progressiveCapex, capexFinancing);
     updateOptimizedCapexTable(progressiveCapex, capexFinancing);
     
     // Asegurar que modelData existe
@@ -75,15 +65,10 @@ function calculateOptimizedCapex() {
     // Calcular total CAPEX para el log
     const totalCapex = Object.values(progressiveCapex).reduce((sum, year) => sum + year.total, 0);
     
-    console.log('✅ CAPEX Optimizado calculado:', {
-        'Total CAPEX': `$${(totalCapex/1000).toFixed(0)}K`,
-        'Ahorro vs Original': `$${((800000 - totalCapex)/1000).toFixed(0)}K (-${((800000 - totalCapex)/800000*100).toFixed(1)}%)`,
-        'Distribución': '2025: 53% | 2026: 25% | 2027: 18% | 2028: 4%',
-        'Scope': 'Solo Chile + México (Brasil, Canadá, USA eliminados)'
-    });
+
 }
 
-function updateOptimizedCapexMetrics(capex, financing, inventoryInvestment) {
+function updateOptimizedCapexMetrics(capex, financing) {
     const totalCapex = Object.values(capex).reduce((sum, year) => sum + year.total, 0);
     const totalDebt = Object.values(financing).reduce((sum, year) => sum + year.debt, 0);
     const totalEquity = Object.values(financing).reduce((sum, year) => sum + year.equity, 0);
@@ -103,11 +88,6 @@ function updateOptimizedCapexMetrics(capex, financing, inventoryInvestment) {
     if (totalEquityElement) {
         totalEquityElement.innerHTML = `$${(totalEquity/1000).toFixed(0)}K`;
     }
-    
-    const inventoryElement = document.getElementById('inventoryInvestment');
-    if (inventoryElement) {
-        inventoryElement.innerHTML = `$${(inventoryInvestment/1000).toFixed(0)}K`;
-    }
 }
 
 function updateOptimizedCapexTable(capex, financing) {
@@ -122,7 +102,7 @@ function updateOptimizedCapexTable(capex, financing) {
     // Encabezados para mostrar la distribución anual optimizada
     const headerRow = tbody.insertRow();
     headerRow.className = 'category-header';
-    headerRow.insertCell(0).innerHTML = 'CAPEX OPTIMIZADO (-29.4%)';
+    headerRow.insertCell(0).innerHTML = 'CAPEX';
     headerRow.insertCell(1).innerHTML = '2025 (53%)';
     headerRow.insertCell(2).innerHTML = '2026 (25%)';
     headerRow.insertCell(3).innerHTML = '2027 (18%)';

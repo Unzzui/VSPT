@@ -5,8 +5,8 @@
 function calculateProgressiveCapex() {
     console.log('💰 Calculando CAPEX progresivo y financiamiento...');
     
-    const totalCapex = 800000; // $800K total
     const params = getFinancialParams();
+    const totalCapex = 565000; // $565K optimizado total
     
     const investments = {
         totalCapex: totalCapex,
@@ -73,39 +73,31 @@ function updateCapexTable(investments) {
     headerRow.insertCell(4).innerHTML = '2028 (5%)';
     headerRow.insertCell(5).innerHTML = 'TOTAL';
     
-    // Obtener parámetros de inventario
-    const inventoryParams = getInventoryParams();
-    const totalBottlesNeeded = inventoryParams.initialStockMonths * 1000;
-    const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer);
-    const inventoryInvestment = containersNeeded * inventoryParams.containerCost;
-    
-    // Desglose detallado del CAPEX por componentes
+    // Desglose detallado del CAPEX por componentes (SIN inventario - va en Working Capital)
     const capexComponents = {
         2025: {
             'Plataforma Digital Core': 120000,
             'Desarrollo Web Base': 80000,
-            'SEO/SEM Setup': 35000,
-            'Setup México + Certificaciones': 60000,
+            'Configuración SEO/SEM': 35000,
+            'Setup México y Certificaciones': 60000,
             'Setup Brasil Inicial': 45000,
-            'Legal & Compliance Base': 20000,
-            'Inventario Inicial (50%)': inventoryInvestment * 0.5
+            'Base Legal y Compliance': 20000
         },
         2026: {
             'Expansión Internacional': 80000,
             'Setup Mercado Canadá': 50000,
             'Setup Mercado USA': 60000,
-            'Desarrollo Warehouses': 50000,
-            'Inventario Adicional (50%)': inventoryInvestment * 0.5
+            'Desarrollo Almacenes': 50000
         },
         2027: {
             'Upgrades Tecnológicos': 60000,
-            'Optimización Plataforma': 40000,
-            'Prep Países Adicionales': 35000,
-            'Scaling Infrastructure': 25000
+            'Optimización de Plataforma': 40000,
+            'Preparación Países Adicionales': 35000,
+            'Infraestructura de Escalamiento': 25000
         },
         2028: {
             'Optimizaciones Finales': 25000,
-            'Contingencia & Ajustes': 15000
+            'Contingencia y Ajustes': 15000
         }
     };
     
@@ -137,9 +129,7 @@ function updateCapexTable(investments) {
             cell.innerHTML = amount > 0 ? `$${(amount/1000).toFixed(0)}K` : '-';
             if (amount > 0) {
                 cell.style.fontWeight = 'bold';
-                if (component.includes('Inventario')) {
-                    cell.style.color = '#6f42c1';
-                } else if (component.includes('Setup') || component.includes('Expansión')) {
+                if (component.includes('Setup') || component.includes('Expansión')) {
                     cell.style.color = '#007bff';
                 } else if (component.includes('Digital') || component.includes('Tecnológicos')) {
                     cell.style.color = '#28a745';
@@ -319,7 +309,7 @@ function getAccumulatedCapex(currentYear) {
     for (let year = 2025; year <= currentYear; year++) {
         const capexData = capexDistribution[year];
         if (capexData) {
-            accumulated += 800000 * capexData.pct;
+            accumulated += 565000 * capexData.pct;
         }
     }
     return accumulated;
@@ -339,33 +329,31 @@ function createInvestmentsSheet() {
     const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer);
     const inventoryInvestment = containersNeeded * inventoryParams.containerCost;
     
-    // Desglose detallado del CAPEX por componentes
+    // Desglose detallado del CAPEX por componentes (SIN inventario - va en Working Capital)
     const capexComponents = {
         2025: {
             'Plataforma Digital Core': 120000,
             'Desarrollo Web Base': 80000,
-            'SEO/SEM Setup': 35000,
-            'Setup México + Certificaciones': 60000,
+            'Configuración SEO/SEM': 35000,
+            'Setup México y Certificaciones': 60000,
             'Setup Brasil Inicial': 45000,
-            'Legal & Compliance Base': 20000,
-            'Inventario Inicial (50%)': inventoryInvestment * 0.5
+            'Base Legal y Compliance': 20000
         },
         2026: {
             'Expansión Internacional': 80000,
             'Setup Mercado Canadá': 50000,
             'Setup Mercado USA': 60000,
-            'Desarrollo Warehouses': 50000,
-            'Inventario Adicional (50%)': inventoryInvestment * 0.5
+            'Desarrollo Almacenes': 50000
         },
         2027: {
             'Upgrades Tecnológicos': 60000,
-            'Optimización Plataforma': 40000,
-            'Prep Países Adicionales': 35000,
-            'Scaling Infrastructure': 25000
+            'Optimización de Plataforma': 40000,
+            'Preparación Países Adicionales': 35000,
+            'Infraestructura de Escalamiento': 25000
         },
         2028: {
             'Optimizaciones Finales': 25000,
-            'Contingencia & Ajustes': 15000
+            'Contingencia y Ajustes': 15000
         }
     };
     

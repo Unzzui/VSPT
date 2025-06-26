@@ -49,7 +49,7 @@ const defaultFinancialParams = {
     depreciationYears: 5
 };
 
-// Distribución de CAPEX por años (total $800K)
+// Distribución de CAPEX por años (total $565K optimizado)
 const capexDistribution = {
     2025: { pct: 0.45, label: '45%' }, 
     2026: { pct: 0.30, label: '30%' }, 
@@ -95,15 +95,16 @@ function getInventoryParams() {
     const containerCostElement = document.getElementById('containerCost');
     const initialStockElement = document.getElementById('initialStock');
     
-    const bottlesPerContainer = bottlesPerContainerElement ? parseInt(bottlesPerContainerElement.value) : 1200;
-    const containerCost = containerCostElement ? parseInt(containerCostElement.value) : 8500;
-    const initialStockMonths = initialStockElement ? parseInt(initialStockElement.value) : 3;
+    // Valores por defecto REALISTAS para vinos
+    const bottlesPerContainer = bottlesPerContainerElement ? parseInt(bottlesPerContainerElement.value) : 12000; // 12,000 botellas/contenedor (realista)
+    const containerCost = containerCostElement ? parseInt(containerCostElement.value) : 5000; // $5,000 USD/contenedor (realista)
+    const initialStockMonths = initialStockElement ? parseInt(initialStockElement.value) : 6; // 6 meses de stock inicial (realista)
     
     // Validación para evitar NaN
     const validatedParams = {
-        bottlesPerContainer: isNaN(bottlesPerContainer) || bottlesPerContainer <= 0 ? 1200 : bottlesPerContainer,
-        containerCost: isNaN(containerCost) || containerCost <= 0 ? 8500 : containerCost,
-        initialStockMonths: isNaN(initialStockMonths) || initialStockMonths <= 0 ? 3 : initialStockMonths
+        bottlesPerContainer: isNaN(bottlesPerContainer) || bottlesPerContainer <= 0 ? 12000 : bottlesPerContainer,
+        containerCost: isNaN(containerCost) || containerCost <= 0 ? 5000 : containerCost,
+        initialStockMonths: isNaN(initialStockMonths) || initialStockMonths <= 0 ? 6 : initialStockMonths
     };
     
     console.log('📦 Parámetros de inventario obtenidos:', validatedParams);
@@ -124,7 +125,7 @@ function getBusinessParams() {
     
     // Patrones de crecimiento decreciente predefinidos
     // const trafficGrowthPattern = [1.00, 0.80, 0.50, 0.30, 0.20]; // Para años 2025-2030
-    const trafficGrowthPattern = [1.00, 1.00, 1.00, 0.70, 0.60]; // Para años 2025-2030
+    const trafficGrowthPattern = [1.00, 1.00, 0.90, 0.80, 0.70]; // Para años 2025-2030
 
     const conversionGrowthPattern = [0.40, 0.25, 0.15, 0.10, 0.05]; // Para años 2025-2030
 

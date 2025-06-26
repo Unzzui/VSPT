@@ -194,7 +194,17 @@ function updateCalculations() {
             console.warn('⚠️ calculateFinancialCashFlow no disponible');
         }
         
-        // 8.1. Sincronizar datos entre módulos
+        // 8.1. Actualizar Factores Clave que Impactan los Flujos de Caja
+        setTimeout(() => {
+            if (typeof updateKeyFactorsDisplay === 'function') {
+                updateKeyFactorsDisplay();
+                console.log('✅ Factores Clave actualizados con datos reales');
+            } else {
+                console.warn('⚠️ updateKeyFactorsDisplay no disponible');
+            }
+        }, 500); // Esperar un poco para que los flujos estén completamente calculados
+        
+        // 8.2. Sincronizar datos entre módulos
         syncDataBetweenModules();
         
         // 9. Análisis de Sensibilidad (sensitivity.js) - Solo ejecutar si estamos en la pestaña de sensibilidad

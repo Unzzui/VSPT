@@ -7,22 +7,15 @@ function calculateDebtStructure() {
     
     const params = getFinancialParams();
     
-    // Obtener CAPEX total optimizado dinámico (incluyendo inventario)
-    const inventoryParams = getInventoryParams();
-    const totalBottlesNeeded = (inventoryParams.initialStockMonths || 3) * 1000;
-    const containersNeeded = Math.ceil(totalBottlesNeeded / (inventoryParams.bottlesPerContainer || 1200));
-    const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
-    
     // CAPEX OPTIMIZADO - Reducido de $800K a $565K (-29.4%)
-    const optimizedCapex = 565000; // CAPEX optimizado base
-    const totalCapex = optimizedCapex + inventoryInvestment; // CAPEX total incluyendo inventario
+    const optimizedCapex = 565000; // CAPEX optimizado base (sin inventario)
+    const totalCapex = optimizedCapex; // CAPEX total (inventario va en Working Capital)
     
     const debtAmount = totalCapex * params.debtRatio;
     const equityAmount = totalCapex * params.equityRatio;
     
     console.log('📊 Parámetros de deuda optimizados:', {
         'CAPEX Optimizado': `$${(optimizedCapex/1000).toFixed(0)}K`,
-        'Inventario': `$${(inventoryInvestment/1000).toFixed(0)}K`,
         'CAPEX Total': `$${(totalCapex/1000).toFixed(0)}K`,
         'Ahorro vs Original': `$${((800000 - optimizedCapex)/1000).toFixed(0)}K (-29.4%)`,
         'Monto Deuda': `$${(debtAmount/1000).toFixed(0)}K`,
@@ -292,16 +285,9 @@ function debugDebt() {
     const params = getFinancialParams();
     console.log('📊 Parámetros financieros:', params);
     
-    const inventoryParams = getInventoryParams();
-    console.log('📦 Parámetros de inventario:', inventoryParams);
-    
-    const totalBottlesNeeded = (inventoryParams.initialStockMonths || 3) * 1000;
-    const containersNeeded = Math.ceil(totalBottlesNeeded / (inventoryParams.bottlesPerContainer || 1200));
-    const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
-    
     const optimizedCapex = 565000; // CAPEX optimizado
     const originalCapex = 800000; // CAPEX original
-    const totalCapex = optimizedCapex + inventoryInvestment;
+    const totalCapex = optimizedCapex; // Sin inventario (va en Working Capital)
     const debtAmount = totalCapex * params.debtRatio;
     const savings = originalCapex - optimizedCapex;
     
@@ -309,7 +295,6 @@ function debugDebt() {
     console.log('- CAPEX Original:', `$${(originalCapex/1000).toFixed(0)}K`);
     console.log('- CAPEX Optimizado:', `$${(optimizedCapex/1000).toFixed(0)}K`);
     console.log('- Ahorro CAPEX:', `$${(savings/1000).toFixed(0)}K (-29.4%)`);
-    console.log('- Inventario:', `$${(inventoryInvestment/1000).toFixed(0)}K`);
     console.log('- CAPEX Total:', `$${(totalCapex/1000).toFixed(0)}K`);
     console.log('- Monto Deuda:', `$${(debtAmount/1000).toFixed(0)}K`);
     console.log('- Ahorro en Deuda:', `$${(savings * params.debtRatio / 1000).toFixed(0)}K`);
@@ -329,7 +314,6 @@ function debugDebt() {
     
     return {
         params,
-        inventoryParams,
         optimizedCapex,
         originalCapex,
         savings,

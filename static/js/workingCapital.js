@@ -65,8 +65,11 @@ function calculateWorkingCapital() {
         } else if (year === 2025) {
             // WC inicial mínimo para setup y inventario inicial
             const inventoryParams = getInventoryParams();
-            const initialInventoryValue = (inventoryParams.initialStockMonths / 12) * 
-                (inventoryParams.containerCost * inventoryParams.bottlesPerContainer / 1000); // Valor en miles
+            
+            // Cálculo realista del inventario inicial
+            const totalBottlesNeeded = inventoryParams.initialStockMonths * 1000; // 6 meses × 1000 botellas/mes = 6,000 botellas
+            const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer); // 6,000 ÷ 12,000 = 0.5 → 1 contenedor
+            const initialInventoryValue = containersNeeded * inventoryParams.containerCost; // 1 × $5,000 = $5,000 USD
             
             workingCapital[year].consolidated.inventory = initialInventoryValue;
             workingCapital[year].consolidated.total = initialInventoryValue + 25000; // + capital operativo inicial
