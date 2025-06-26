@@ -123,7 +123,9 @@ function getBusinessParams() {
     const inflationElement = document.getElementById('inflation');
     
     // Patrones de crecimiento decreciente predefinidos
-    const trafficGrowthPattern = [1.00, 0.80, 0.50, 0.30, 0.20]; // Para años 2025-2030
+    // const trafficGrowthPattern = [1.00, 0.80, 0.50, 0.30, 0.20]; // Para años 2025-2030
+    const trafficGrowthPattern = [1.00, 1.00, 0.80, 0.70, 0.60]; // Para años 2025-2030
+
     const conversionGrowthPattern = [0.40, 0.25, 0.15, 0.10, 0.05]; // Para años 2025-2030
 
     return {

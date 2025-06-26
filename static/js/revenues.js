@@ -22,8 +22,8 @@ function calculateRevenues() {
             yearlyTraffic = params.initialTraffic;
         } else {
             // Usar el patrón de crecimiento decreciente definido en config
-            const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.80, 0.50, 0.30, 0.20];
-            
+            // const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.80, 0.50, 0.30, 0.20];
+             const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.90, 0.80, 0.70, 0.60];
             let cumulativeTraffic = params.initialTraffic;
             for (let i = 1; i <= yearIndex; i++) {
                 const currentGrowthRate = trafficGrowthPattern[Math.min(i - 1, trafficGrowthPattern.length - 1)];
@@ -253,11 +253,16 @@ function updateRevenueMetrics(revenues) {
     const inventoryInvestment = containersNeeded * (inventoryParams.containerCost || 8500);
 
     // Calcular CAC promedio (Customer Acquisition Cost)
+    // NUEVA LÓGICA: Calcula el CAC basado en el delta de clientes nuevos año a año
+    // - 2025: Todos los clientes son nuevos (base inicial)
+    // - 2026-2030: Solo se cuentan los clientes incrementales respecto al año anterior
+    // Esto es más preciso que sumar todos los clientes de todos los años
     const businessParams = getBusinessParams();
     let totalMarketingSpend = 0;
     let totalNewCustomers = 0;
+    let previousYearOrders = 0;
     
-    // Sumar gasto de marketing y clientes nuevos para todos los años
+    // Calcular gasto de marketing y clientes nuevos año a año (delta)
     for (let year = 2025; year <= 2030; year++) {
         const yearRevenue = Object.keys(marketDistribution).reduce((sum, market) => {
             return sum + (revenues[year] && revenues[year][market] ? revenues[year][market].netRevenue : 0);
@@ -269,7 +274,17 @@ function updateRevenueMetrics(revenues) {
         const yearOrders = Object.keys(marketDistribution).reduce((sum, market) => {
             return sum + (revenues[year] && revenues[year][market] ? revenues[year][market].orders : 0);
         }, 0);
-        totalNewCustomers += yearOrders;
+        
+        // En el primer año (2025), todos son clientes nuevos
+        // En años posteriores, solo el delta respecto al año anterior
+        if (year === 2025) {
+            totalNewCustomers += yearOrders;
+        } else {
+            const newCustomersDelta = yearOrders - previousYearOrders;
+            totalNewCustomers += Math.max(0, newCustomersDelta); // Solo sumar si hay crecimiento
+        }
+        
+        previousYearOrders = yearOrders;
     }
     
     const avgCAC = totalNewCustomers > 0 ? totalMarketingSpend / totalNewCustomers : 0;
@@ -282,8 +297,8 @@ function updateRevenueMetrics(revenues) {
     const avgTicket2030 = revenues[2030] && revenues[2030].chile ? revenues[2030].chile.avgTicket : 0;
     const purchasesPerYear = 2.5; // Asunción conservadora para vinos premium
     const customerLifetimeYears = 3; // Asunción de retención promedio
-    const netMarginPct = 0.20; // 20% margen neto después de costos
-    
+    const netMarginPct = 0.11; // 11% margen neto después de costos
+
     const avgLTV = avgTicket2030 * purchasesPerYear * customerLifetimeYears * netMarginPct;
     const ltvCacRatio = avgCAC > 0 ? avgLTV / avgCAC : 0;
 
@@ -311,11 +326,19 @@ function updateRevenueMetrics(revenues) {
         'Revenue 2030': elements.totalRevenue2030,
         'CAGR (Chile 2025 → Total 2030)': elements.avgGrowthRate,
         'Conversión Chile': `${initialConversion.toFixed(2)}% → ${finalConversion.toFixed(2)}%`,
-        'CAC Promedio': elements.customerCAC,
+        'CAC Promedio (optimizado)': elements.customerCAC,
         'LTV Promedio': elements.customerLTV,
         'Ratio LTV/CAC': elements.ltvCacRatio,
         'Marketing Total (2025-2030)': `$${(totalMarketingSpend/1000).toFixed(0)}K`,
-        'Clientes Totales (2025-2030)': Math.round(totalNewCustomers).toLocaleString()
+        'Clientes Nuevos DELTA (2025-2030)': Math.round(totalNewCustomers).toLocaleString()
+    });
+    
+    // Log detallado del cálculo de CAC para debugging
+    console.log('📊 Cálculo detallado de CAC:', {
+        'Método': 'Delta año a año (no acumulativo)',
+        'Marketing Total': `$${(totalMarketingSpend/1000).toFixed(1)}K`,
+        'Clientes Nuevos (Delta)': Math.round(totalNewCustomers).toLocaleString(),
+        'CAC Resultado': `$${Math.round(avgCAC)}`
     });
 }
 

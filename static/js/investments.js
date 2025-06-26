@@ -396,12 +396,13 @@ function createInvestmentsSheet() {
     // Totales si hay datos del modelo
     if (modelData.investments) {
         const inv = modelData.investments;
+        const params = getFinancialParams();
         
         // CAPEX Total
         const capexRow = ['TOTAL CAPEX'];
         let total = 0;
         for (let year = 2025; year <= 2028; year++) {
-            const amount = inv.distribution[year] ? inv.distribution[year].amount : 0;
+            const amount = inv[year] ? inv[year].total : 0;
             capexRow.push(amount);
             total += amount;
         }
@@ -413,10 +414,10 @@ function createInvestmentsSheet() {
         data.push(['ESTRUCTURA DE FINANCIAMIENTO', '', '', '', '', '']);
         
         // Deuda
-        const debtRow = [`Financiado con Deuda (${(inv.financing.debtRatio * 100).toFixed(0)}%)`];
+        const debtRow = [`Financiado con Deuda (${(params.debtRatio * 100).toFixed(0)}%)`];
         total = 0;
         for (let year = 2025; year <= 2028; year++) {
-            const amount = inv.distribution[year] ? inv.distribution[year].debt : 0;
+            const amount = inv[year] ? inv[year].total * params.debtRatio : 0;
             debtRow.push(amount);
             total += amount;
         }
@@ -424,10 +425,10 @@ function createInvestmentsSheet() {
         data.push(debtRow);
         
         // Equity
-        const equityRow = [`Aporte Capital (${(inv.financing.equityRatio * 100).toFixed(0)}%)`];
+        const equityRow = [`Aporte Capital (${(params.equityRatio * 100).toFixed(0)}%)`];
         total = 0;
         for (let year = 2025; year <= 2028; year++) {
-            const amount = inv.distribution[year] ? inv.distribution[year].equity : 0;
+            const amount = inv[year] ? inv[year].total * params.equityRatio : 0;
             equityRow.push(amount);
             total += amount;
         }
@@ -440,11 +441,13 @@ function createInvestmentsSheet() {
         
         // CAPEX acumulado
         const cumulativeRow = ['CAPEX Acumulado'];
+        let cumulativeTotal = 0;
         for (let year = 2025; year <= 2028; year++) {
-            const amount = inv.cumulative[year] ? inv.cumulative[year].capex : 0;
-            cumulativeRow.push(amount);
+            const amount = inv[year] ? inv[year].total : 0;
+            cumulativeTotal += amount;
+            cumulativeRow.push(cumulativeTotal);
         }
-        cumulativeRow.push(inv.totalCapex);
+        cumulativeRow.push(cumulativeTotal);
         data.push(cumulativeRow);
     }
     
