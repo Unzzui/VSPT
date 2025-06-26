@@ -320,12 +320,7 @@ function updateWorkingCapitalTable(wc) {
     }
     
     // Nota explicativa
-    const noteRow = tbody.insertRow();
-    noteRow.insertCell(0).innerHTML = '';
-    noteRow.insertCell(1).innerHTML = '* 6 meses (solo operativo)';
-    noteRow.insertCell(1).colSpan = 6;
-    noteRow.style.fontSize = '10px';
-    noteRow.style.fontStyle = 'italic';
+ 
 }
 
 function updateWorkingCapitalMetrics(wc) {
