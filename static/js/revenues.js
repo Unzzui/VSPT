@@ -22,7 +22,7 @@ function calculateRevenues() {
         } else {
             // Usar el patrón de crecimiento decreciente definido en config
             // const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.80, 0.50, 0.30, 0.20];
-             const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.90, 0.80, 0.70, 0.60];
+             const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.80, 0.60, 0.40, 0.20];
             let cumulativeTraffic = params.initialTraffic;
             for (let i = 1; i <= yearIndex; i++) {
                 const currentGrowthRate = trafficGrowthPattern[Math.min(i - 1, trafficGrowthPattern.length - 1)];
@@ -48,7 +48,7 @@ function calculateRevenues() {
         }
         
         // Ticket size con crecimiento premium
-        const ticketSize = params.avgTicket * (1 + Math.max(0, yearIndex - 1) * 0.08); // Sin crecimiento en 2025
+        const ticketSize = params.avgTicket * Math.pow(1.08, Math.max(0, yearIndex - 1)); // 8% compuesto anual desde 2026
 
         revenues[year] = {};
         

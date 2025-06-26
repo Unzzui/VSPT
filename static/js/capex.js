@@ -4,7 +4,7 @@
 // Reducciones: Warehouses ($25K), Expansión Internacional ($40K)
 
 function calculateOptimizedCapex() {
-    console.log('🏗️ Calculando CAPEX optimizado...');
+
     
     // CAPEX OPTIMIZADO - Reducido 29.4% vs original (eliminando Brasil, Canadá, USA)
     const optimizedCapex = 565000; // CAPEX optimizado total (era 800K)

@@ -36,17 +36,24 @@ function calculateCosts() {
                 return sum + (modelData.revenues[year][market] ? modelData.revenues[year][market].netRevenue : 0);
             }, 0);
             
-            // COGS (Cost of Goods Sold) - 54% del revenue (ajustado de 60% a 54%)
+            // CORRECCIÓN: Ajustar para 6 meses de operación en 2025
+            let operatingMonths = 12;
+            if (year === 2025) {
+                operatingMonths = 6; // Solo 6 meses de operación en 2025
+            }
+            
+            // COGS (Cost of Goods Sold) - 54% del revenue
             costs[year].cogs = yearRevenue * params.cogsPct;
             
-            // Gastos operativos variables
-            costs[year].operatingExpenses.marketing = yearRevenue * businessParams.marketingPct;
-            costs[year].operatingExpenses.logistics = yearRevenue * 0.08; // 8% logística
-            costs[year].operatingExpenses.technology = yearRevenue * 0.05; // 5% tecnología
-            costs[year].operatingExpenses.administrative = yearRevenue * 0.08; // 8% administrativos
+            // Gastos operativos variables (proporcionales a los meses de operación)
+            const operatingFactor = operatingMonths / 12;
+            costs[year].operatingExpenses.marketing = yearRevenue * businessParams.marketingPct * operatingFactor;
+            costs[year].operatingExpenses.logistics = yearRevenue * 0.08 * operatingFactor; // 8% logística
+            costs[year].operatingExpenses.technology = yearRevenue * 0.05 * operatingFactor; // 5% tecnología
+            costs[year].operatingExpenses.administrative = yearRevenue * 0.08 * operatingFactor; // 8% administrativos
             
-            // Gastos operativos fijos (ajustados por año base 2025)
-            costs[year].operatingExpenses.salesSalary = businessParams.salesSalary * (1 + businessParams.inflation) ** (year - 2025);
+            // Gastos operativos fijos (ajustados por año base 2025 y meses de operación)
+            costs[year].operatingExpenses.salesSalary = businessParams.salesSalary * (1 + businessParams.inflation) ** (year - 2025) * operatingFactor;
             
             costs[year].operatingExpenses.total = 
                 costs[year].operatingExpenses.salesSalary +
@@ -58,10 +65,16 @@ function calculateCosts() {
         
         // Costos fijos (existen desde 2025) - Ajustados para operación en 4 países
         const yearsSince2025 = year - 2025;
-        costs[year].fixedCosts.personnel = 80000 * Math.pow(1 + businessParams.inflation, yearsSince2025);
-        costs[year].fixedCosts.infrastructure = 45000 * Math.pow(1 + businessParams.inflation, yearsSince2025);
-        costs[year].fixedCosts.compliance = 25000 * Math.pow(1 + businessParams.inflation, yearsSince2025);
-        costs[year].fixedCosts.insurance = 18000 * Math.pow(1 + businessParams.inflation, yearsSince2025);
+        // CORRECCIÓN: Ajustar costos fijos para 6 meses en 2025
+        let fixedCostFactor = 1;
+        if (year === 2025) {
+            fixedCostFactor = 6 / 12; // Solo 6 meses
+        }
+        
+        costs[year].fixedCosts.personnel = 80000 * Math.pow(1 + businessParams.inflation, yearsSince2025) * fixedCostFactor;
+        costs[year].fixedCosts.infrastructure = 45000 * Math.pow(1 + businessParams.inflation, yearsSince2025) * fixedCostFactor;
+        costs[year].fixedCosts.compliance = 25000 * Math.pow(1 + businessParams.inflation, yearsSince2025) * fixedCostFactor;
+        costs[year].fixedCosts.insurance = 18000 * Math.pow(1 + businessParams.inflation, yearsSince2025) * fixedCostFactor;
         
         costs[year].fixedCosts.total = 
             costs[year].fixedCosts.personnel +

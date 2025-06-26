@@ -39,21 +39,35 @@ function calculateEconomicCashFlow() {
             }
         }
         
-        // COGS y gastos operativos
-        economicFlow[year].cogs = economicFlow[year].revenues * params.cogsPct;
+        // COGS y gastos operativos - CORRECCIÓN: Usar costos reales de costs.js
+        if (modelData.costs && modelData.costs[year]) {
+            // Usar COGS real calculado en costs.js (ya ajustado para 6 meses en 2025)
+            economicFlow[year].cogs = modelData.costs[year].cogs;
+        } else {
+            // Fallback: calcular COGS como porcentaje de ingresos
+            economicFlow[year].cogs = economicFlow[year].revenues * params.cogsPct;
+        }
+        
         economicFlow[year].grossProfit = economicFlow[year].revenues - economicFlow[year].cogs;
         
         // Gastos operativos (del modelo de costos REAL)
         if (modelData.costs && modelData.costs[year]) {
+            // INCLUIR tanto gastos operativos como costos fijos estructurales
             economicFlow[year].operatingExpenses = modelData.costs[year].operatingExpenses.total + 
                                                    modelData.costs[year].fixedCosts.total;
         } else {
             // Fallback usando parámetros reales del modelo
             const businessParams = getBusinessParams();
-            economicFlow[year].operatingExpenses = economicFlow[year].revenues * businessParams.marketingPct + // Marketing
+            // CORRECCIÓN: Ajustar fallback para 6 meses en 2025
+            let operatingFactor = 1;
+            if (year === 2025) {
+                operatingFactor = 6 / 12; // Solo 6 meses de operación
+            }
+            
+            economicFlow[year].operatingExpenses = (economicFlow[year].revenues * businessParams.marketingPct + // Marketing
                                                    economicFlow[year].revenues * 0.08 + // Otros gastos operativos
-                                                   (year >= 2026 ? businessParams.salesSalary || 50000 : 0) + // Salario comercial
-                                                   120000 * Math.pow(1.035, year - 2025); // Costos fijos base con inflación
+                                                   (year >= 2026 ? businessParams.salesSalary || 50000 : 0)) * operatingFactor + // Salario comercial
+                                                   120000 * Math.pow(1.035, year - 2025) * operatingFactor; // Costos fijos base con inflación
         }
         
         // EBITDA
@@ -131,6 +145,29 @@ function calculateEconomicCashFlow() {
     const irr = calculateIRR(cashFlows);
     
     economicFlow.metrics = { npv, irr, wacc: params.wacc };
+    
+    // VALIDACIÓN: Verificar consistencia con costs.js
+    console.log('🔍 VALIDACIÓN CASHFLOW - Consistencia con Costs.js');
+    if (modelData.costs && modelData.costs[2025]) {
+        const costs2025 = modelData.costs[2025];
+        const flow2025 = economicFlow[2025];
+        console.log(`📊 2025 Consistencia:`);
+        console.log(`  COGS: Costs.js $${costs2025.cogs.toFixed(0)} vs Cashflow $${flow2025.cogs.toFixed(0)}`);
+        console.log(`  OpEx + Fixed: Costs.js $${(costs2025.operatingExpenses.total + costs2025.fixedCosts.total).toFixed(0)} vs Cashflow $${flow2025.operatingExpenses.toFixed(0)}`);
+        console.log(`  - OpEx: $${costs2025.operatingExpenses.total.toFixed(0)}`);
+        console.log(`  - Fixed: $${costs2025.fixedCosts.total.toFixed(0)}`);
+        
+        // Verificar si hay diferencias
+        const cogsDiff = Math.abs(costs2025.cogs - flow2025.cogs);
+        const opExDiff = Math.abs((costs2025.operatingExpenses.total + costs2025.fixedCosts.total) - flow2025.operatingExpenses);
+        
+        if (cogsDiff > 1) {
+            console.warn(`⚠️ Diferencia en COGS 2025: $${cogsDiff.toFixed(0)}`);
+        }
+        if (opExDiff > 1) {
+            console.warn(`⚠️ Diferencia en OpEx+Fixed 2025: $${opExDiff.toFixed(0)}`);
+        }
+    }
     
     updateEconomicFlowTable(economicFlow);
     modelData.economicCashFlow = economicFlow;

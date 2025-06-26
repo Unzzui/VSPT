@@ -272,10 +272,13 @@ function updateFinancingMetrics(investments) {
         }
     });
     
-    console.log('📊 Métricas de financiamiento actualizadas:', {
-        'Total CAPEX': elements.totalCapex,
-        'Debt Ratio': elements.debtRatioDisplay
-    });
+    // Guardar métricas en modelData para uso posterior
+    modelData.financingMetrics = {
+        totalCapex: elements.totalCapex,
+        totalDebt: elements.totalDebt,
+        totalEquity: elements.totalEquity,
+        debtRatio: elements.debtRatioDisplay
+    };
 }
 
 // Función auxiliar para obtener CAPEX acumulado hasta un año

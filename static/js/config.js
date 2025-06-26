@@ -18,8 +18,8 @@ const marketDistribution = {
         currency: 'CLP', 
         tax: 0.27, 
         premium: 1.0, 
-        paymentDays: 0, 
-        inventoryDays: 30,
+        paymentDays: 94, 
+        inventoryDays: 120,
         label: 'Chile'
     },
     mexico: { 
@@ -27,8 +27,8 @@ const marketDistribution = {
         currency: 'MXN', 
         tax: 0.16, 
         premium: 1.1, 
-        paymentDays: 0, 
-        inventoryDays: 45,
+        paymentDays: 94, 
+        inventoryDays: 120,
         label: 'México'
     }
 };
@@ -42,11 +42,12 @@ const defaultFinancialParams = {
     wacc: 0.08,
     equityCost: 0.12,
     taxRate: 0.27,
-    payableDays: 45,
-    serviceDays: 30,
+    payableDays: 117,
+    serviceDays: 117,
     cogsPct: 0.54,
     operatingExpensesPct: 0.10, // Cambiado de 0.25 a 0.10 (10%)
-    depreciationYears: 5
+    depreciationYears: 5,
+    inventoryDays: 60,
 };
 
 // Distribución de CAPEX por años (total $565K optimizado)
@@ -82,7 +83,8 @@ function getFinancialParams() {
         serviceDays: defaultFinancialParams.serviceDays,
         cogsPct: defaultFinancialParams.cogsPct,
         operatingExpensesPct: defaultFinancialParams.operatingExpensesPct,
-        depreciationYears: defaultFinancialParams.depreciationYears
+        depreciationYears: defaultFinancialParams.depreciationYears,
+        inventoryDays: defaultFinancialParams.inventoryDays
     };
 }
 
@@ -125,7 +127,7 @@ function getBusinessParams() {
     
     // Patrones de crecimiento decreciente predefinidos
     // const trafficGrowthPattern = [1.00, 0.80, 0.50, 0.30, 0.20]; // Para años 2025-2030
-    const trafficGrowthPattern = [1.00, 1.00, 0.90, 0.80, 0.70]; // Para años 2025-2030
+    const trafficGrowthPattern = [1.00, 0.80, 0.60, 0.40, 0.20]; // Para años 2025-2030
 
     const conversionGrowthPattern = [0.40, 0.25, 0.15, 0.10, 0.05]; // Para años 2025-2030
 
