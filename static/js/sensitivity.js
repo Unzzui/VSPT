@@ -1138,15 +1138,25 @@ function updateBaseParametersDisplay() {
         // Obtener parámetros actuales del modelo
         const params = getBusinessParams();
         const financialParams = getFinancialParams();
+        const inventoryParams = getInventoryParams();
         
-        // Actualizar elementos de parámetros base
+        // Actualizar elementos de parámetros base con más detalle
         const elements = {
             'baseTraffic': params.initialTraffic ? params.initialTraffic.toLocaleString() : '9,100',
             'baseConversion': params.initialConversion ? `${(params.initialConversion * 100).toFixed(1)}%` : '2.0%',
             'baseTicket': params.avgTicket ? `$${params.avgTicket}` : '$50',
             'baseWACC': financialParams.wacc ? `${(financialParams.wacc * 100).toFixed(1)}%` : '8.0%',
             'baseExchangeRate': exchangeRates?.CLP || '900',
-            'baseCosts': `${((params.marketingPct || 0.12) * 100 + 42).toFixed(0)}%` // Marketing + COGS estimado
+            'baseCosts': `${((params.marketingPct || 0.12) * 100 + 42).toFixed(0)}%`, // Marketing + COGS estimado
+            // Nuevos parámetros detallados
+            'baseTrafficGrowth': params.trafficGrowth ? `${(params.trafficGrowth * 100).toFixed(1)}%` : 'N/A',
+            'baseConversionGrowth': params.conversionGrowthRate ? `${(params.conversionGrowthRate * 100).toFixed(1)}%` : 'N/A',
+            'baseMarketingPct': params.marketingPct ? `${(params.marketingPct * 100).toFixed(1)}%` : '12.0%',
+            'baseCOGS': financialParams.cogsPct ? `${(financialParams.cogsPct * 100).toFixed(1)}%` : '54.0%',
+            'baseInflation': params.inflation ? `${(params.inflation * 100).toFixed(1)}%` : '3.0%',
+            'baseSalesSalary': params.salesSalary ? `$${params.salesSalary.toLocaleString()}` : '$60,000',
+            'baseInventoryDays': inventoryParams.initialStockMonths ? `${inventoryParams.initialStockMonths * 30} días` : '90 días',
+            'basePayableDays': financialParams.payableDays ? `${financialParams.payableDays} días` : '30 días'
         };
         
         Object.keys(elements).forEach(id => {
@@ -1156,10 +1166,148 @@ function updateBaseParametersDisplay() {
             }
         });
         
-
+        // Actualizar parámetros por escenario
+        updateScenarioParametersDisplay();
         
     } catch (error) {
         console.error('❌ Error actualizando parámetros base:', error);
+    }
+}
+
+// Nueva función para mostrar parámetros por escenario
+function updateScenarioParametersDisplay() {
+    try {
+        const params = getBusinessParams();
+        const financialParams = getFinancialParams();
+        
+        // Crear tabla de parámetros por escenario
+        const scenarioTable = document.getElementById('scenarioParametersTable');
+        if (!scenarioTable) {
+            console.warn('⚠️ Tabla de parámetros por escenario no encontrada');
+            return;
+        }
+        
+        scenarioTable.innerHTML = '';
+        
+        // Header
+        const headerRow = scenarioTable.insertRow();
+        headerRow.className = 'table-header';
+        const headers = ['Parámetro', 'Pesimista', 'Base', 'Optimista', 'Stress Test'];
+        headers.forEach(header => {
+            const th = headerRow.insertCell();
+            th.innerHTML = header;
+            th.style.fontWeight = 'bold';
+            th.style.backgroundColor = '#f8f9fa';
+        });
+        
+        // Parámetros clave
+        const parameters = [
+            {
+                name: 'Tráfico Inicial',
+                base: params.initialTraffic,
+                unit: 'visitas/mes',
+                pesimista: 0.7,
+                optimista: 1.4,
+                stress: 0.5
+            },
+            {
+                name: 'Tasa Conversión',
+                base: params.initialConversion * 100,
+                unit: '%',
+                pesimista: 0.7,
+                optimista: 1.4,
+                stress: 0.5
+            },
+            {
+                name: 'Ticket Promedio',
+                base: params.avgTicket,
+                unit: 'USD',
+                pesimista: 0.85,
+                optimista: 1.15,
+                stress: 0.75
+            },
+            {
+                name: 'Marketing (% Revenue)',
+                base: params.marketingPct * 100,
+                unit: '%',
+                pesimista: 1.3,
+                optimista: 0.8,
+                stress: 1.5
+            },
+            {
+                name: 'COGS (% Revenue)',
+                base: financialParams.cogsPct * 100,
+                unit: '%',
+                pesimista: 1.2,
+                optimista: 0.9,
+                stress: 1.3
+            },
+            {
+                name: 'Crecimiento Tráfico',
+                base: params.trafficGrowth * 100,
+                unit: '%',
+                pesimista: 0.6,
+                optimista: 1.5,
+                stress: 0.4
+            },
+            {
+                name: 'Inflación',
+                base: params.inflation * 100,
+                unit: '%',
+                pesimista: 1.2,
+                optimista: 0.8,
+                stress: 1.5
+            }
+        ];
+        
+        parameters.forEach(param => {
+            const row = scenarioTable.insertRow();
+            
+            // Nombre del parámetro
+            const nameCell = row.insertCell();
+            nameCell.innerHTML = `${param.name} (${param.unit})`;
+            nameCell.style.fontWeight = '500';
+            
+            // Valores por escenario
+            const scenarios = ['pesimista', 'base', 'optimista', 'stress'];
+            scenarios.forEach((scenario, index) => {
+                const cell = row.insertCell();
+                let factor = 1;
+                
+                switch(scenario) {
+                    case 'pesimista':
+                        factor = param.pesimista;
+                        cell.style.color = '#d32f2f';
+                        break;
+                    case 'base':
+                        factor = 1;
+                        cell.style.color = '#1976d2';
+                        cell.style.fontWeight = 'bold';
+                        break;
+                    case 'optimista':
+                        factor = param.optimista;
+                        cell.style.color = '#388e3c';
+                        break;
+                    case 'stress':
+                        factor = param.stress;
+                        cell.style.color = '#f57c00';
+                        break;
+                }
+                
+                const value = param.base * factor;
+                
+                if (param.unit === 'USD') {
+                    cell.innerHTML = `$${value.toFixed(0)}`;
+                } else if (param.unit === '%') {
+                    cell.innerHTML = `${value.toFixed(1)}%`;
+                } else {
+                    cell.innerHTML = value.toLocaleString();
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Error actualizando parámetros por escenario:', error);
     }
 }
 

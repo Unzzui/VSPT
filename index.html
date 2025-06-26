@@ -1010,7 +1010,7 @@
             <!-- Panel de Parámetros Base -->
             <div class="base-parameters mb-8">
                 <h3 class="text-xl font-semibold mb-6"><i class="fas fa-cog"></i> Parámetros Base del Modelo</h3>
-                <div class="parameters-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div class="parameters-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     <div class="parameter-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                         <div class="parameter-icon text-blue-600 mb-2">
                             <i class="fas fa-users text-2xl"></i>
@@ -1058,6 +1058,72 @@
                         <div class="parameter-label text-sm font-medium text-indigo-800">Costos Operativos</div>
                         <div class="parameter-value text-xl font-bold text-indigo-900" id="baseCosts">54%</div>
                         <div class="parameter-unit text-xs text-indigo-600">% ingresos</div>
+                    </div>
+                    <!-- Nuevos parámetros detallados -->
+                    <div class="parameter-card bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-lg border border-teal-200">
+                        <div class="parameter-icon text-teal-600 mb-2">
+                            <i class="fas fa-chart-line text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-teal-800">Crecimiento Tráfico</div>
+                        <div class="parameter-value text-xl font-bold text-teal-900" id="baseTrafficGrowth">N/A</div>
+                        <div class="parameter-unit text-xs text-teal-600">% anual</div>
+                    </div>
+                    <div class="parameter-card bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg border border-pink-200">
+                        <div class="parameter-icon text-pink-600 mb-2">
+                            <i class="fas fa-trending-up text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-pink-800">Crecimiento Conversión</div>
+                        <div class="parameter-value text-xl font-bold text-pink-900" id="baseConversionGrowth">N/A</div>
+                        <div class="parameter-unit text-xs text-pink-600">% anual</div>
+                    </div>
+                    <div class="parameter-card bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
+                        <div class="parameter-icon text-yellow-600 mb-2">
+                            <i class="fas fa-bullhorn text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-yellow-800">Marketing</div>
+                        <div class="parameter-value text-xl font-bold text-yellow-900" id="baseMarketingPct">12.0%</div>
+                        <div class="parameter-unit text-xs text-yellow-600">% revenue</div>
+                    </div>
+                    <div class="parameter-card bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <div class="parameter-icon text-gray-600 mb-2">
+                            <i class="fas fa-box text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-gray-800">COGS</div>
+                        <div class="parameter-value text-xl font-bold text-gray-900" id="baseCOGS">54.0%</div>
+                        <div class="parameter-unit text-xs text-gray-600">% revenue</div>
+                    </div>
+                    <div class="parameter-card bg-gradient-to-br from-cyan-50 to-cyan-100 p-4 rounded-lg border border-cyan-200">
+                        <div class="parameter-icon text-cyan-600 mb-2">
+                            <i class="fas fa-chart-area text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-cyan-800">Inflación</div>
+                        <div class="parameter-value text-xl font-bold text-cyan-900" id="baseInflation">3.0%</div>
+                        <div class="parameter-unit text-xs text-cyan-600">% anual</div>
+                    </div>
+                    <div class="parameter-card bg-gradient-to-br from-lime-50 to-lime-100 p-4 rounded-lg border border-lime-200">
+                        <div class="parameter-icon text-lime-600 mb-2">
+                            <i class="fas fa-user-tie text-2xl"></i>
+                        </div>
+                        <div class="parameter-label text-sm font-medium text-lime-800">Salario Ventas</div>
+                        <div class="parameter-value text-xl font-bold text-lime-900" id="baseSalesSalary">$60,000</div>
+                        <div class="parameter-unit text-xs text-lime-600">USD anual</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parámetros Detallados por Escenario -->
+            <div class="scenario-parameters mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-table"></i> Parámetros por Escenario</h3>
+                <div class="table-container bg-white rounded-lg border border-gray-200 shadow-lg p-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Variación de Parámetros Clave por Escenario</h4>
+                    <div class="overflow-x-auto">
+                        <table id="scenarioParametersTable" class="w-full text-sm">
+                            <!-- La tabla se llenará dinámicamente desde JavaScript -->
+                        </table>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-600">
+                        <p><strong>Nota:</strong> Los valores muestran la variación respecto al escenario base (100%).</p>
+                        <p><strong>Colores:</strong> <span style="color: #d32f2f;">Pesimista</span> | <span style="color: #1976d2; font-weight: bold;">Base</span> | <span style="color: #388e3c;">Optimista</span> | <span style="color: #f57c00;">Stress Test</span></p>
                     </div>
                 </div>
             </div>
