@@ -32,7 +32,7 @@ let modelData = {
 
 function showTab(tabName) {
     try {
-        console.log(`🔄 Cambiando a tab: ${tabName}`);
+
         
         // Cerrar menú móvil si está abierto
         const tabsContainer = document.querySelector('.tabs');
@@ -60,7 +60,7 @@ function showTab(tabName) {
         const targetContent = document.getElementById(tabName);
         if (targetContent) {
             targetContent.classList.remove('hidden');
-            console.log(`✅ Tab ${tabName} mostrado`);
+
         } else {
             console.error(`❌ Elemento con ID ${tabName} no encontrado`);
             return;
@@ -128,12 +128,12 @@ function showTab(tabName) {
 
 function updateCalculations() {
     try {
-        console.log('🚀 Iniciando actualización completa del modelo financiero...');
+
         
         // 1. CAPEX Progresivo y Financiamiento (investments.js)
         if (typeof calculateOptimizedCapex === 'function') {
             calculateOptimizedCapex();
-            console.log('✅ CAPEX progresivo y financiamiento calculados');
+ 
         } else {
             console.warn('⚠️ calculateOptimizedCapex no disponible');
         }
@@ -141,7 +141,7 @@ function updateCalculations() {
         // 2. Proyección de Ingresos (revenues.js)
         if (typeof calculateRevenues === 'function') {
             calculateRevenues();
-            console.log('✅ Ingresos por país calculados');
+     
         } else {
             console.warn('⚠️ calculateRevenues no disponible');
         }
@@ -149,7 +149,7 @@ function updateCalculations() {
         // 3. Costos Operativos (costs.js)
         if (typeof calculateCosts === 'function') {
             calculateCosts();
-            console.log('✅ Costos operativos calculados');
+      
         } else {
             console.warn('⚠️ calculateCosts no disponible');
         }
@@ -157,7 +157,7 @@ function updateCalculations() {
         // 4. Working Capital por País (workingCapital.js)
         if (typeof calculateWorkingCapital === 'function') {
             calculateWorkingCapital();
-            console.log('✅ Working Capital calculado');
+       
         } else {
             console.warn('⚠️ calculateWorkingCapital no disponible');
         }
@@ -165,7 +165,7 @@ function updateCalculations() {
         // 5. Estructura y Cronograma de Deuda (debt.js)
         if (typeof calculateDebtStructure === 'function') {
             calculateDebtStructure();
-            console.log('✅ Cronograma de deuda calculado');
+        
         } else {
             console.warn('⚠️ calculateDebtStructure no disponible');
         }
@@ -173,7 +173,7 @@ function updateCalculations() {
         // 6. Cronograma de Depreciaciones (depreciation.js)
         if (typeof calculateDepreciations === 'function') {
             calculateDepreciations();
-            console.log('✅ Cronograma de depreciaciones calculado');
+      
         } else {
             console.warn('⚠️ calculateDepreciations no disponible');
         }
@@ -181,7 +181,7 @@ function updateCalculations() {
         // 7. Flujo de Caja Económico (cashflow.js)
         if (typeof calculateEconomicCashFlow === 'function') {
             calculateEconomicCashFlow();
-            console.log('✅ Flujo económico calculado');
+   
         } else {
             console.warn('⚠️ calculateEconomicCashFlow no disponible');
         }
@@ -189,7 +189,7 @@ function updateCalculations() {
         // 8. Flujo de Caja Financiero (cashflow.js)
         if (typeof calculateFinancialCashFlow === 'function') {
             calculateFinancialCashFlow();
-            console.log('✅ Flujo financiero calculado');
+  
         } else {
             console.warn('⚠️ calculateFinancialCashFlow no disponible');
         }
@@ -198,7 +198,7 @@ function updateCalculations() {
         setTimeout(() => {
             if (typeof updateKeyFactorsDisplay === 'function') {
                 updateKeyFactorsDisplay();
-                console.log('✅ Factores Clave actualizados con datos reales');
+
             } else {
                 console.warn('⚠️ updateKeyFactorsDisplay no disponible');
             }
@@ -214,9 +214,9 @@ function updateCalculations() {
             
             if (isSensitivityTabActive && typeof updateSensitivity === 'function') {
                 updateSensitivity();
-                console.log('✅ Análisis de sensibilidad actualizado');
+
             } else if (!isSensitivityTabActive) {
-                console.log('ℹ️ Análisis de sensibilidad omitido (no está en la pestaña activa)');
+
             } else {
                 console.warn('⚠️ updateSensitivity no disponible');
             }
@@ -236,24 +236,24 @@ function updateCalculations() {
         // 9.1. Actualizar métricas clave automáticamente
         if (typeof updateMetricsDisplay === 'function') {
             updateMetricsDisplay();
-            console.log('✅ Métricas clave actualizadas automáticamente');
+
         }
         
         // 10. Actualizar Dashboard (dashboard.js)
         if (typeof updateDashboard === 'function') {
             updateDashboard();
-            console.log('✅ Dashboard actualizado');
+
         }
         
         // 11. Evaluar viabilidad del proyecto
         setTimeout(() => {
             if (typeof evaluateProjectViability === 'function') {
                 evaluateProjectViability();
-                console.log('✅ Evaluación de viabilidad ejecutada');
+
             }
         }, 1000);
         
-        console.log('🎉 Modelo financiero actualizado completamente');
+
         
     } catch (error) {
         console.error('❌ Error en updateCalculations:', error);
@@ -268,7 +268,7 @@ function updateCalculations() {
 // ============================================================================
 
 function syncDataBetweenModules() {
-    console.log('🔄 Sincronizando datos entre módulos...');
+
     
     // Verificar que modelData existe
     if (typeof modelData === 'undefined') {
@@ -281,15 +281,7 @@ function syncDataBetweenModules() {
             return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
         }, 0);
         
-        console.log('📊 Datos sincronizados:', {
-            'Revenue 2030 del modelo': `$${(revenue2030/1000000).toFixed(1)}M`,
-            'Mercados disponibles': Object.keys(modelData.revenues[2030] || {}),
-            'Datos por mercado 2030': Object.keys(modelData.revenues[2030] || {}).map(market => ({
-                market,
-                revenue: `$${((modelData.revenues[2030][market]?.netRevenue || 0)/1000000).toFixed(1)}M`,
-                orders: Math.round(modelData.revenues[2030][market]?.orders || 0).toLocaleString()
-            }))
-        });
+
         
         // Forzar actualización de elementos específicos si están disponibles
         const totalRevenue2030Element = document.getElementById('totalRevenue2030');
@@ -301,7 +293,7 @@ function syncDataBetweenModules() {
         const sensitivityRevenueElement = document.getElementById('sensitivityRevenue');
         if (sensitivityRevenueElement) {
             sensitivityRevenueElement.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
-            console.log('✅ Análisis de sensibilidad sincronizado:', `$${(revenue2030/1000000).toFixed(1)}M`);
+
         }
         
         // Actualizar dashboard si está disponible
@@ -313,13 +305,13 @@ function syncDataBetweenModules() {
         // Forzar actualización del análisis de sensibilidad si está disponible
         setTimeout(() => {
             if (window.sensitivityAnalysis && typeof window.sensitivityAnalysis.updateBaseMetrics === 'function') {
-                console.log('🔄 Forzando actualización de métricas de sensibilidad...');
+
                 window.sensitivityAnalysis.updateBaseMetrics();
             }
             
             // También intentar con la función global
             if (typeof window.updateSensitivityAnalysis === 'function') {
-                console.log('🔄 Forzando actualización global de sensibilidad...');
+
                 window.updateSensitivityAnalysis();
             }
         }, 200);
@@ -328,7 +320,7 @@ function syncDataBetweenModules() {
         console.warn('⚠️ Datos de ingresos no disponibles para sincronización');
     }
     
-    console.log('✅ Sincronización completada');
+
 }
 
 // ============================================================================
@@ -336,7 +328,7 @@ function syncDataBetweenModules() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📊 Inicializando modelo financiero VSPT...');
+
     
     // Verificar que todos los módulos estén cargados
     const requiredFunctions = [
@@ -353,25 +345,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const missingFunctions = requiredFunctions.filter(fn => typeof window[fn] !== 'function');
     if (missingFunctions.length > 0) {
         console.warn('⚠️ Funciones faltantes:', missingFunctions);
-        console.log('🔍 Verificar que todos los archivos JS están cargados en el HTML');
+
     } else {
-        console.log('✅ Todos los módulos están disponibles');
+
     }
     
     // Agregar event listeners a todos los inputs para actualización automática
     const inputs = document.querySelectorAll('input, select');
-    console.log(`🎛️ Configurando ${inputs.length} controles interactivos...`);
+
     
     inputs.forEach(input => {
         input.addEventListener('change', () => {
-            console.log(`🔄 Cambio detectado en: ${input.id || input.name}`);
+
             updateCalculations();
         });
         input.addEventListener('input', () => {
             // Debounce para inputs de texto
             clearTimeout(input.debounceTimer);
             input.debounceTimer = setTimeout(() => {
-                console.log(`⚡ Input actualizado: ${input.id || input.name}`);
+
                 updateCalculations();
             }, 300);
         });
@@ -380,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ejecutar cálculos iniciales
     setTimeout(() => {
         updateCalculations();
-        console.log('🎯 Modelo inicializado correctamente');
+
         
         // Mostrar tab inicial
         const firstTab = document.querySelector('.tab.active');
@@ -405,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function downloadExcel() {
     try {
         if (typeof exportToExcel === 'function') {
-            console.log('📥 Iniciando exportación a Excel...');
+
             exportToExcel();
         } else {
             console.error('❌ Función exportToExcel no disponible en utils.js');
@@ -426,22 +418,11 @@ function downloadExcel() {
 // ============================================================================
 
 function debugModel() {
-    console.log('🔍 Estado actual del modelo:', modelData);
-    console.log('📊 Módulos disponibles:', {
-        investments: typeof calculateOptimizedCapex !== 'undefined',
-        revenues: typeof calculateRevenues !== 'undefined',
-        costs: typeof calculateCosts !== 'undefined',
-        workingCapital: typeof calculateWorkingCapital !== 'undefined',
-        debt: typeof calculateDebtStructure !== 'undefined',
-        depreciation: typeof calculateDepreciations !== 'undefined',
-        cashflow: typeof calculateEconomicCashFlow !== 'undefined',
-        sensitivity: typeof updateSensitivity !== 'undefined',
-        utils: typeof exportToExcel !== 'undefined'
-    });
+
 }
 
 function resetModel() {
-    console.log('🔄 Reiniciando modelo...');
+
     modelData = {
         investments: {},
         revenues: {},
@@ -458,20 +439,15 @@ function resetModel() {
 
 // Función de debug específica para inventario
 function debugInventory() {
-    console.log('🔍 Debug de inventario:');
+
     
     const inventoryParams = getInventoryParams();
-    console.log('📦 Parámetros de inventario:', inventoryParams);
+
     
     const totalBottlesNeeded = inventoryParams.initialStockMonths * 1000;
     const containersNeeded = Math.ceil(totalBottlesNeeded / inventoryParams.bottlesPerContainer);
     const inventoryInvestment = containersNeeded * inventoryParams.containerCost;
-    
-    console.log('📊 Cálculos:');
-    console.log('- Botellas necesarias:', totalBottlesNeeded);
-    console.log('- Contenedores necesarios:', containersNeeded);
-    console.log('- Inversión total:', inventoryInvestment);
-    console.log('- Inversión formateada:', `$${(inventoryInvestment/1000).toFixed(0)}K`);
+
     
     return {
         params: inventoryParams,
@@ -502,14 +478,14 @@ function downloadExcel() {
 
 // Función para restaurar valores por defecto
 function resetToDefaults() {
-    console.log('🔄 Restaurando valores por defecto...');
+
     
     try {
         // Confirmar con el usuario
         const confirmReset = confirm('¿Está seguro de que desea restaurar todos los valores por defecto? Esta acción no se puede deshacer.');
         
         if (!confirmReset) {
-            console.log('❌ Reset cancelado por el usuario');
+
             return;
         }
         
@@ -549,7 +525,7 @@ function resetToDefaults() {
                 } else {
                     element.value = defaultValues[elementId];
                 }
-                console.log(`✅ ${elementId}: ${defaultValues[elementId]}`);
+
             } else {
                 console.warn(`⚠️ Elemento ${elementId} no encontrado`);
             }
@@ -566,7 +542,7 @@ function resetToDefaults() {
             const element = document.getElementById(selectId);
             if (element) {
                 element.value = sensitivitySelects[selectId];
-                console.log(`✅ ${selectId}: ${sensitivitySelects[selectId]}`);
+
             }
         });
         
@@ -586,7 +562,7 @@ function resetToDefaults() {
         // Recalcular todo el modelo con los nuevos valores
         setTimeout(() => {
             updateCalculations();
-            console.log('✅ Modelo restaurado a valores por defecto');
+
             
             // Mostrar mensaje de confirmación
             const notification = document.createElement('div');
@@ -641,7 +617,7 @@ function toggleMobileMenu() {
             icon.className = isExpanded ? 'fas fa-times' : 'fas fa-bars';
         }
         
-        console.log(`📱 Menú móvil ${isExpanded ? 'abierto' : 'cerrado'}`);
+
     }
 }
 

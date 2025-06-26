@@ -3,7 +3,7 @@
 // ============================================================================
 
 function calculateDebtStructure() {
-    console.log('💳 Calculando cronograma de deuda francesa...');
+
     
     const params = getFinancialParams();
     
@@ -14,15 +14,7 @@ function calculateDebtStructure() {
     const debtAmount = totalCapex * params.debtRatio;
     const equityAmount = totalCapex * params.equityRatio;
     
-    console.log('📊 Parámetros de deuda optimizados:', {
-        'CAPEX Optimizado': `$${(optimizedCapex/1000).toFixed(0)}K`,
-        'CAPEX Total': `$${(totalCapex/1000).toFixed(0)}K`,
-        'Ahorro vs Original': `$${((800000 - optimizedCapex)/1000).toFixed(0)}K (-29.4%)`,
-        'Monto Deuda': `$${(debtAmount/1000).toFixed(0)}K`,
-        'Ratio Deuda': `${(params.debtRatio * 100).toFixed(1)}%`,
-        'Tasa Interés': `${(params.interestRate * 100).toFixed(1)}%`,
-        'Plazo': `${params.debtTermYears} años`
-    });
+
     
     const debt = {
         totalCapex: totalCapex,
@@ -81,13 +73,7 @@ function calculateDebtStructure() {
     updateDebtMetrics(debt);
     modelData.debt = debt;
     
-    console.log('✅ Cronograma de deuda optimizado calculado:', {
-        'CAPEX Optimizado': `$${(optimizedCapex/1000).toFixed(0)}K (era $800K)`,
-        'Monto Total Deuda': `$${(debtAmount/1000).toFixed(0)}K`,
-        'Cuota Mensual': `$${(monthlyPayment).toFixed(0)}`,
-        'Plazo': `${params.debtTermYears} años`,
-        'Ahorro en Deuda': `$${((800000 - optimizedCapex) * params.debtRatio / 1000).toFixed(0)}K`
-    });
+
 }
 
 function calculateDebtMetrics(debt) {
@@ -124,12 +110,7 @@ function updateDebtScheduleTable(debt) {
         return;
     }
     
-    console.log('📋 Actualizando tabla de cronograma de deuda:', {
-        'Monto Deuda': `$${(debt.debtAmount/1000).toFixed(0)}K`,
-        'Tasa': `${(debt.interestRate*100).toFixed(1)}%`,
-        'Plazo': `${debt.termYears} años`,
-        'CAPEX Total': `$${(debt.totalCapex/1000).toFixed(0)}K`
-    });
+
     
     tbody.innerHTML = '';
     
@@ -217,20 +198,15 @@ function updateDebtMetrics(debt) {
         }
     });
     
-    console.log('📊 Métricas de deuda actualizadas dinámicamente:', {
-        'Total Debt': elements.totalDebtAmount,
-        'Monthly Payment': elements.monthlyPaymentAmount,
-        'Total Interest': elements.totalInterestPaid,
-        'Debt/Equity': elements.debtServiceRatio
-    });
+
 }
 
 // Función de debug para cronograma de deuda optimizado
 function debugDebt() {
-    console.log('🔍 Debug del cronograma de deuda optimizado:');
+
     
     const params = getFinancialParams();
-    console.log('📊 Parámetros financieros:', params);
+
     
     const optimizedCapex = 565000; // CAPEX optimizado
     const originalCapex = 800000; // CAPEX original
@@ -238,16 +214,7 @@ function debugDebt() {
     const debtAmount = totalCapex * params.debtRatio;
     const savings = originalCapex - optimizedCapex;
     
-    console.log('💰 Cálculos de deuda optimizada:');
-    console.log('- CAPEX Original:', `$${(originalCapex/1000).toFixed(0)}K`);
-    console.log('- CAPEX Optimizado:', `$${(optimizedCapex/1000).toFixed(0)}K`);
-    console.log('- Ahorro CAPEX:', `$${(savings/1000).toFixed(0)}K (-29.4%)`);
-    console.log('- CAPEX Total:', `$${(totalCapex/1000).toFixed(0)}K`);
-    console.log('- Monto Deuda:', `$${(debtAmount/1000).toFixed(0)}K`);
-    console.log('- Ahorro en Deuda:', `$${(savings * params.debtRatio / 1000).toFixed(0)}K`);
-    console.log('- Ratio Deuda:', `${(params.debtRatio * 100).toFixed(1)}%`);
-    console.log('- Tasa Interés:', `${(params.interestRate * 100).toFixed(1)}%`);
-    console.log('- Plazo:', `${params.debtTermYears} años`);
+
     
     // Calcular cuota francesa
     const monthlyRate = params.interestRate / 12;
@@ -256,8 +223,7 @@ function debugDebt() {
         debtAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
         (Math.pow(1 + monthlyRate, totalPayments) - 1) : 0;
     
-    console.log('- Cuota Mensual:', `$${monthlyPayment.toFixed(0)}`);
-    console.log('- Cuota Anual:', `$${(monthlyPayment * 12).toFixed(0)}`);
+
     
     return {
         params,

@@ -26,13 +26,13 @@ const ASSET_LIVES = {
 // Cálculo de depreciaciones detalladas
 function calculateDepreciations() {
     try {
-        console.log('🔄 Calculando cronograma de depreciaciones...');
+
         
         // Obtener datos de CAPEX desde el módulo optimizado
         const investments = modelData.investments || {};
         
         if (Object.keys(investments).length === 0) {
-            console.warn('⚠️ No hay datos de CAPEX disponibles para depreciaciones');
+
             return;
         }
         
@@ -157,10 +157,10 @@ function calculateDepreciations() {
         updateDepreciationTable();
         updateDepreciationMetrics();
         
-        console.log('✅ Depreciaciones calculadas:', modelData.depreciation);
+
         
     } catch (error) {
-        console.error('❌ Error calculando depreciaciones:', error);
+
     }
 }
 
@@ -202,7 +202,7 @@ function calculateAnnualDepreciation(assetData, year, assetLife, depreciableValu
         return 0;
         
     } catch (error) {
-        console.error('❌ Error calculando depreciación anual:', error);
+
         return 0;
     }
 }
@@ -238,10 +238,10 @@ function updateDepreciationTable() {
             `;
         }).join('');
         
-        console.log('✅ Tabla de depreciaciones actualizada');
+
         
     } catch (error) {
-        console.error('❌ Error actualizando tabla de depreciaciones:', error);
+
     }
 }
 
@@ -292,10 +292,10 @@ function updateDepreciationMetrics() {
             residualValueElement.textContent = `$${formatNumber(totalResidual/1000, 1)}K`;
         }
         
-        console.log('✅ Métricas de depreciaciones actualizadas');
+
         
     } catch (error) {
-        console.error('❌ Error actualizando métricas de depreciaciones:', error);
+
     }
 }
 
@@ -317,20 +317,17 @@ function getDepreciationData() {
         };
         
     } catch (error) {
-        console.error('❌ Error obteniendo datos de depreciación:', error);
+
         return { summary: {}, schedule: [] };
     }
 }
 
 // Debug helper para depreciaciones
 function debugDepreciation() {
-    console.log('🔍 DEBUG - Estado de Depreciaciones:');
-    console.log('- Datos completos:', modelData.depreciation);
-    console.log('- Cronograma:', modelData.depreciation?.schedule);
-    console.log('- Vidas útiles configuradas:', ASSET_LIVES);
+
     
     const capexData = modelData.investments?.capexBreakdown || [];
-    console.log('- CAPEX disponible para depreciación:', capexData);
+
     
     return modelData.depreciation;
 }

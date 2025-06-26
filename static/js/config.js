@@ -107,7 +107,7 @@ function getInventoryParams() {
         initialStockMonths: isNaN(initialStockMonths) || initialStockMonths <= 0 ? 6 : initialStockMonths
     };
     
-    console.log('📦 Parámetros de inventario obtenidos:', validatedParams);
+
     return validatedParams;
 }
 

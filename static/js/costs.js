@@ -3,7 +3,6 @@
 // ============================================================================
 
 function calculateCosts() {
-    console.log('💸 Calculando costos operativos...');
     
     const params = getFinancialParams();
     const businessParams = getBusinessParams();
@@ -78,10 +77,7 @@ function calculateCosts() {
     updateCostMetrics(costs);
     modelData.costs = costs;
     
-    console.log('✅ Costos calculados:', {
-        '2026 Total': `$${(costs[2026].totalCosts/1000).toFixed(0)}K`,
-        '2030 Total': `$${(costs[2030].totalCosts/1000).toFixed(0)}K`
-    });
+
 }
 
 function updateCostsTable(costs) {
@@ -214,11 +210,7 @@ function updateCostMetrics(costs) {
         }
     });
     
-    console.log('📊 Métricas de costos actualizadas:', {
-        'Total 2030': elements.totalCosts2030,
-        'Cost Margin': elements.costMargin,
-        'COGS Margin': elements.cogsMargin
-    });
+
 }
 
 // Función para exportar datos de costos a Excel

@@ -4,15 +4,8 @@
 
 function calculateProgressiveCapex() {
     try {
-        console.log('💰 Calculando CAPEX progresivo y financiamiento...');
-        
         const params = getFinancialParams();
         const totalCapex = 565000; // $565K optimizado total
-        
-        console.log('📊 Parámetros financieros:', params);
-        console.log('📊 CAPEX total:', totalCapex);
-        console.log('📊 capexDistribution disponible:', typeof capexDistribution !== 'undefined');
-        console.log('📊 capexDistribution keys:', Object.keys(capexDistribution || {}));
         
         const investments = {
             totalCapex: totalCapex,
@@ -34,12 +27,6 @@ function calculateProgressiveCapex() {
             const yearlyCapex = totalCapex * yearData.pct;
             cumulativeCapex += yearlyCapex;
             
-            console.log(`📅 Año ${year}:`, {
-                percentage: yearData.pct,
-                yearlyCapex: yearlyCapex,
-                cumulativeCapex: cumulativeCapex
-            });
-            
             investments.distribution[year] = {
                 amount: yearlyCapex,
                 percentage: yearData.pct,
@@ -55,27 +42,12 @@ function calculateProgressiveCapex() {
             };
         });
         
-        console.log('📊 Distribución calculada:', investments.distribution);
-        
         updateCapexTable(investments);
         updateFinancingMetrics(investments);
         modelData.investments = investments;
         
-        console.log('✅ CAPEX y financiamiento calculados:', {
-            total: `$${(totalCapex/1000).toFixed(0)}K`,
-            debt: `$${(investments.financing.debt/1000).toFixed(0)}K`,
-            equity: `$${(investments.financing.equity/1000).toFixed(0)}K`
-        });
-        
-        console.log('🔍 modelData.investments asignado:', {
-            totalCapex: modelData.investments.totalCapex,
-            distributionKeys: Object.keys(modelData.investments.distribution),
-            distribution: modelData.investments.distribution
-        });
-        
     } catch (error) {
         console.error('❌ Error en calculateProgressiveCapex:', error);
-        console.error('❌ Stack trace:', error.stack);
     }
 }
 
@@ -110,7 +82,7 @@ function updateCapexTable(investments) {
         2026: {
             'Expansión Internacional': 40000,
             'Expansión Mercado México': 55000,
-            'Desarrollo Almacenes (Reducido)': 25000,
+            'Desarrollo Almacenes': 25000,
             'Mejoras de Plataforma': 15000
         },
         2027: {
@@ -327,23 +299,16 @@ function getAccumulatedCapex(currentYear) {
 
 // Función para inicializar automáticamente cuando el DOM esté listo
 function initializeInvestments() {
-    console.log('🚀 Inicializando módulo de inversiones...');
-    
     // Verificar que capexDistribution esté disponible
     if (typeof capexDistribution === 'undefined') {
-        console.error('❌ capexDistribution no está definida');
         return;
     }
-    
-    console.log('✅ capexDistribution disponible:', capexDistribution);
     
     // Calcular CAPEX progresivo
     calculateProgressiveCapex();
     
     // Verificar que se haya asignado correctamente
-    if (modelData.investments) {
-        console.log('✅ modelData.investments inicializado correctamente');
-    } else {
+    if (!modelData.investments) {
         console.error('❌ modelData.investments no se inicializó');
     }
 }

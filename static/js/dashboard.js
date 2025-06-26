@@ -10,21 +10,15 @@ class Dashboard {
 
     // Inicializar el dashboard
     init() {
-        console.log('🚀 Dashboard: Iniciando...');
+
         if (this.initialized) {
-            console.log('⚠️ Dashboard ya inicializado');
+
             return;
         }
         
         // Esperar a que todos los módulos estén cargados
         if (typeof updateCalculations === 'function') {
-            console.log('✅ Módulos disponibles, verificando datos...');
-            console.log('🔍 Estado de modelData al inicializar:', {
-                economicCashFlow: !!modelData.economicCashFlow,
-                economicCashFlowKeys: modelData.economicCashFlow ? Object.keys(modelData.economicCashFlow) : [],
-                revenues: !!modelData.revenues,
-                investments: !!modelData.investments
-            });
+
             
             // Verificar si los datos del modelo están disponibles
             const hasEconomicData = modelData.economicCashFlow && 
@@ -32,10 +26,10 @@ class Dashboard {
                                    Object.keys(modelData.economicCashFlow).some(key => !isNaN(key));
             
             if (hasEconomicData) {
-                console.log('✅ Datos del modelo disponibles, usando datos reales');
+
                 this.collectData();
             } else {
-                console.log('⚠️ Datos del modelo no disponibles, usando datos por defecto y reintentando...');
+
                 this.setDefaultData();
                 // Reintentar en 200ms para dar tiempo a que se calculen los datos
                 setTimeout(() => {
@@ -51,34 +45,34 @@ class Dashboard {
             this.updateMarketMetrics();
             this.updateCashflowSummary();
             this.initialized = true;
-            console.log('🎉 Dashboard inicializado exitosamente');
+
         } else {
             // Reintentar en 100ms si los módulos no están listos
-            console.log('⏳ Módulos no disponibles, reintentando...');
+
             setTimeout(() => this.init(), 100);
         }
     }
 
     // Recopilar datos de todos los módulos
     collectData() {
-        console.log('📊 Dashboard: Recopilando datos de todos los módulos...');
+
         try {
             // Datos de inversiones
             this.data.capex = this.getCapexData();
-            console.log('✅ Datos CAPEX recopilados:', this.data.capex);
+
             
             // Datos de ingresos
             this.data.revenues = this.getRevenueData();
-            console.log('✅ Datos de ingresos recopilados:', this.data.revenues);
+
             
             // Datos de costos
             this.data.costs = this.getCostData();
-            console.log('✅ Datos de costos recopilados:', this.data.costs);
+
             
             // Datos de flujo de caja
-            console.log('🔄 Llamando a getCashflowData()...');
+
             this.data.cashflow = this.getCashflowData();
-            console.log('✅ Datos de flujo de caja recopilados:', this.data.cashflow);
+
             
             // Calcular métricas derivadas
             this.calculateDerivedMetrics();
@@ -86,7 +80,7 @@ class Dashboard {
         } catch (error) {
             console.error('❌ Error en collectData():', error);
             console.error('❌ Stack trace:', error.stack);
-            console.log('Usando datos por defecto');
+
             this.setDefaultData();
         }
     }
@@ -95,10 +89,10 @@ class Dashboard {
     getCapexData() {
         // PRIORIDAD 1: Usar datos reales del CAPEX optimizado si están disponibles
         if (modelData.investments && typeof calculateOptimizedCapex === 'function') {
-            console.log('📊 Dashboard usando CAPEX optimizado del modelo');
+            
             
             const capexData = calculateOptimizedCapex();
-            console.log('🔍 capexData resultado:', capexData);
+
             
             if (capexData && capexData.total) {
                 const params = getFinancialParams();
@@ -115,7 +109,7 @@ class Dashboard {
                     params: params
                 };
             } else {
-                console.log('⚠️ capexData no válido, usando fallback');
+
             }
         }
         
@@ -143,7 +137,7 @@ class Dashboard {
         
         // PRIORIDAD 1: Usar datos reales del modelo si están disponibles
         if (modelData.revenues) {
-            console.log('📊 Dashboard usando datos reales del modelo de ingresos (Chile y México)');
+
             
             // Calcular totales usando solo los mercados activos
             const revenue2030 = activeMarkets.reduce((sum, market) => {
@@ -166,12 +160,7 @@ class Dashboard {
                 modelData.revenues[2025].chile.netRevenue : 0;
             const cagr = revenue2025Chile > 0 ? Math.pow(revenue2030 / revenue2025Chile, 1/5) - 1 : 0;
 
-            console.log('✅ Dashboard usando datos del modelo (Chile y México):', {
-                'Revenue 2030': `$${(revenue2030/1000000).toFixed(1)}M`,
-                'Orders 2030': Math.round(orders2030).toLocaleString(),
-                'CAGR': `${(cagr * 100).toFixed(1)}%`,
-                'Active Markets': activeMarkets
-            });
+
 
             // Filtrar datos del modelo para incluir solo mercados activos
             const filteredRevenueData = {};
@@ -196,7 +185,7 @@ class Dashboard {
             };
         }
         // PRIORIDAD 2: Si no hay datos del modelo, calcular usando solo Chile y México
-        console.log('⚠️ Dashboard calculando datos propios (solo Chile y México)');
+
         const params = getBusinessParams();
         const revenues = {};
         
@@ -305,17 +294,13 @@ class Dashboard {
 
     // Obtener datos de flujo de caja usando los datos reales del modelo
     getCashflowData() {
-        console.log('📊 Dashboard: Obteniendo datos de flujo de caja...');
-        console.log('🔍 modelData.economicCashFlow disponible:', !!modelData.economicCashFlow);
-        console.log('🔍 modelData.economicCashFlow.metrics disponible:', !!(modelData.economicCashFlow && modelData.economicCashFlow.metrics));
-        console.log('🔍 modelData.economicCashFlow completo:', modelData.economicCashFlow);
+
         
         // Si ya tenemos datos del modelo, usarlos
         if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
-            console.log('✅ ENTRANDO AL BRANCH DEL MODELO ECONÓMICO');
+
             const economicFlow = modelData.economicCashFlow;
-            console.log('🔍 Estructura de economicFlow:', economicFlow);
-            console.log('🔍 Años disponibles en economicFlow:', Object.keys(economicFlow));
+
             
             let accumulatedFCF = 0;
             const yearlyFCF = {};
@@ -325,20 +310,19 @@ class Dashboard {
                 !isNaN(key) && economicFlow[key] && typeof economicFlow[key].fcf !== 'undefined'
             );
             
-            console.log('📅 Años disponibles con FCF:', availableYears);
+
             
             availableYears.forEach(year => {
                 const yearNum = parseInt(year);
-                console.log(`🔍 Verificando año ${yearNum}:`, economicFlow[yearNum]);
+
                 if (economicFlow[yearNum] && typeof economicFlow[yearNum].fcf !== 'undefined') {
                     yearlyFCF[yearNum] = economicFlow[yearNum].fcf;
                     accumulatedFCF += economicFlow[yearNum].fcf;
-                    console.log(`✅ Año ${yearNum} - FCF: ${economicFlow[yearNum].fcf}`);
+
                 }
             });
             
-            console.log('📈 yearlyFCF del modelo:', yearlyFCF);
-            console.log('💰 accumulatedFCF:', accumulatedFCF);
+
             
             // Usar métricas financieras del modelo si están disponibles
             let financialNPV = null;
@@ -411,7 +395,7 @@ class Dashboard {
                 accumulatedFCF += fcf;
             }
             
-            console.log(`📊 FCF ${year}: $${(fcf/1000).toFixed(0)}K (Revenue: $${(yearRevenue/1000).toFixed(0)}K, CAPEX: $${(capex/1000).toFixed(0)}K)`);
+
         });
 
         return {
@@ -647,26 +631,22 @@ class Dashboard {
             const yearlyFCF = this.data.cashflow.yearlyFCF || {};
             let operationalFCF = 0;
             
-            console.log('📊 Calculando ROI Dashboard:');
-            console.log('- yearlyFCF:', yearlyFCF);
+            
             
             // Sumar FCF de años operativos (2026-2030) - incluye negativos y positivos
             for (let year = 2026; year <= 2030; year++) {
                 if (yearlyFCF[year] !== undefined) {
-                    console.log(`- FCF ${year}: $${(yearlyFCF[year]/1000).toFixed(0)}K`);
                     operationalFCF += yearlyFCF[year];
                 }
             }
             
             const totalCapex = this.data.capex.totalCapex;
             
-            console.log(`- Total FCF Operativo: $${(operationalFCF/1000).toFixed(0)}K`);
-            console.log(`- Total CAPEX: $${(totalCapex/1000).toFixed(0)}K`);
+            
             
             // ROI = (FCF Acumulado Operativo / Inversión Total) * 100
             if (totalCapex > 0) {
                 this.data.roi = ((operationalFCF / totalCapex) * 100);
-                console.log(`- ROI Calculado: ${this.data.roi.toFixed(1)}%`);
             } else {
                 this.data.roi = 0;
             }
@@ -777,12 +757,7 @@ class Dashboard {
         };
 
         // Logging detallado para debugging
-        console.log('📊 Actualizando KPIs Dashboard:');
-        console.log(`- ROI: ${roi}%`);
-        console.log(`- VAN Económico: $${((this.data.cashflow.npv || 0)/1000).toFixed(0)}K`);
-        console.log(`- TIR Económica: ${Math.round(this.data.cashflow.economicIRR || 0)}%`);
-        console.log(`- VAN Financiero: $${((this.data.cashflow.financialNPV || 0)/1000).toFixed(0)}K`);
-        console.log(`- TIR Financiera: ${Math.round(this.data.cashflow.financialIRR || 0)}%`);
+
 
         Object.entries(elements).forEach(([id, value]) => {
             const element = document.getElementById(id);
@@ -843,10 +818,10 @@ class Dashboard {
         
         const npvTrend = npvCard?.querySelector('.kpi-trend');
         
-        console.log(`📈 Evaluando VAN Económico: $${(npvValue/1000).toFixed(0)}K`);
+        
         
         if (!npvTrend) {
-            console.log('⚠️ No se encontró el elemento de tendencia del VAN Económico');
+
             return;
         }
         
@@ -856,23 +831,23 @@ class Dashboard {
         if (npvValue >= 2000000) { // >= $2M
             npvTrend.classList.add('positive');
             npvTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
-            console.log('- Evaluación: Excelente (>= $2M)');
+
         } else if (npvValue >= 1000000) { // >= $1M
             npvTrend.classList.add('positive');
             npvTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
-            console.log('- Evaluación: Muy Bueno (>= $1M)');
+
         } else if (npvValue > 0) { // > $0
             npvTrend.classList.add('positive');
             npvTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Positivo';
-            console.log('- Evaluación: Positivo (> $0)');
+
         } else if (npvValue >= -500000) { // >= -$500K
             npvTrend.classList.add('warning');
             npvTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
-            console.log('- Evaluación: Bajo (>= -$500K)');
+
         } else { // < -$500K
             npvTrend.classList.add('negative');
             npvTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
-            console.log('- Evaluación: Negativo (< -$500K)');
+
         }
     }
     
@@ -892,10 +867,10 @@ class Dashboard {
         
         const economicIRRTrend = economicIRRCard?.querySelector('.kpi-trend');
         
-        console.log(`📈 Evaluando TIR Económica: ${economicIRRValue.toFixed(1)}%`);
+        
         
         if (!economicIRRTrend) {
-            console.log('⚠️ No se encontró el elemento de tendencia de la TIR Económica');
+
             return;
         }
         
@@ -906,27 +881,27 @@ class Dashboard {
         if (economicIRRValue >= 15) { // >= 15%
             economicIRRTrend.classList.add('positive');
             economicIRRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
-            console.log('- Evaluación: Excelente (>= 15%)');
+
         } else if (economicIRRValue >= 12) { // >= 12%
             economicIRRTrend.classList.add('positive');
             economicIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
-            console.log('- Evaluación: Muy Bueno (>= 12%)');
+
         } else if (economicIRRValue >= 8) { // >= 8% (WACC)
             economicIRRTrend.classList.add('positive');
             economicIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Viable';
-            console.log('- Evaluación: Viable (>= WACC 8%)');
+
         } else if (economicIRRValue >= 5) { // >= 5%
             economicIRRTrend.classList.add('warning');
             economicIRRTrend.innerHTML = '<i class="fas fa-minus"></i> Marginal';
-            console.log('- Evaluación: Marginal (>= 5%)');
+
         } else if (economicIRRValue >= 0) { // >= 0%
             economicIRRTrend.classList.add('warning');
             economicIRRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
-            console.log('- Evaluación: Bajo (>= 0%)');
+
         } else { // < 0%
             economicIRRTrend.classList.add('negative');
             economicIRRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
-            console.log('- Evaluación: Negativo (< 0%)');
+
         }
     }
     
@@ -946,10 +921,9 @@ class Dashboard {
         
         const financialNPVTrend = financialNPVCard?.querySelector('.kpi-trend');
         
-        console.log(`📈 Evaluando VAN Financiero: $${(financialNPVValue/1000).toFixed(0)}K`);
         
         if (!financialNPVTrend) {
-            console.log('⚠️ No se encontró el elemento de tendencia del VAN Financiero');
+
             return;
         }
         
@@ -959,23 +933,23 @@ class Dashboard {
         if (financialNPVValue >= 1500000) { // >= $1.5M
             financialNPVTrend.classList.add('positive');
             financialNPVTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
-            console.log('- Evaluación: Excelente (>= $1.5M)');
+
         } else if (financialNPVValue >= 800000) { // >= $800K
             financialNPVTrend.classList.add('positive');
             financialNPVTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
-            console.log('- Evaluación: Muy Bueno (>= $800K)');
+
         } else if (financialNPVValue > 0) { // > $0
             financialNPVTrend.classList.add('positive');
             financialNPVTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Positivo';
-            console.log('- Evaluación: Positivo (> $0)');
+
         } else if (financialNPVValue >= -300000) { // >= -$300K
             financialNPVTrend.classList.add('warning');
             financialNPVTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
-            console.log('- Evaluación: Bajo (>= -$300K)');
+
         } else { // < -$300K
             financialNPVTrend.classList.add('negative');
             financialNPVTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
-            console.log('- Evaluación: Negativo (< -$300K)');
+
         }
     }
     
@@ -995,10 +969,9 @@ class Dashboard {
         
         const financialIRRTrend = financialIRRCard?.querySelector('.kpi-trend');
         
-        console.log(`📈 Evaluando TIR Financiera: ${financialIRRValue.toFixed(1)}%`);
         
         if (!financialIRRTrend) {
-            console.log('⚠️ No se encontró el elemento de tendencia de la TIR Financiera');
+
             return;
         }
         
@@ -1008,27 +981,27 @@ class Dashboard {
         if (financialIRRValue >= 30) { // >= 30%
             financialIRRTrend.classList.add('positive');
             financialIRRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
-            console.log('- Evaluación: Excelente (>= 30%)');
+
         } else if (financialIRRValue >= 20) { // >= 20%
             financialIRRTrend.classList.add('positive');
             financialIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
-            console.log('- Evaluación: Muy Bueno (>= 20%)');
+
         } else if (financialIRRValue >= 12) { // >= 12% (por encima del WACC típico)
             financialIRRTrend.classList.add('positive');
             financialIRRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Bueno';
-            console.log('- Evaluación: Bueno (>= 12%)');
+
         } else if (financialIRRValue >= 8) { // >= 8%
             financialIRRTrend.classList.add('warning');
             financialIRRTrend.innerHTML = '<i class="fas fa-minus"></i> Regular';
-            console.log('- Evaluación: Regular (>= 8%)');
+
         } else if (financialIRRValue > 0) { // > 0%
             financialIRRTrend.classList.add('warning');
             financialIRRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
-            console.log('- Evaluación: Bajo (> 0%)');
+
         } else { // <= 0%
             financialIRRTrend.classList.add('negative');
             financialIRRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
-            console.log('- Evaluación: Negativo (<= 0%)');
+
         }
     }
 
@@ -1040,18 +1013,16 @@ class Dashboard {
 
     // Crear gráfico de evolución de flujos de caja
     createRevenueChart() {
-        console.log('🎨 Dashboard: Creando gráfico de flujos de caja...');
+
         const ctx = document.getElementById('revenueChart');
         if (!ctx) {
-            console.log('⚠️ Canvas revenueChart no encontrado, creando...');
+
             // Crear canvas si no existe
             this.createRevenueChartCanvas();
             return;
         }
 
-        console.log('✅ Canvas encontrado, preparando datos...');
-        console.log('🔍 Datos de cashflow disponibles:', this.data.cashflow);
-        console.log('🔍 yearlyFCF disponible:', this.data.cashflow.yearlyFCF);
+
         
         const years = Object.keys(this.data.cashflow.yearlyFCF || {});
         const cashflows = years.map(year => {
@@ -1059,12 +1030,10 @@ class Dashboard {
             return fcf / 1000000; // Convertir a millones
         });
 
-        console.log('📊 Años:', years);
-        console.log('💰 Flujos de caja (millones):', cashflows);
+
         
         if (years.length === 0) {
-            console.warn('⚠️ No hay años en yearlyFCF, revisando datos del modelo...');
-            console.log('🔍 modelData.economicCashFlow:', modelData.economicCashFlow);
+
         }
 
         if (this.charts.revenue) {
@@ -1125,7 +1094,7 @@ class Dashboard {
 
     // Crear canvas para gráfico de revenue
     createRevenueChartCanvas() {
-        console.log('🎨 Dashboard: Creando canvas para gráfico de flujos de caja...');
+
         
         // Buscar específicamente la sección de flujos de caja por el texto del h3
         const chartSections = document.querySelectorAll('.chart-section');
@@ -1138,10 +1107,10 @@ class Dashboard {
             }
         });
         
-        console.log('🔍 Sección de flujos de caja encontrada:', !!targetSection);
+
         
         if (targetSection) {
-            console.log('✅ Reemplazando placeholder con canvas...');
+
             targetSection.innerHTML = '<canvas id="revenueChart" style="max-height: 200px;"></canvas>';
             setTimeout(() => this.createRevenueChart(), 100);
         } else {
@@ -1268,18 +1237,13 @@ class Dashboard {
         // Mercados inactivos para marcar como inactivos
         const inactiveMarkets = ['usa', 'brasil', 'brazil', 'canada'];
         
-        console.log('🌍 Actualizando métricas por mercado (Chile y México)...');
-        console.log('- Datos de ingresos disponibles:', this.data.revenues?.yearlyData?.[2030] ? 'Sí' : 'No');
-        
-        if (this.data.revenues?.yearlyData?.[2030]) {
-            console.log('- Mercados activos en datos 2030:', Object.keys(this.data.revenues.yearlyData[2030]));
-        }
+
         
         // Actualizar solo mercados activos
         Object.entries(activeMarketMapping).forEach(([cssClass, marketKey]) => {
             const marketData = this.data.revenues?.yearlyData?.[2030]?.[marketKey];
             
-            console.log(`- Procesando ${marketKey} (CSS: ${cssClass}):`, marketData ? 'Datos encontrados' : 'Sin datos');
+
             
             if (marketData) {
                 const card = document.querySelector(`.market-card.${cssClass}`);
@@ -1296,11 +1260,7 @@ class Dashboard {
                             stat.style.color = '';
                         });
                         
-                        console.log(`✅ ${marketKey} actualizado:`, {
-                            revenue: this.formatCurrency(marketData.netRevenue),
-                            orders: this.formatNumber(marketData.orders),
-                            ticket: '$' + Math.round(marketData.avgTicket)
-                        });
+
                     } else {
                         console.warn(`⚠️ No se encontraron suficientes elementos .stat-value en ${cssClass}`);
                     }
@@ -1341,7 +1301,7 @@ class Dashboard {
 
     // Actualizar tabla de métricas por mercado 2030 (tabla principal del dashboard)
     updateMarketTable() {
-        console.log('📊 Actualizando tabla de métricas por mercado 2030...');
+
         
         if (!this.data.revenues?.yearlyData?.[2030]) {
             console.warn('⚠️ No hay datos de ingresos 2030 para actualizar la tabla');
@@ -1349,7 +1309,7 @@ class Dashboard {
         }
         
         const marketData2030 = this.data.revenues.yearlyData[2030];
-        console.log('- Datos disponibles para 2030:', Object.keys(marketData2030));
+
         
         // Calcular totales
         let totalRevenue = 0;
@@ -1383,11 +1343,7 @@ class Dashboard {
                 totalOrders += data.orders;
                 totalTicketWeighted += data.netRevenue; // Para calcular AOV promedio ponderado
                 
-                console.log(`✅ Tabla ${marketKey} actualizada:`, {
-                    revenue: this.formatCurrency(data.netRevenue),
-                    orders: this.formatNumber(data.orders),
-                    aov: '$' + Math.round(data.avgTicket)
-                });
+
             } else {
                 console.warn(`⚠️ No hay datos para ${marketKey} en la tabla`);
             }
@@ -1417,11 +1373,7 @@ class Dashboard {
             totalAovElement.textContent = '$' + Math.round(avgAOV);
         }
         
-        console.log('✅ Tabla de métricas actualizada:', {
-            'Total Revenue': this.formatCurrency(totalRevenue),
-            'Total Orders': this.formatNumber(totalOrders),
-            'Avg AOV': totalOrders > 0 ? '$' + Math.round(totalRevenue / totalOrders) : '$0'
-        });
+
     }
 
     // Actualizar resumen de cashflow
@@ -1521,7 +1473,7 @@ class Dashboard {
 
     // Actualizar resumen visual dinámico (Mercado Líder, Mayor AOV, Mayor Volumen)
     updateMarketSummary() {
-        console.log('📈 Actualizando resumen visual de mercados...');
+
         
         if (!this.data.revenues?.yearlyData?.[2030]) {
             console.warn('⚠️ No hay datos de ingresos 2030 para actualizar el resumen');
@@ -1601,11 +1553,7 @@ class Dashboard {
             highestVolumeElement.innerHTML = `${marketName} con <strong>${this.formatNumber(highestVolume)}</strong> órdenes anuales`;
         }
         
-        console.log('✅ Resumen visual actualizado:', {
-            'Mercado Líder': leaderMarket ? `${marketNames[leaderMarket]} (${leaderShare.toFixed(1)}%)` : 'N/A',
-            'Mayor AOV': highestAOVMarket ? `${marketNames[highestAOVMarket]} ($${Math.round(highestAOV)})` : 'N/A',
-            'Mayor Volumen': highestVolumeMarket ? `${marketNames[highestVolumeMarket]} (${this.formatNumber(highestVolume)})` : 'N/A'
-        });
+
     }
 }
 
@@ -1616,7 +1564,7 @@ window.vsptDashboard = new Dashboard();
 document.addEventListener('DOMContentLoaded', function() {
     // Esperar más tiempo para que todos los cálculos estén completos
     setTimeout(() => {
-        console.log('🎯 Inicializando dashboard...');
+
         window.vsptDashboard.init();
         
         // Forzar evaluación de viabilidad después de inicializar dashboard
@@ -1659,7 +1607,7 @@ window.updateDashboard = function() {
 
 // Función para evaluar la viabilidad del proyecto con retry automático
 function evaluateProjectViability(retryCount = 0) {
-    console.log(`🔍 Evaluando viabilidad del proyecto (intento ${retryCount + 1})...`);
+
     
     // Primero intentar obtener datos del dashboard directamente
     let economicIRR = 0, financialIRR = 0, economicNPV = 0, financialNPV = 0;
@@ -1672,15 +1620,10 @@ function evaluateProjectViability(retryCount = 0) {
         economicNPV = (dashboardData.npv || 0) / 1000000; // Convertir a millones
         financialNPV = (dashboardData.financialNPV || 0) / 1000000; // Convertir a millones
         
-        console.log('✅ Usando datos del dashboard:', {
-            economicIRR: `${economicIRR}%`,
-            financialIRR: `${financialIRR}%`,
-            economicNPV: `$${economicNPV.toFixed(1)}M`,
-            financialNPV: `$${financialNPV.toFixed(1)}M`
-        });
+
     } else {
         // PRIORIDAD 2: Intentar obtener de los elementos del DOM
-        console.log('⚠️ Dashboard data no disponible, intentando DOM...');
+
         
         const economicIRRElement = document.getElementById('economicIRR');
         const financialIRRElement = document.getElementById('financialIRR');
@@ -1702,24 +1645,19 @@ function evaluateProjectViability(retryCount = 0) {
         financialNPV = parseFloat(financialNPVElement?.textContent?.replace(/[$M,]/g, '') || 
                                        dashFinancialNPVElement?.textContent?.replace(/[$M,]/g, '') || '0');
         
-        console.log('📊 Datos obtenidos del DOM:', {
-            economicIRR: `${economicIRR}%`,
-            financialIRR: `${financialIRR}%`,
-            economicNPV: `$${economicNPV.toFixed(1)}M`,
-            financialNPV: `$${financialNPV.toFixed(1)}M`
-        });
+
     }
     
     // Si los datos son cero o muy bajos y es el primer intento, reintentar
     if ((economicIRR === 0 && financialIRR === 0 && economicNPV === 0) && retryCount < 3) {
-        console.log(`⏳ Datos no disponibles, reintentando en 1 segundo (intento ${retryCount + 1}/3)...`);
+
         setTimeout(() => evaluateProjectViability(retryCount + 1), 1000);
         return;
     }
     
     // Si aún no hay datos después de 3 intentos, usar datos por defecto
     if (economicIRR === 0 && financialIRR === 0 && economicNPV === 0) {
-        console.log('⚠️ Usando datos por defecto para evaluación');
+
         economicIRR = 35; // TIR económica por defecto
         financialIRR = 28; // TIR financiera por defecto
         economicNPV = 1.8; // NPV económico por defecto (millones)
@@ -1919,9 +1857,5 @@ function generateProjectConclusion(economicViability, financialViability) {
     conclusionCard.querySelector('h4').textContent = overallStatus;
     conclusionText.textContent = conclusionMessage;
     
-    console.log('📋 Conclusión del proyecto:', {
-        overallStatus,
-        economicViable: economicViability.viable,
-        financialViable: financialViability.viable
-    });
+
 } 

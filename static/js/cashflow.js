@@ -3,20 +3,13 @@
 // ============================================================================
 
 function calculateEconomicCashFlow() {
-    console.log('📊 Calculando flujo de caja económico...');
+   
     
     const params = getFinancialParams();
     const economicFlow = {};
     
     // Debug: verificar disponibilidad de datos
-    console.log('🔍 Datos disponibles para cashflow:', {
-        'revenues': !!modelData.revenues,
-        'costs': !!modelData.costs,
-        'investments': !!modelData.investments,
-        'depreciation': !!modelData.depreciation,
-        'workingCapital': !!modelData.workingCapital,
-        'marketDistribution': typeof marketDistribution !== 'undefined'
-    });
+
     
     for (let year = 2025; year <= 2030; year++) {
         economicFlow[year] = {
@@ -142,18 +135,11 @@ function calculateEconomicCashFlow() {
     updateEconomicFlowTable(economicFlow);
     modelData.economicCashFlow = economicFlow;
     
-    console.log('✅ Flujo económico calculado:', {
-        'NPV': `$${(npv/1000).toFixed(0)}K`,
-        'IRR': `${(irr*100).toFixed(1)}%`,
-        'WACC': `${(params.wacc*100).toFixed(1)}%`
-    });
+
 }
 
 function calculateFinancialCashFlow() {
-    console.log('💸 Calculando flujo de caja financiero...');
-    console.log('🔍 modelData.investments disponible:', !!modelData.investments);
-    console.log('🔍 modelData.capexFinancing disponible:', !!modelData.capexFinancing);
-    console.log('🔍 modelData.capexFinancing:', modelData.capexFinancing);
+
     
     const params = getFinancialParams();
     const financialFlow = {};
@@ -183,10 +169,8 @@ function calculateFinancialCashFlow() {
             const totalCapex = 565000; // CAPEX optimizado total
             const params = getFinancialParams();
             financialFlow[year].debtProceeds = totalCapex * params.debtRatio;
-            console.log(`💰 Año ${year} - Debt Proceeds (préstamo total): $${financialFlow[year].debtProceeds} (${(params.debtRatio*100).toFixed(0)}% de $${totalCapex})`);
         } else {
             financialFlow[year].debtProceeds = 0;
-            console.log(`💰 Año ${year} - Sin debt proceeds (préstamo ya recibido en 2025)`);
         }
         
         // Gastos financieros (intereses de la deuda REAL)
@@ -246,17 +230,7 @@ function calculateFinancialCashFlow() {
     updateFinancialFlowTable(financialFlow);
     modelData.financialCashFlow = financialFlow;
     
-    console.log('✅ Flujo financiero calculado:', {
-        'Equity NPV': `$${(equityNPV/1000).toFixed(0)}K`,
-        'Project IRR': `${(projectIRR*100).toFixed(1)}%`,
-        'Equity Cost': `${(params.equityCost*100).toFixed(1)}%`,
-        'Préstamo Inicial 2025': `$${(financialFlow[2025]?.debtProceeds/1000 || 0).toFixed(0)}K`,
-        'Desglose Servicio Deuda 2026': {
-            'Intereses': `$${(financialFlow[2026]?.interestExpense/1000 || 0).toFixed(0)}K`,
-            'Amortización': `$${(financialFlow[2026]?.debtService/1000 || 0).toFixed(0)}K`,
-            'Total Servicio': `$${((financialFlow[2026]?.interestExpense + financialFlow[2026]?.debtService)/1000 || 0).toFixed(0)}K`
-        }
-    });
+
 }
 
 function updateEconomicFlowTable(economicFlow) {

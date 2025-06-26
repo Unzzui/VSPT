@@ -11,227 +11,164 @@ let changeHistory = [];
 // ============================================================================
 
 function updateImpactMetrics() {
-    console.log('📊 Actualizando métricas de impacto...');
-    
-    // Calcular métricas de impacto del proyecto
-    const metrics = {
-        totalInvestment: 565000,
-        peakRevenue: 0,
-        totalRevenue5Years: 0,
-        peakOrders: 0,
-        totalOrders5Years: 0,
-        employmentGenerated: 0,
-        marketPenetration: {},
-        cumulativeInvestment: 0
-    };
-    
-    // Revenue y órdenes
-    if (modelData.revenues) {
-        Object.keys(modelData.revenues).forEach(year => {
-            let yearRevenue = 0;
-            let yearOrders = 0;
-            
-            Object.keys(marketDistribution).forEach(market => {
-                const marketData = modelData.revenues[year][market];
-                if (marketData) {
-                    yearRevenue += marketData.netRevenue;
-                    yearOrders += marketData.orders;
-                }
-            });
-            
-            if (yearRevenue > metrics.peakRevenue) metrics.peakRevenue = yearRevenue;
-            if (yearOrders > metrics.peakOrders) metrics.peakOrders = yearOrders;
-            
-            metrics.totalRevenue5Years += yearRevenue;
-            metrics.totalOrders5Years += yearOrders;
-        });
+    try {
+        const metrics = {
+            economicNPV: 0,
+            financialNPV: 0,
+            economicIRR: 0,
+            financialIRR: 0,
+            revenue2030: 0,
+            totalCapex: 565000
+        };
+        
+        // Obtener métricas económicas
+        if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
+            metrics.economicNPV = modelData.economicCashFlow.metrics.npv || 0;
+            metrics.economicIRR = (modelData.economicCashFlow.metrics.irr || 0) * 100;
+        }
+        
+        // Obtener métricas financieras
+        if (modelData.financialCashFlow && modelData.financialCashFlow.metrics) {
+            metrics.financialNPV = modelData.financialCashFlow.metrics.equityNPV || 0;
+            metrics.financialIRR = (modelData.financialCashFlow.metrics.projectIRR || 0) * 100;
+        }
+        
+        // Obtener revenue 2030
+        if (modelData.revenues && modelData.revenues[2030]) {
+            metrics.revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
+                return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
+            }, 0);
+        }
+        
+        // Obtener CAPEX total
+        if (modelData.investments) {
+            metrics.cumulativeInvestment = modelData.investments.totalCapex || 565000;
+        }
+        
+        // Actualizar elementos en la interfaz
+        updateImpactDisplay(metrics);
+        
+    } catch (error) {
+        console.error('❌ Error actualizando métricas de impacto:', error);
     }
-    
-    // Inversión acumulada
-    if (modelData.investments) {
-        metrics.cumulativeInvestment = modelData.investments.totalCapex || 565000;
-    }
-    
-    // Empleo generado (estimación basada en revenue)
-    metrics.employmentGenerated = Math.ceil(metrics.peakRevenue / 500000); // 1 empleado por cada $500K de revenue
-    
-    // Penetración por mercado en 2030
-    if (modelData.revenues && modelData.revenues[2030]) {
-        Object.keys(marketDistribution).forEach(market => {
-            const marketRevenue = modelData.revenues[2030][market]?.netRevenue || 0;
-            const marketOrders = modelData.revenues[2030][market]?.orders || 0;
-            
-            // Estimación de market share basada en mercado total estimado
-            const estimatedMarketSize = 50000000; // $50M mercado total estimado por país
-            
-            metrics.marketPenetration[market] = {
-                revenue: marketRevenue,
-                orders: marketOrders,
-                marketShare: (marketRevenue / estimatedMarketSize) * 100
-            };
-        });
-    }
-    
-    // Actualizar elementos en el DOM
-    updateImpactDisplay(metrics);
-    modelData.impactMetrics = metrics;
-    
-    console.log('✅ Métricas de impacto calculadas:', {
-        'Peak Revenue': `$${(metrics.peakRevenue/1000000).toFixed(1)}M`,
-        'Total Orders': Math.round(metrics.totalOrders5Years).toLocaleString(),
-        'Employment': metrics.employmentGenerated
-    });
 }
 
 function updatePerformanceIndicators() {
-    console.log('📈 Actualizando indicadores de rendimiento...');
-    
-    const indicators = {
-        roi: 0,
-        paybackPeriod: 0,
-        conversionImprovement: 0,
-        averageTicketGrowth: 0,
-        marketDiversification: 0,
-        cashFlowStability: 0,
-        debtServiceCoverage: 0,
-        liquidityRatio: 0
-    };
-    
-    // ROI basado en flujo financiero
-    if (modelData.financialCashFlow && modelData.financialCashFlow.metrics) {
-        const totalInvestment = 800000 * getFinancialParams().equityRatio;
-        const totalCashFlow = Object.keys(modelData.financialCashFlow)
-            .filter(key => parseInt(key) >= 2026)
-            .reduce((sum, year) => sum + (modelData.financialCashFlow[year].fcfe || 0), 0);
+    try {
+        const indicators = {
+            roi: 0,
+            paybackPeriod: 0,
+            breakEvenYear: 0,
+            cashFlowProfile: {},
+            riskMetrics: {}
+        };
         
-        indicators.roi = totalInvestment > 0 ? (totalCashFlow / totalInvestment) * 100 : 0;
-    }
-    
-    // Payback Period
-    let cumulativeCF = 0;
-    let paybackFound = false;
-    if (modelData.financialCashFlow) {
-        Object.keys(modelData.financialCashFlow)
-            .filter(key => parseInt(key) >= 2026)
-            .sort()
-            .forEach((year, index) => {
-                cumulativeCF += modelData.financialCashFlow[year].fcfe || 0;
-                if (cumulativeCF > 0 && !paybackFound) {
-                    indicators.paybackPeriod = index + 1;
-                    paybackFound = true;
-                }
-            });
-    }
-    
-    // Mejora en conversión
-    if (modelData.revenues && modelData.revenues[2026] && modelData.revenues[2030]) {
-        const initialConversion = modelData.revenues[2026].mexico?.conversionRate || 0;
-        const finalConversion = modelData.revenues[2030].mexico?.conversionRate || 0;
-        indicators.conversionImprovement = initialConversion > 0 ? 
-            ((finalConversion - initialConversion) / initialConversion) * 100 : 0;
-    }
-    
-    // Crecimiento ticket promedio
-    indicators.averageTicketGrowth = 8 * 4; // 8% anual por 4 años
-    
-    // Diversificación geográfica (índice Herfindahl inverso)
-    const weights = Object.values(marketDistribution).map(m => m.weight);
-    indicators.marketDiversification = (1 - weights.reduce((sum, w) => sum + w * w, 0)) * 100;
-    
-    // Estabilidad de flujo de caja (coeficiente de variación inverso)
-    if (modelData.financialCashFlow) {
-        const cashFlows = Object.keys(modelData.financialCashFlow)
-            .filter(key => parseInt(key) >= 2026)
-            .map(year => modelData.financialCashFlow[year].fcfe || 0);
-        
-        if (cashFlows.length > 0) {
-            const mean = cashFlows.reduce((sum, cf) => sum + cf, 0) / cashFlows.length;
-            const variance = cashFlows.reduce((sum, cf) => sum + Math.pow(cf - mean, 2), 0) / cashFlows.length;
-            const cv = Math.sqrt(variance) / Math.abs(mean);
-            indicators.cashFlowStability = Math.max(0, (1 - cv) * 100);
+        // Calcular ROI
+        if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
+            const totalInvestment = 565000;
+            const npv = modelData.economicCashFlow.metrics.npv || 0;
+            indicators.roi = totalInvestment > 0 ? (npv / totalInvestment) * 100 : 0;
         }
-    }
-    
-    // Cobertura del servicio de deuda
-    if (modelData.debt && modelData.economicCashFlow) {
-        let avgEbitda = 0;
-        let avgDebtService = 0;
-        let count = 0;
         
-        for (let year = 2026; year <= 2030; year++) {
-            if (modelData.economicCashFlow[year] && modelData.debt.schedule[year]) {
-                avgEbitda += modelData.economicCashFlow[year].ebitda || 0;
-                avgDebtService += modelData.debt.schedule[year].totalPayment || 0;
-                count++;
+        // Calcular Payback Period
+        if (modelData.economicCashFlow) {
+            let cumulativeCashFlow = 0;
+            let paybackYear = 0;
+            
+            for (let year = 2025; year <= 2030; year++) {
+                if (modelData.economicCashFlow[year]) {
+                    cumulativeCashFlow += modelData.economicCashFlow[year].fcf || 0;
+                    if (cumulativeCashFlow >= 0 && paybackYear === 0) {
+                        paybackYear = year;
+                    }
+                }
+            }
+            
+            indicators.paybackPeriod = paybackYear;
+        }
+        
+        // Calcular Break-even Year
+        if (modelData.economicCashFlow) {
+            let cumulativeProfit = 0;
+            let breakEvenYear = 0;
+            
+            for (let year = 2025; year <= 2030; year++) {
+                if (modelData.economicCashFlow[year]) {
+                    cumulativeProfit += modelData.economicCashFlow[year].ebitda || 0;
+                    if (cumulativeProfit >= 0 && breakEvenYear === 0) {
+                        breakEvenYear = year;
+                    }
+                }
+            }
+            
+            indicators.breakEvenYear = breakEvenYear;
+        }
+        
+        // Perfil de flujo de caja
+        if (modelData.economicCashFlow) {
+            for (let year = 2025; year <= 2030; year++) {
+                if (modelData.economicCashFlow[year]) {
+                    indicators.cashFlowProfile[year] = {
+                        fcf: modelData.economicCashFlow[year].fcf || 0,
+                        ebitda: modelData.economicCashFlow[year].ebitda || 0
+                    };
+                }
             }
         }
         
-        if (count > 0) {
-            avgEbitda /= count;
-            avgDebtService /= count;
-            indicators.debtServiceCoverage = avgDebtService > 0 ? avgEbitda / avgDebtService : 0;
-        }
+        // Métricas de riesgo
+        indicators.riskMetrics = {
+            revenueVolatility: 0.15, // Estimación
+            costVolatility: 0.10,    // Estimación
+            marketRisk: 0.20         // Estimación
+        };
+        
+        // Actualizar elementos en la interfaz
+        updatePerformanceDisplay(indicators);
+        modelData.performanceIndicators = indicators;
+        
+    } catch (error) {
+        console.error('❌ Error actualizando indicadores de performance:', error);
     }
-    
-    updatePerformanceDisplay(indicators);
-    modelData.performanceIndicators = indicators;
-    
-    console.log('✅ Indicadores de performance calculados:', {
-        'ROI': `${indicators.roi.toFixed(1)}%`,
-        'Payback': `${indicators.paybackPeriod} años`,
-        'DSCR': indicators.debtServiceCoverage.toFixed(1)
-    });
 }
 
 function trackChanges() {
-    console.log('🔍 Tracking cambios en el modelo...');
+    const currentState = captureModelState();
+    const previousState = modelData.previousState;
     
-    // Obtener valores actuales de inputs principales
-    const currentValues = {
-        debtRatio: document.getElementById('debtRatio')?.value,
-        interestRate: document.getElementById('interestRate')?.value,
-        initialConversion: document.getElementById('initialConversion')?.value,
-        conversionGrowthRate: document.getElementById('conversionGrowthRate')?.value,
-        trafficGrowth: document.getElementById('trafficGrowth')?.value,
-        avgTicket: document.getElementById('avgTicket')?.value,
-        initialTraffic: document.getElementById('initialTraffic')?.value,
-        marketingPct: document.getElementById('marketingPct')?.value,
-        timestamp: new Date().toISOString()
-    };
-    
-    // Comparar con valores anteriores
-    const changes = {};
-    Object.keys(currentValues).forEach(key => {
-        if (key !== 'timestamp' && previousValues[key] !== currentValues[key]) {
-            changes[key] = {
-                from: previousValues[key],
-                to: currentValues[key],
-                impact: calculateChangeImpact(key, previousValues[key], currentValues[key])
-            };
-        }
-    });
-    
-    // Si hay cambios, agregarlos al historial
-    if (Object.keys(changes).length > 0) {
-        changeHistory.push({
-            timestamp: currentValues.timestamp,
-            changes: changes,
-            modelState: captureModelState()
+    if (previousState) {
+        const changes = {};
+        let hasSignificantChanges = false;
+        
+        // Comparar estados
+        Object.keys(currentState).forEach(key => {
+            if (currentState[key] !== previousState[key]) {
+                changes[key] = {
+                    from: previousState[key],
+                    to: currentState[key]
+                };
+                
+                // Detectar cambios significativos
+                if (key.includes('revenue') || key.includes('npv') || key.includes('irr')) {
+                    hasSignificantChanges = true;
+                }
+            }
         });
         
-        // Mantener solo los últimos 20 cambios
-        if (changeHistory.length > 20) {
-            changeHistory.shift();
+        if (Object.keys(changes).length > 0) {
+            modelData.changeHistory = modelData.changeHistory || [];
+            modelData.changeHistory.push({
+                timestamp: new Date().toISOString(),
+                changes: changes
+            });
+            
+            if (hasSignificantChanges) {
+                notifySignificantChanges(changes);
+            }
         }
-        
-        console.log('📋 Cambios detectados:', Object.keys(changes));
-        
-        // Notificar cambios significativos
-        notifySignificantChanges(changes);
     }
     
-    // Actualizar valores anteriores
-    previousValues = { ...currentValues };
+    modelData.previousState = currentState;
 }
 
 function calculateChangeImpact(parameter, oldValue, newValue) {
@@ -288,12 +225,12 @@ function notifySignificantChanges(changes) {
 function updateImpactDisplay(metrics) {
     // Actualizar elementos de impacto si existen en el DOM
     const elements = {
-        'peakRevenue': `$${(metrics.peakRevenue/1000000).toFixed(1)}M`,
-        'totalOrders': Math.round(metrics.totalOrders5Years).toLocaleString(),
-        'employmentGenerated': metrics.employmentGenerated.toString(),
-        'totalInvestment': `$${(metrics.totalInvestment/1000).toFixed(0)}K`,
-        'marketPenetrationMexico': metrics.marketPenetration.mexico ? 
-            `${metrics.marketPenetration.mexico.marketShare.toFixed(3)}%` : '0%'
+        'economicNPV': `$${(metrics.economicNPV/1000000).toFixed(1)}M`,
+        'financialNPV': `$${(metrics.financialNPV/1000000).toFixed(1)}M`,
+        'economicIRR': `${metrics.economicIRR.toFixed(1)}%`,
+        'financialIRR': `${metrics.financialIRR.toFixed(1)}%`,
+        'revenue2030': `$${(metrics.revenue2030/1000000).toFixed(1)}M`,
+        'totalCapex': `$${(metrics.totalCapex/1000).toFixed(0)}K`
     };
     
     Object.keys(elements).forEach(id => {
@@ -307,10 +244,10 @@ function updatePerformanceDisplay(indicators) {
     const elements = {
         'projectROI': `${indicators.roi.toFixed(1)}%`,
         'paybackPeriod': `${indicators.paybackPeriod} años`,
-        'conversionImprovement': `${indicators.conversionImprovement.toFixed(1)}%`,
-        'marketDiversification': `${indicators.marketDiversification.toFixed(1)}%`,
-        'cashFlowStability': `${indicators.cashFlowStability.toFixed(1)}%`,
-        'debtServiceCoverage': `${indicators.debtServiceCoverage.toFixed(1)}x`
+        'breakEvenYear': `${indicators.breakEvenYear} años`,
+        'cashFlowStability': `${indicators.riskMetrics.revenueVolatility * 100}%`,
+        'marketRisk': `${indicators.riskMetrics.marketRisk * 100}%`,
+        'costVolatility': `${indicators.riskMetrics.costVolatility * 100}%`
     };
     
     Object.keys(elements).forEach(id => {
@@ -322,9 +259,9 @@ function updatePerformanceDisplay(indicators) {
             if (id === 'projectROI') {
                 element.style.color = indicators.roi > 15 ? '#28a745' : 
                                      indicators.roi > 0 ? '#ffc107' : '#dc3545';
-            } else if (id === 'debtServiceCoverage') {
-                element.style.color = indicators.debtServiceCoverage > 1.5 ? '#28a745' : 
-                                     indicators.debtServiceCoverage > 1.2 ? '#ffc107' : '#dc3545';
+            } else if (id === 'paybackPeriod') {
+                element.style.color = indicators.paybackPeriod <= 3 ? '#28a745' : 
+                                     indicators.paybackPeriod <= 5 ? '#ffc107' : '#dc3545';
             }
         }
     });
@@ -438,40 +375,47 @@ function showAlert(message, type = 'info') {
 // ============================================================================
 
 function saveModelState() {
-    const state = {
-        modelData: modelData,
-        parameters: {
-            financial: getFinancialParams(),
-            business: getBusinessParams(),
-            inventory: getInventoryParams()
-        },
-        timestamp: new Date().toISOString(),
-        version: '1.0'
-    };
-    
     try {
-        localStorage.setItem('vspt_model_state', JSON.stringify(state));
-        console.log('✅ Estado del modelo guardado');
-        return true;
+        const state = {
+            timestamp: new Date().toISOString(),
+            modelData: modelData,
+            inputs: captureModelState()
+        };
+        
+        localStorage.setItem('vsptModelState', JSON.stringify(state));
+        
     } catch (error) {
-        console.error('❌ Error guardando estado:', error);
-        return false;
+        console.error('❌ Error guardando estado del modelo:', error);
     }
 }
 
 function loadModelState() {
     try {
-        const saved = localStorage.getItem('vspt_model_state');
-        if (saved) {
-            const state = JSON.parse(saved);
-            modelData = state.modelData || {};
-            console.log('✅ Estado del modelo restaurado');
-            return true;
+        const savedState = localStorage.getItem('vsptModelState');
+        
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            
+            // Restaurar datos del modelo
+            if (state.modelData) {
+                Object.assign(modelData, state.modelData);
+            }
+            
+            // Restaurar inputs si es necesario
+            if (state.inputs) {
+                Object.keys(state.inputs).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element && state.inputs[key] !== undefined) {
+                        element.value = state.inputs[key];
+                    }
+                });
+            }
+            
         }
+        
     } catch (error) {
-        console.error('❌ Error cargando estado:', error);
+        console.error('❌ Error cargando estado del modelo:', error);
     }
-    return false;
 }
 
 function clearModelState() {
@@ -572,20 +516,12 @@ function exportToExcel() {
         const wsMetrics = createMetricsSheet();
         XLSX.utils.book_append_sheet(wb, wsMetrics, "Métricas Clave");
         
-        // Descargar archivo
-        const fileName = `VSPT_Modelo_Financiero_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        
-        console.log('✅ Archivo Excel generado exitosamente');
-        if (typeof showAlert === 'function') {
-            showAlert('Archivo Excel descargado exitosamente', 'success');
-        }
+        // Generar y descargar archivo
+        XLSX.writeFile(wb, 'VSPT_Digital_360_Modelo_Financiero.xlsx');
         
     } catch (error) {
         console.error('❌ Error generando Excel:', error);
-        if (typeof showAlert === 'function') {
-            showAlert('Error al generar archivo Excel', 'error');
-        }
+        alert('Error generando archivo Excel. Verifique la consola para más detalles.');
     }
 }
 
@@ -1191,8 +1127,6 @@ function createSensitivitySheet() {
 
 // Función para actualizar métricas automáticamente en la interfaz
 function updateMetricsDisplay() {
-    console.log('📊 Actualizando métricas clave en tiempo real...');
-    
     try {
         // Crear los datos de métricas usando la misma lógica que createMetricsSheet
         const capexTotal = modelData.investments?.totalCapex || 565000;
@@ -1280,8 +1214,6 @@ function updateMetricsDisplay() {
         // Guardar métricas en modelData para uso posterior
         modelData.keyMetrics = metricsData;
         
-        console.log('✅ Métricas clave actualizadas:', metricsData);
-        
     } catch (error) {
         console.error('❌ Error actualizando métricas:', error);
     }
@@ -1346,21 +1278,16 @@ function validateExcelData() {
     try {
         // Asegurar que los datos de inversión estén calculados
         if (typeof calculateProgressiveCapex === 'function' && !modelData.investments) {
-            console.log('🔄 Inicializando datos de inversión para validación...');
             calculateProgressiveCapex();
         }
         
         // Verificar si calculateProgressiveCapex existe y ejecutarlo si es necesario
         if (typeof calculateProgressiveCapex === 'function') {
-            console.log('🔄 Forzando recálculo de CAPEX...');
             calculateProgressiveCapex();
-        } else {
-            console.error('❌ calculateProgressiveCapex no está disponible');
         }
         
         // Fallback: crear datos de inversión manualmente si no existen
         if (!modelData.investments || !modelData.investments.distribution) {
-            console.log('🔄 Creando datos de inversión manualmente...');
             const totalCapex = 565000;
             const debtRatio = getFinancialParams()?.debtRatio || 0.5;
             
@@ -1379,21 +1306,12 @@ function validateExcelData() {
                     equityRatio: 1 - debtRatio
                 }
             };
-            
-            console.log('✅ Datos de inversión creados manualmente:', modelData.investments);
         }
         
         // Validar CAPEX
         if (modelData.investments) {
             const total = modelData.investments.totalCapex || 565000;
             const calculatedTotal = Object.values(modelData.investments.distribution || {}).reduce((sum, yearData) => sum + (yearData.amount || 0), 0);
-            
-            console.log('🔍 Validación CAPEX:', {
-                total: total,
-                calculatedTotal: calculatedTotal,
-                distribution: modelData.investments.distribution,
-                distributionKeys: Object.keys(modelData.investments.distribution || {})
-            });
             
             if (Math.abs(total - calculatedTotal) > 1000) {
                 errors.push(`CAPEX total (${total}) no coincide con distribución (${calculatedTotal})`);

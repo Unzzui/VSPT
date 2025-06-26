@@ -3,7 +3,6 @@
 // ============================================================================
 
 function calculateRevenues() {
-    console.log('📊 Calculando proyección de ingresos por país...');
     
     const params = getBusinessParams();
     const revenues = {};
@@ -99,19 +98,13 @@ function calculateRevenues() {
     updateRevenueMetrics(revenues);
     modelData.revenues = revenues;
     
-    console.log('✅ Ingresos calculados OPTIMIZADOS - Solo Chile (2025) + México (2026+):', {
-        '2025 Chile (6 meses)': `$${(revenues[2025].chile.netRevenue/1000).toFixed(0)}K`,
-        '2026 Chile + México (+100% tráfico, +40% conversión)': `$${(Object.values(revenues[2026]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        '2027 Chile + México (+80% tráfico, +25% conversión)': `$${(Object.values(revenues[2027]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        '2030 Chile + México (+20% tráfico, +5% conversión)': `$${(Object.values(revenues[2030]).reduce((sum, market) => sum + market.netRevenue, 0)/1000).toFixed(0)}K`,
-        'Distribución 2030': 'Chile 65% | México 35%'
-    });
+
 }
 
 function updateRevenuesTable(revenues) {
     const tbody = document.getElementById('ingresosBody');
     if (!tbody) {
-        console.warn('⚠️ Tabla ingresos no encontrada');
+
         return;
     }
     
@@ -322,25 +315,7 @@ function updateRevenueMetrics(revenues) {
         }
     });
     
-    console.log('✅ Métricas de ingresos actualizadas:', {
-        'Revenue 2030': elements.totalRevenue2030,
-        'CAGR (Chile 2025 → Total 2030)': elements.avgGrowthRate,
-        'Conversión Chile': `${initialConversion.toFixed(2)}% → ${finalConversion.toFixed(2)}%`,
-        'CAC Promedio (optimizado)': elements.customerCAC,
-        'LTV Promedio': elements.customerLTV,
-        'Ratio LTV/CAC': elements.ltvCacRatio,
-        'Marketing Total (2025-2030)': `$${(totalMarketingSpend/1000).toFixed(0)}K`,
-        'Clientes Nuevos DELTA (2025-2030)': Math.round(totalNewCustomers).toLocaleString()
-    });
-    
-    // Log detallado del cálculo de CAC para debugging
-    console.log('📊 Cálculo detallado de CAC:', {
-        'Método': 'Delta año a año (no acumulativo)',
-        'Marketing Total': `$${(totalMarketingSpend/1000).toFixed(1)}K`,
-        'Clientes Nuevos (Delta)': Math.round(totalNewCustomers).toLocaleString(),
-        'CAC Resultado': `$${Math.round(avgCAC)}`
-    });
+
 }
 
-// Función para exportar datos de ingresos a Excel
-// REMOVIDO: Esta función está implementada en utils.js para evitar duplicados
+

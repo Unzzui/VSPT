@@ -3,7 +3,7 @@
 // ============================================================================
 
 function calculateWorkingCapital() {
-    console.log('💼 Calculando Working Capital detallado por país...');
+
     
     const workingCapital = {};
     const params = getFinancialParams();
@@ -88,11 +88,7 @@ function calculateWorkingCapital() {
     updateWorkingCapitalMetrics(workingCapital);
     modelData.workingCapital = workingCapital;
     
-    console.log('✅ Working Capital calculado:', {
-        '2025 Inicial': `$${(workingCapital[2025].consolidated.total/1000).toFixed(0)}K`,
-        '2030 Final': `$${(workingCapital[2030].consolidated.total/1000).toFixed(0)}K`,
-        'Δ WC 2030': `$${(workingCapital[2030].deltaWC/1000).toFixed(0)}K`
-    });
+
 }
 
 function updateWorkingCapitalTable(wc) {
@@ -232,9 +228,5 @@ function updateWorkingCapitalMetrics(wc) {
         }
     });
     
-    console.log('📊 Métricas de Working Capital actualizadas:', {
-        'WC 2030': elements.workingCapital2030,
-        'WC % Revenue': elements.wcPercentRevenue,
-        'Total Δ WC': elements.totalDeltaWC
-    });
+
 }

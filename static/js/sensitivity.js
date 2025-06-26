@@ -55,7 +55,7 @@ const SENSITIVITY_SCENARIOS = {
 };
 
 function updateSensitivity() {
-    console.log('📊 Iniciando análisis de sensibilidad...');
+
     
     try {
         // Actualizar primero los parámetros base en la interfaz
@@ -84,7 +84,7 @@ function updateSensitivity() {
             timestamp: new Date().toISOString()
         };
         
-        console.log('✅ Análisis de sensibilidad completado');
+
         
     } catch (error) {
         console.error('❌ Error en análisis de sensibilidad:', error);
@@ -100,7 +100,7 @@ function ensureModelDataReady() {
     
     // Si no hay datos del flujo económico, ejecutar cálculos
     if (!modelData.economicCashFlow || !modelData.financialCashFlow) {
-        console.log('🔄 Ejecutando cálculos principales...');
+
         
         // Ejecutar todos los cálculos en orden
         if (typeof calculateInvestments === 'function') calculateInvestments();
@@ -117,7 +117,6 @@ function ensureModelDataReady() {
 function getBaseScenarioMetrics() {
     // Asegurar que los cálculos del modelo estén ejecutados
     if (!modelData.economicCashFlow || !modelData.financialCashFlow) {
-        console.log('⚠️ Datos del modelo no disponibles, ejecutando cálculos...');
         
         // Ejecutar cálculos principales
         if (typeof calculateRevenues === 'function') calculateRevenues();
@@ -132,12 +131,7 @@ function getBaseScenarioMetrics() {
     const financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
     const financialIRR = (modelData.financialCashFlow?.metrics?.projectIRR || 0) * 100;
     
-    console.log('🔍 Sensibilidad - Métricas del modelo:');
-    console.log('  economicNPV:', economicNPV);
-    console.log('  economicIRR:', economicIRR);
-    console.log('  financialNPV:', financialNPV);
-    console.log('  financialIRR:', financialIRR);
-    console.log('  modelData.economicCashFlow completo:', modelData.economicCashFlow);
+
     
     // Revenue 2030 del modelo de ingresos - USAR DATOS REALES DEL MODELO
     let revenue2030 = 0;
@@ -145,10 +139,10 @@ function getBaseScenarioMetrics() {
         revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
             return sum + (modelData.revenues[2030][market] ? modelData.revenues[2030][market].netRevenue : 0);
         }, 0);
-        console.log('📊 Sensibilidad usando revenue 2030 del modelo de ingresos:', `$${(revenue2030/1000000).toFixed(1)}M`);
+
     } else {
         // Fallback: calcular usando la misma lógica que revenues.js
-        console.log('⚠️ Sensibilidad calculando revenue 2030 propio');
+
         const params = getBusinessParams();
         const yearIndex = 5; // 2030 es año 5 desde 2025
         const yearlyTraffic = params.initialTraffic * Math.pow(1 + params.trafficGrowth, yearIndex);
@@ -172,14 +166,7 @@ function getBaseScenarioMetrics() {
     // EBITDA 2030 del flujo económico
     const ebitda2030 = modelData.economicCashFlow?.[2030]?.ebitda || 0;
     
-    console.log('📊 Métricas base del modelo principal:', {
-        economicNPV: `$${(economicNPV / 1000000).toFixed(2)}M`,
-        economicIRR: `${economicIRR.toFixed(1)}%`,
-        financialNPV: `$${(financialNPV / 1000000).toFixed(2)}M`,
-        financialIRR: `${financialIRR.toFixed(1)}%`,
-        revenue2030: `$${(revenue2030 / 1000000).toFixed(1)}M`,
-        ebitda2030: `$${(ebitda2030 / 1000000).toFixed(1)}M`
-    });
+
     
     // Si los valores base no son razonables, usar datos de respaldo
     const hasValidData = revenue2030 > 0 && Math.abs(economicNPV) > 0;
@@ -207,14 +194,14 @@ function getBaseScenarioMetrics() {
 }
 
 function executeSensitivityAnalysis(baseMetrics) {
-    console.log('🎯 Ejecutando análisis de escenarios...');
+
     
     const results = {};
     
     // Para cada escenario, aplicar factores sobre las métricas base
     Object.keys(SENSITIVITY_SCENARIOS).forEach(scenarioName => {
         const scenario = SENSITIVITY_SCENARIOS[scenarioName];
-        console.log(`📈 Calculando escenario: ${scenarioName}`);
+
         
         let metrics;
         
@@ -231,18 +218,14 @@ function executeSensitivityAnalysis(baseMetrics) {
             metrics: metrics
         };
         
-        console.log(`✅ Escenario ${scenarioName} completado:`, {
-            economicNPV: `$${(metrics.economicNPV / 1000000).toFixed(2)}M`,
-            economicIRR: `${metrics.economicIRR.toFixed(1)}%`
-        });
+
     });
     
     return results;
 }
 
 function calculateScenarioMetrics(baseMetrics, factors) {
-    console.log('🔢 Aplicando factores:', factors);
-    console.log('📊 Métricas base:', baseMetrics);
+
     
     // PROBLEMA DETECTADO: Si las métricas base son negativas, la multiplicación invierte los resultados
     
@@ -253,11 +236,7 @@ function calculateScenarioMetrics(baseMetrics, factors) {
     const revenueChange = baseMetrics.revenue2030 * (revenueMultiplier - 1);
     const newRevenue = baseMetrics.revenue2030 + revenueChange;
     
-    console.log('💰 Impacto en ingresos:', {
-        revenueMultiplier,
-        revenueChange: `$${(revenueChange / 1000000).toFixed(2)}M`,
-        newRevenue: `$${(newRevenue / 1000000).toFixed(2)}M`
-    });
+
     
     // Calcular impacto en costos
     const costMultiplier = (factors.marketingPct + factors.cogsPct) / 2;
@@ -267,12 +246,7 @@ function calculateScenarioMetrics(baseMetrics, factors) {
     const costChange = baseCosts * (costMultiplier - 1);
     const newTotalCosts = baseCosts + costChange;
     
-    console.log('💰 Impacto en costos:', {
-        costMultiplier,
-        baseCosts: `$${(baseCosts / 1000000).toFixed(2)}M`,
-        costChange: `$${(costChange / 1000000).toFixed(2)}M`,
-        newTotalCosts: `$${(newTotalCosts / 1000000).toFixed(2)}M`
-    });
+
     
     // Nuevo EBITDA
     const newEbitda = newRevenue - newTotalCosts;
@@ -280,11 +254,7 @@ function calculateScenarioMetrics(baseMetrics, factors) {
     // Calcular cambio neto en EBITDA
     const ebitdaChange = newEbitda - baseMetrics.ebitda2030;
     
-    console.log('📊 Resultado intermedio:', {
-        baseEbitda: `$${(baseMetrics.ebitda2030 / 1000000).toFixed(2)}M`,
-        newEbitda: `$${(newEbitda / 1000000).toFixed(2)}M`,
-        ebitdaChange: `$${(ebitdaChange / 1000000).toFixed(2)}M`
-    });
+
     
     // Calcular NPV usando lógica más directa
     // Asumimos que cada $1M de cambio en EBITDA = $3M de cambio en NPV (múltiplo conservador)
@@ -320,12 +290,7 @@ function calculateScenarioMetrics(baseMetrics, factors) {
         financialIRR: newFinancialIRR
     };
     
-    console.log('✅ Resultado final del escenario:', {
-        economicNPV: `$${(result.economicNPV / 1000000).toFixed(2)}M`,
-        financialNPV: `$${(result.financialNPV / 1000000).toFixed(2)}M`,
-        economicIRR: `${result.economicIRR.toFixed(1)}%`,
-        financialIRR: `${result.financialIRR.toFixed(1)}%`
-    });
+
     
     return result;
 }
@@ -427,7 +392,7 @@ function updateSensitivityDisplay(scenarios) {
         });
     });
     
-    console.log('✅ Tabla de sensibilidad actualizada con alineamiento correcto');
+
 }
 
 function updateSensitivityBanners(scenarios) {
@@ -472,7 +437,7 @@ function updateSensitivityBanners(scenarios) {
             }
         });
         
-        console.log('✅ Banners de sensibilidad actualizados:', banners);
+
         
     } catch (error) {
         console.error('❌ Error actualizando banners de sensibilidad:', error);
@@ -536,23 +501,20 @@ function getSensitivityData() {
 
 // Función de debug
 function debugSensitivity() {
-    console.log('🔍 Debug Análisis de Sensibilidad');
-    console.log('modelData:', modelData);
-    console.log('economicCashFlow:', modelData.economicCashFlow);
-    console.log('financialCashFlow:', modelData.financialCashFlow);
+
     
     if (modelData.economicCashFlow?.metrics) {
-        console.log('Métricas económicas:', modelData.economicCashFlow.metrics);
+
     }
     
     if (modelData.financialCashFlow?.metrics) {
-        console.log('Métricas financieras:', modelData.financialCashFlow.metrics);
+
     }
 }
 
 // Función de prueba para verificar la lógica de escenarios
 function testSensitivityLogic() {
-    console.log('🧪 PRUEBA: Verificando lógica de sensibilidad');
+
     
     // Métricas de prueba
     const testBaseMetrics = {
@@ -564,23 +526,17 @@ function testSensitivityLogic() {
         ebitda2030: 3200000         // $3.2M
     };
     
-    console.log('📊 Métricas base de prueba:', testBaseMetrics);
+
     
     Object.keys(SENSITIVITY_SCENARIOS).forEach(scenarioName => {
         if (scenarioName === 'Base') return;
         
         const scenario = SENSITIVITY_SCENARIOS[scenarioName];
-        console.log(`\n🔍 Probando escenario: ${scenarioName}`);
-        console.log('Factores:', scenario.factors);
+
         
         const result = calculateScenarioMetrics(testBaseMetrics, scenario.factors);
         
-        console.log('Resultado:', {
-            economicNPV: `$${(result.economicNPV / 1000000).toFixed(2)}M`,
-            financialNPV: `$${(result.financialNPV / 1000000).toFixed(2)}M`,
-            economicIRR: `${result.economicIRR.toFixed(1)}%`,
-            revenue2030: `$${(result.revenue2030 / 1000000).toFixed(1)}M`
-        });
+
         
         // Verificar lógica
         const shouldBeWorse = scenarioName === 'Pesimista' || scenarioName === 'Stress Test';
@@ -588,12 +544,12 @@ function testSensitivityLogic() {
         
         if (shouldBeWorse) {
             const isWorse = result.economicNPV < testBaseMetrics.economicNPV;
-            console.log(`✅ ¿${scenarioName} es peor que base?`, isWorse ? 'SÍ' : '❌ NO');
+
         }
         
         if (shouldBeBetter) {
             const isBetter = result.economicNPV > testBaseMetrics.economicNPV;
-            console.log(`✅ ¿${scenarioName} es mejor que base?`, isBetter ? 'SÍ' : '❌ NO');
+
         }
     });
 }
@@ -641,7 +597,7 @@ class SensitivityAnalysis {
 
     // Inicializar análisis de sensibilidad
     init() {
-        console.log('🔍 Inicializando análisis de sensibilidad dinámico...');
+
         this.calculateBaseScenario();
         this.calculateSensitivities();
         this.updateSensitivityDisplay();
@@ -649,30 +605,17 @@ class SensitivityAnalysis {
 
     // Calcular escenario base
     calculateBaseScenario() {
-        console.log('📊 Calculando escenario base...');
+
         
         // Obtener parámetros actuales del modelo
         const baseParams = this.getCurrentModelParameters();
         
         // Generar flujos de caja para verificar
         const cashFlows = this.generateCashFlows(baseParams);
-        console.log('💰 Flujos de caja generados:', {
-            'CAPEX inicial': `$${(cashFlows[0]/1000).toFixed(0)}K`,
-            '2025 (6m Chile)': `$${(cashFlows[1]/1000).toFixed(0)}K`,
-            '2026': `$${(cashFlows[2]/1000).toFixed(0)}K`,
-            '2027': `$${(cashFlows[3]/1000).toFixed(0)}K`,
-            '2028': `$${(cashFlows[4]/1000).toFixed(0)}K`,
-            '2029': `$${(cashFlows[5]/1000).toFixed(0)}K`,
-            '2030': `$${(cashFlows[6]/1000).toFixed(0)}K`
-        });
+
         
         // Verificar distribución de mercados
-        console.log('🌍 Distribución de mercados verificada:', {
-            'marketDistribution disponible': typeof marketDistribution !== 'undefined',
-            'Chile weight': typeof marketDistribution !== 'undefined' ? marketDistribution.chile?.weight : 'N/A',
-            'Total weights': typeof marketDistribution !== 'undefined' ? 
-                Object.values(marketDistribution).reduce((sum, m) => sum + m.weight, 0) : 'N/A'
-        });
+
         
         // Calcular métricas base
         this.baseScenario = {
@@ -684,12 +627,7 @@ class SensitivityAnalysis {
             cashFlows: cashFlows
         };
         
-        console.log('📈 Escenario base calculado:', {
-            'VAN': `$${this.baseScenario.npv.toFixed(1)}M`,
-            'TIR': `${this.baseScenario.irr.toFixed(1)}%`,
-            'Revenue 2030': `$${this.baseScenario.revenue2030.toFixed(1)}M`,
-            'Costos Totales': `$${this.baseScenario.totalCosts.toFixed(1)}M`
-        });
+
     }
 
     // Obtener parámetros actuales del modelo
@@ -718,13 +656,13 @@ class SensitivityAnalysis {
 
     // Calcular sensibilidades para todos los factores
     calculateSensitivities() {
-        console.log('🎯 Calculando sensibilidades...');
+
         
         Object.keys(this.factors).forEach(factorKey => {
             this.sensitivityResults[factorKey] = this.calculateFactorSensitivity(factorKey);
         });
         
-        console.log('📊 Resultados de sensibilidad:', this.sensitivityResults);
+
     }
 
     // Calcular sensibilidad para un factor específico
@@ -968,7 +906,6 @@ class SensitivityAnalysis {
 
     // Actualizar display de sensibilidad
     updateSensitivityDisplay() {
-        console.log('🎨 Actualizando display de sensibilidad...');
         
         // Actualizar factores individuales
         this.updateFactorCards();
@@ -1074,7 +1011,6 @@ class SensitivityAnalysis {
     updateBaseMetrics() {
         // PRIORIDAD 1: Usar datos reales del modelo si están disponibles
         if (modelData.revenues && modelData.revenues[2030]) {
-            console.log('📊 Sensibilidad usando datos reales del modelo');
             
             // Calcular revenue 2030 usando datos reales del modelo
             const revenue2030 = Object.keys(marketDistribution).reduce((sum, market) => {
@@ -1102,15 +1038,9 @@ class SensitivityAnalysis {
                 sensitivityRevenue.textContent = `$${(revenue2030/1000000).toFixed(1)}M`;
             }
             
-            console.log('✅ Sensibilidad actualizada con datos del modelo:', {
-                'Revenue 2030': `$${(revenue2030/1000000).toFixed(1)}M`,
-                'VAN Económico': `$${(economicNPV/1000000).toFixed(1)}M`,
-                'TIR Económica': `${economicIRR.toFixed(1)}%`
-            });
             
         } else if (this.baseScenario) {
             // FALLBACK: Usar datos calculados por la clase si no hay datos del modelo
-            console.log('⚠️ Sensibilidad usando datos calculados internamente');
             
             const sensitivityVAN = document.getElementById('sensitivityVAN');
             const sensitivityTIR = document.getElementById('sensitivityTIR');
@@ -1177,7 +1107,6 @@ class SensitivityAnalysis {
 
     // Recalcular cuando cambien parámetros
     recalculate() {
-        console.log('🔄 Recalculando sensibilidad...');
         this.calculateBaseScenario();
         this.calculateSensitivities();
         this.updateSensitivityDisplay();
@@ -1227,7 +1156,7 @@ function updateBaseParametersDisplay() {
             }
         });
         
-        console.log('✅ Parámetros base actualizados en la interfaz:', elements);
+
         
     } catch (error) {
         console.error('❌ Error actualizando parámetros base:', error);
@@ -1236,13 +1165,14 @@ function updateBaseParametersDisplay() {
 
 // Función para actualizar dinámicamente los Factores Clave que Impactan los Flujos de Caja
 function updateKeyFactorsDisplay() {
-    console.log('🎯 Actualizando Factores Clave con datos reales...');
+
     
     // Obtener datos reales del modelo
     const baseMetrics = getBaseMetricsFromModel();
     
     if (!baseMetrics) {
         console.warn('⚠️ No hay datos del modelo disponibles para calcular factores clave');
+
         return;
     }
     
@@ -1259,7 +1189,7 @@ function updateKeyFactorsDisplay() {
     // Actualizar gráfico de barras de sensibilidad
     updateSensitivityChart(sensitivities);
     
-    console.log('✅ Factores Clave actualizados con datos reales:', sensitivities);
+
 }
 
 // Obtener métricas base del modelo
