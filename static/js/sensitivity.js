@@ -1189,6 +1189,9 @@ function updateBaseParametersDisplay() {
         // Actualizar parámetros por escenario
         updateScenarioParametersDisplay();
         
+        // Actualizar tasas de descuento
+        updateDiscountRatesDisplay();
+        
     } catch (error) {
         console.error('❌ Error actualizando parámetros base:', error);
     }
@@ -1247,6 +1250,22 @@ function updateScenarioParametersDisplay() {
                 stress: 0.75
             },
             {
+                name: 'WACC (Tasa Descuento)',
+                base: 8.0, // WACC base fijo en 8%
+                unit: '%',
+                pesimista: 2.5, // +2.5 pp = 10.5%
+                optimista: -2.5, // -2.5 pp = 5.5%
+                stress: 4.0 // +4 pp = 12%
+            },
+            {
+                name: 'Ke (Costo Patrimonio)',
+                base: 12.0, // Ke base fijo en 12%
+                unit: '%',
+                pesimista: 3.0, // +3 pp = 15%
+                optimista: -2.0, // -2 pp = 10%
+                stress: 4.0 // +4 pp = 16%
+            },
+            {
                 name: 'Marketing (% Revenue)',
                 base: params.marketingPct * 100,
                 unit: '%',
@@ -1293,6 +1312,7 @@ function updateScenarioParametersDisplay() {
             scenarios.forEach((scenario, index) => {
                 const cell = row.insertCell();
                 let factor = 1;
+                let isPercentagePoints = false;
                 
                 switch(scenario) {
                     case 'pesimista':
@@ -1314,7 +1334,19 @@ function updateScenarioParametersDisplay() {
                         break;
                 }
                 
-                const value = param.base * factor;
+                let value;
+                if (param.name === 'WACC (Tasa Descuento)' || param.name === 'Ke (Costo Patrimonio)') {
+                    // Para WACC y Ke, usar puntos porcentuales
+                    if (scenario === 'base') {
+                        value = param.base; // Para el escenario base, usar el valor base directamente
+                    } else {
+                        value = param.base + factor; // Para otros escenarios, sumar puntos porcentuales
+                    }
+                    isPercentagePoints = true;
+                } else {
+                    // Para otros parámetros, usar multiplicadores
+                    value = param.base * factor;
+                }
                 
                 if (param.unit === 'USD') {
                     cell.innerHTML = `$${value.toFixed(0)}`;
@@ -1616,4 +1648,73 @@ function updateSensitivityChart(sensitivities) {
             }
         }
     });
+}
+
+// Función para actualizar las tasas de descuento
+function updateDiscountRatesDisplay() {
+    try {
+        const baseWacc = 8.0; // WACC base fijo en 8%
+        const baseKe = 12.0; // Ke base fijo en 12%
+        
+        // WACC Base
+        const waccBase = document.getElementById('waccBase');
+        const keValue = document.getElementById('keValue');
+        const kdValue = document.getElementById('kdValue');
+        const capitalStructure = document.getElementById('capitalStructure');
+        
+        if (waccBase) waccBase.textContent = baseWacc.toFixed(1) + '%';
+        if (keValue) keValue.textContent = baseKe.toFixed(1) + '%'; // Costo del patrimonio
+        if (kdValue) kdValue.textContent = '6.0%'; // Costo de la deuda
+        if (capitalStructure) capitalStructure.textContent = '65% / 35%'; // Estructura de capital
+        
+        // Ke Base
+        const keBase = document.getElementById('keBase');
+        const riskFreeRate = document.getElementById('riskFreeRate');
+        const riskPremium = document.getElementById('riskPremium');
+        const projectBeta = document.getElementById('projectBeta');
+        
+        if (keBase) keBase.textContent = baseKe.toFixed(1) + '%';
+        if (riskFreeRate) riskFreeRate.textContent = '4.5%';
+        if (riskPremium) riskPremium.textContent = '7.5%';
+        if (projectBeta) projectBeta.textContent = '1.0';
+        
+        // Valor Terminal
+        const terminalWacc = document.getElementById('terminalWacc');
+        const growthRate = document.getElementById('growthRate');
+        
+        if (terminalWacc) terminalWacc.textContent = baseWacc.toFixed(1) + '%';
+        if (growthRate) growthRate.textContent = '2.0%';
+        
+        // Actualizar explicación de VAN Económico vs Financiero
+        updateNPVExplanation(baseWacc, baseKe);
+        
+    } catch (error) {
+        console.error('❌ Error actualizando tasas de descuento:', error);
+    }
+}
+
+// Función para actualizar la explicación de VAN Económico vs Financiero
+function updateNPVExplanation(wacc, ke) {
+    try {
+        // Buscar elementos en la explicación de VAN
+        const economicNpvElements = document.querySelectorAll('.economic-npv li');
+        const financialNpvElements = document.querySelectorAll('.financial-npv li');
+        
+        // Actualizar WACC en VAN Económico
+        economicNpvElements.forEach(element => {
+            if (element.textContent.includes('WACC')) {
+                element.innerHTML = `• <strong>Tasa de descuento:</strong> WACC (${wacc.toFixed(1)}%)`;
+            }
+        });
+        
+        // Actualizar Ke en VAN Financiero
+        financialNpvElements.forEach(element => {
+            if (element.textContent.includes('Ke')) {
+                element.innerHTML = `• <strong>Tasa de descuento:</strong> Ke (${ke.toFixed(1)}%)`;
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error actualizando explicación de VAN:', error);
+    }
 }
