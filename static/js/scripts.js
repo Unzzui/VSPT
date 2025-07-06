@@ -26,6 +26,170 @@ let modelData = {
     sensitivity: {}
 };
 
+// Función de inicialización que se ejecuta cuando se carga la página
+function initializeModel() {
+    console.log('🚀 Inicializando modelo VSPT Digital...');
+    
+    // Ejecutar cálculos iniciales
+    updateCalculations();
+    
+    // Mostrar dashboard por defecto
+    showTab('dashboard');
+    
+    console.log('✅ Modelo inicializado correctamente');
+}
+
+// Ejecutar inicialización cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM cargado, iniciando modelo...');
+    initializeModel();
+    
+    // Agregar función de prueba global
+    window.testCashFlow = function() {
+        console.log('🧪 Probando flujo de caja...');
+        if (typeof calculateEconomicCashFlow === 'function') {
+            calculateEconomicCashFlow();
+        }
+        if (typeof calculateEconomicCashFlowWithoutTerminal === 'function') {
+            calculateEconomicCashFlowWithoutTerminal();
+        }
+    };
+    
+    // Función para forzar visualización de tabla
+    window.showEconomicFlowTable = function() {
+        console.log('👁️ Forzando visualización de tabla económica...');
+        const economicFlowTab = document.getElementById('economicFlow');
+        if (economicFlowTab) {
+            economicFlowTab.classList.remove('hidden');
+            console.log('✅ Tabla económica visible');
+        } else {
+            console.error('❌ Tabla económica no encontrada');
+        }
+    };
+    
+    // Función para forzar visualización completa
+    window.forceShowEconomicTable = function() {
+        console.log('🔧 Forzando visualización de tabla económica...');
+        
+        // Verificar que la pestaña esté visible
+        const economicFlowTab = document.getElementById('economicFlow');
+        if (economicFlowTab) {
+            economicFlowTab.classList.remove('hidden');
+            console.log('✅ Pestaña económica visible');
+        }
+        
+        // Verificar que la tabla tenga contenido
+        const tbody = document.getElementById('economicFlowBody');
+        if (tbody) {
+            console.log(`📊 Tabla tiene ${tbody.rows.length} filas`);
+            
+            // Si no hay filas, forzar recálculo
+            if (tbody.rows.length === 0) {
+                console.log('🔄 Forzando recálculo de tabla...');
+                if (modelData.economicCashFlow) {
+                    if (typeof updateEconomicFlowTable === 'function') {
+                        updateEconomicFlowTable(modelData.economicCashFlow);
+                    }
+                }
+            }
+        }
+        
+        // Verificar estilos CSS
+        const table = document.getElementById('economicFlowTable');
+        if (table) {
+            console.log('📋 Tabla encontrada, verificando estilos...');
+            console.log('  Display:', window.getComputedStyle(table).display);
+            console.log('  Visibility:', window.getComputedStyle(table).visibility);
+            console.log('  Opacity:', window.getComputedStyle(table).opacity);
+        }
+    };
+    
+    // Función para forzar visualización de tabla financiera
+    window.forceShowFinancialTable = function() {
+        console.log('🔧 Forzando visualización de tabla financiera...');
+        
+        // Verificar que la pestaña esté visible
+        const financialFlowTab = document.getElementById('financialFlow');
+        if (financialFlowTab) {
+            financialFlowTab.classList.remove('hidden');
+            financialFlowTab.style.display = 'block';
+            console.log('✅ Pestaña financiera visible');
+        }
+        
+        // Verificar que la tabla tenga contenido
+        const tbody = document.getElementById('financialFlowBody');
+        if (tbody) {
+            console.log(`📊 Tabla financiera tiene ${tbody.rows.length} filas`);
+            
+            // Si no hay filas, forzar recálculo
+            if (tbody.rows.length === 0) {
+                console.log('🔄 Forzando recálculo de tabla financiera...');
+                if (modelData.financialCashFlow) {
+                    if (typeof updateFinancialFlowTable === 'function') {
+                        updateFinancialFlowTable(modelData.financialCashFlow);
+                    }
+                } else if (typeof calculateFinancialCashFlow === 'function') {
+                    calculateFinancialCashFlow();
+                }
+            }
+        }
+        
+        // Forzar visibilidad de la tabla
+        const table = document.getElementById('financialFlowTable');
+        const tableContainer = document.querySelector('#financialFlow .table-container');
+        
+        if (table) {
+            table.style.display = 'table';
+            table.style.visibility = 'visible';
+            table.style.opacity = '1';
+            console.log('✅ Tabla financiera forzada a visible');
+        }
+        
+        if (tableContainer) {
+            tableContainer.style.display = 'block';
+            tableContainer.style.visibility = 'visible';
+            tableContainer.style.opacity = '1';
+            console.log('✅ Contenedor de tabla financiera forzado a visible');
+        }
+        
+        // Verificar estilos CSS
+        if (table) {
+            console.log('📋 Tabla financiera encontrada, verificando estilos...');
+            console.log('  Display:', window.getComputedStyle(table).display);
+            console.log('  Visibility:', window.getComputedStyle(table).visibility);
+            console.log('  Opacity:', window.getComputedStyle(table).opacity);
+        }
+    };
+    
+    // Función global para forzar visualización de todas las tablas
+    window.forceAllTablesVisibility = function() {
+        console.log('🔧 Forzando visualización de todas las tablas...');
+        
+        // Forzar visibilidad de todas las pestañas de contenido
+        document.querySelectorAll('.content').forEach(content => {
+            if (!content.classList.contains('hidden')) {
+                // Solo las pestañas visibles
+                const tables = content.querySelectorAll('table');
+                const tableContainers = content.querySelectorAll('.table-container');
+                
+                tables.forEach(table => {
+                    table.style.display = 'table';
+                    table.style.visibility = 'visible';
+                    table.style.opacity = '1';
+                });
+                
+                tableContainers.forEach(container => {
+                    container.style.display = 'block';
+                    container.style.visibility = 'visible';
+                    container.style.opacity = '1';
+                });
+                
+                console.log(`✅ Forzada visibilidad en ${content.id}`);
+            }
+        });
+    };
+});
+
 // ============================================================================
 // FUNCIÓN PRINCIPAL DE NAVEGACIÓN
 // ============================================================================
@@ -54,13 +218,15 @@ function showTab(tabName) {
         // Ocultar todos los contenidos
         document.querySelectorAll('.content').forEach(content => {
             content.classList.add('hidden');
+            content.style.display = 'none';
         });
         
         // Mostrar el contenido seleccionado
         const targetContent = document.getElementById(tabName);
         if (targetContent) {
             targetContent.classList.remove('hidden');
-
+            targetContent.style.display = 'block';
+            console.log(`✅ Pestaña ${tabName} ahora visible`);
         } else {
             console.error(`❌ Elemento con ID ${tabName} no encontrado`);
             return;
@@ -77,6 +243,49 @@ function showTab(tabName) {
             activeTab.classList.add('active');
         }
         
+        // Función para forzar visualización de tablas
+        const forceTableVisibility = (tabId) => {
+            const tabElement = document.getElementById(tabId);
+            if (tabElement) {
+                // Forzar visibilidad del contenedor
+                tabElement.style.display = 'block';
+                tabElement.style.visibility = 'visible';
+                tabElement.style.opacity = '1';
+                
+                // Forzar visibilidad de todas las tablas dentro
+                const tables = tabElement.querySelectorAll('table');
+                const tableContainers = tabElement.querySelectorAll('.table-container');
+                
+                tables.forEach((table) => {
+                    table.style.display = 'table';
+                    table.style.visibility = 'visible';
+                    table.style.opacity = '1';
+                });
+                
+                tableContainers.forEach((container) => {
+                    container.style.display = 'block';
+                    container.style.visibility = 'visible';
+                    container.style.opacity = '1';
+                });
+                
+                // Verificar si las tablas tienen contenido y recalcular si es necesario
+                const tbodies = tabElement.querySelectorAll('tbody');
+                tbodies.forEach((tbody) => {
+                    if (tbody.rows.length === 0) {
+                        if (tabId === 'economicFlow' && modelData.economicCashFlow) {
+                            if (typeof updateEconomicFlowTable === 'function') {
+                                updateEconomicFlowTable(modelData.economicCashFlow);
+                            }
+                        } else if (tabId === 'financialFlow' && modelData.financialCashFlow) {
+                            if (typeof updateFinancialFlowTable === 'function') {
+                                updateFinancialFlowTable(modelData.financialCashFlow);
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        
         // Llamar a la función específica de cada tab
         switch (tabName) {
             case 'dashboard':
@@ -90,30 +299,71 @@ function showTab(tabName) {
                 break;
             case 'inversiones':
                 if (typeof calculateOptimizedCapex === 'function') calculateOptimizedCapex();
+                forceTableVisibility('inversiones');
                 break;
             case 'ingresos':
                 if (typeof calculateRevenues === 'function') calculateRevenues();
+                forceTableVisibility('ingresos');
                 break;
             case 'costos':
                 if (typeof calculateCosts === 'function') calculateCosts();
+                forceTableVisibility('costos');
                 break;
             case 'workingCapital':
                 if (typeof calculateWorkingCapital === 'function') calculateWorkingCapital();
+                forceTableVisibility('workingCapital');
                 break;
             case 'debtSchedule':
                 if (typeof calculateDebtSchedule === 'function') calculateDebtSchedule();
+                forceTableVisibility('debtSchedule');
                 break;
             case 'depreciaciones':
                 if (typeof calculateDepreciation === 'function') calculateDepreciation();
+                forceTableVisibility('depreciaciones');
                 break;
             case 'economicFlow':
-                if (typeof calculateEconomicCashFlow === 'function') calculateEconomicCashFlow();
+                console.log('🚀 Activando pestaña de flujo económico...');
+                
+                // Verificar si las funciones existen
+                console.log('  calculateEconomicCashFlow existe:', typeof calculateEconomicCashFlow === 'function');
+                console.log('  calculateEconomicCashFlowWithoutTerminal existe:', typeof calculateEconomicCashFlowWithoutTerminal === 'function');
+                
+                if (typeof calculateEconomicCashFlow === 'function') {
+                    console.log('  Ejecutando calculateEconomicCashFlow...');
+                    calculateEconomicCashFlow();
+                } else {
+                    console.error('❌ calculateEconomicCashFlow no está disponible');
+                }
+                
+                if (typeof calculateEconomicCashFlowWithoutTerminal === 'function') {
+                    console.log('  Ejecutando calculateEconomicCashFlowWithoutTerminal...');
+                    calculateEconomicCashFlowWithoutTerminal();
+                } else {
+                    console.error('❌ calculateEconomicCashFlowWithoutTerminal no está disponible');
+                }
+                
+                // Forzar visualización de tablas inmediatamente
+                forceTableVisibility('economicFlow');
                 break;
             case 'financialFlow':
-                if (typeof calculateFinancialCashFlow === 'function') calculateFinancialCashFlow();
+                console.log('🚀 Activando pestaña de flujo financiero...');
+                
+                // Verificar si las funciones existen
+                console.log('  calculateFinancialCashFlow existe:', typeof calculateFinancialCashFlow === 'function');
+                
+                if (typeof calculateFinancialCashFlow === 'function') {
+                    console.log('  Ejecutando calculateFinancialCashFlow...');
+                    calculateFinancialCashFlow();
+                } else {
+                    console.error('❌ calculateFinancialCashFlow no está disponible');
+                }
+                
+                // Forzar visualización de tablas inmediatamente
+                forceTableVisibility('financialFlow');
                 break;
             case 'sensibilidad':
                 if (typeof updateSensitivity === 'function') updateSensitivity();
+                forceTableVisibility('sensibilidad');
                 break;
         }
         
@@ -186,10 +436,22 @@ function updateCalculations() {
             console.warn('⚠️ calculateEconomicCashFlow no disponible');
         }
         
-        // 8. Flujo de Caja Financiero (cashflow.js)
-        if (typeof calculateFinancialCashFlow === 'function') {
+        // 7.1. Flujo de Caja Económico SIN Valor Terminal (cashflow.js)
+        if (typeof calculateEconomicCashFlowWithoutTerminal === 'function') {
+            calculateEconomicCashFlowWithoutTerminal();
+        } else {
+            console.warn('⚠️ calculateEconomicCashFlowWithoutTerminal no disponible');
+        }
+        
+        // 8. Flujo de Caja Financiero (cashflow.js) - Solo ejecutar si estamos en la pestaña financiera
+        const financialFlowTab = document.querySelector('[onclick="showTab(\'financialFlow\')"]');
+        const isFinancialFlowTabActive = financialFlowTab && financialFlowTab.classList.contains('active');
+        
+        if (isFinancialFlowTabActive && typeof calculateFinancialCashFlow === 'function') {
+            console.log('🔄 Ejecutando flujo financiero (pestaña activa)');
             calculateFinancialCashFlow();
-  
+        } else if (!isFinancialFlowTabActive) {
+            console.log('⏭️ Saltando flujo financiero (pestaña no activa)');
         } else {
             console.warn('⚠️ calculateFinancialCashFlow no disponible');
         }

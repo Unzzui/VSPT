@@ -168,6 +168,48 @@ body {
     transform: scaleX(1);
 }
 
+/* Estilos para tabla con valor terminal vs sin valor terminal */
+.sub-header {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: var(--primary);
+    border-bottom: 2px solid var(--accent);
+}
+
+.sub-header.no-terminal {
+    background-color: #fff3cd;
+    color: #856404;
+    border-bottom: 2px solid #ffc107;
+}
+
+.separator-row {
+    background-color: #f8f9fa;
+}
+
+.separator-row hr {
+    margin: 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #ddd, transparent);
+}
+
+.comparison-row {
+    background-color: #e3f2fd;
+    font-weight: 600;
+}
+
+.comparison-row td {
+    color: #0277bd;
+}
+
+.no-terminal {
+    opacity: 0.8;
+}
+
+.no-terminal:hover {
+    opacity: 1;
+}
+
 /* Contenido principal */
 .content {
     padding: 35px;

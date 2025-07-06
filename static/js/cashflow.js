@@ -3,7 +3,7 @@
 // ============================================================================
 
 function calculateEconomicCashFlow() {
-   
+    console.log('🔄 Calculando Flujo Económico - CON VALOR TERMINAL');
     
     const params = getFinancialParams();
     const economicFlow = {};
@@ -198,6 +198,14 @@ function calculateEconomicCashFlow() {
         const costs2025 = modelData.costs[2025];
         const flow2025 = economicFlow[2025];
         console.log(`📊 2025 Consistencia:`);
+        
+    // Guardar en modelData
+    modelData.economicCashFlow = economicFlow;
+    
+    // Calcular también la versión SIN valor terminal
+    calculateEconomicCashFlowWithoutTerminal();
+    
+    return economicFlow;
         console.log(`  COGS: Costs.js $${costs2025.cogs.toFixed(0)} vs Cashflow $${flow2025.cogs.toFixed(0)}`);
         console.log(`  OpEx + Fixed: Costs.js $${(costs2025.operatingExpenses.total + costs2025.fixedCosts.total).toFixed(0)} vs Cashflow $${flow2025.operatingExpenses.toFixed(0)}`);
         console.log(`  - OpEx: $${costs2025.operatingExpenses.total.toFixed(0)}`);
@@ -218,7 +226,215 @@ function calculateEconomicCashFlow() {
     updateEconomicFlowTable(economicFlow);
     modelData.economicCashFlow = economicFlow;
     
+    // Calcular también la versión SIN valor terminal
+    calculateEconomicCashFlowWithoutTerminal();
+    
+    return economicFlow;
+}
 
+// Función para forzar la visualización de la tabla económica
+function forceShowEconomicTable() {
+    console.log('🔧 Forzando visualización de tabla económica...');
+    
+    // Verificar que la pestaña esté visible
+    const economicFlowTab = document.getElementById('economicFlow');
+    if (economicFlowTab) {
+        economicFlowTab.classList.remove('hidden');
+        console.log('✅ Pestaña económica visible');
+    }
+    
+    // Verificar que la tabla tenga contenido
+    const tbody = document.getElementById('economicFlowBody');
+    if (tbody) {
+        console.log(`📊 Tabla tiene ${tbody.rows.length} filas`);
+        
+        // Si no hay filas, forzar recálculo
+        if (tbody.rows.length === 0) {
+            console.log('🔄 Forzando recálculo de tabla...');
+            if (modelData.economicCashFlow) {
+                updateEconomicFlowTable(modelData.economicCashFlow);
+            }
+        }
+    }
+    
+    // Verificar estilos CSS
+    const table = document.getElementById('economicFlowTable');
+    if (table) {
+        console.log('📋 Tabla encontrada, verificando estilos...');
+        console.log('  Display:', window.getComputedStyle(table).display);
+        console.log('  Visibility:', window.getComputedStyle(table).visibility);
+        console.log('  Opacity:', window.getComputedStyle(table).opacity);
+    }
+}
+
+// ============================================================================
+// FLUJO ECONÓMICO SIN VALOR TERMINAL
+// ============================================================================
+
+function calculateEconomicCashFlowWithoutTerminal() {
+    console.log('🔄 Calculando Flujo Económico - SIN VALOR TERMINAL');
+    
+    const params = getFinancialParams();
+    const economicFlowNoTerminal = {};
+    
+    for (let year = 2025; year <= 2030; year++) {
+        economicFlowNoTerminal[year] = {
+            revenues: 0,
+            cogs: 0,
+            grossProfit: 0,
+            operatingExpenses: 0,
+            ebitda: 0,
+            depreciation: 0,
+            ebit: 0,
+            taxes: 0,
+            nopat: 0,
+            capex: 0,
+            deltaWC: 0,
+            fcf: 0,
+            residualValue: 0 // SIEMPRE 0 en esta versión
+        };
+        
+        // Ingresos (desde 2025 Q3-Q4)
+        if (year >= 2025 && modelData.revenues && modelData.revenues[year]) {
+            if (typeof marketDistribution !== 'undefined') {
+                Object.keys(marketDistribution).forEach(market => {
+                    const revenueData = modelData.revenues[year][market];
+                    if (revenueData) {
+                        economicFlowNoTerminal[year].revenues += revenueData.netRevenue;
+                    }
+                });
+            }
+        }
+        
+        // COGS y gastos operativos - Usar costos reales de costs.js
+        if (modelData.costs && modelData.costs[year]) {
+            economicFlowNoTerminal[year].cogs = modelData.costs[year].cogs;
+        } else {
+            economicFlowNoTerminal[year].cogs = economicFlowNoTerminal[year].revenues * params.cogsPct;
+        }
+        
+        economicFlowNoTerminal[year].grossProfit = economicFlowNoTerminal[year].revenues - economicFlowNoTerminal[year].cogs;
+        
+        // Gastos operativos (del modelo de costos REAL)
+        if (modelData.costs && modelData.costs[year]) {
+            economicFlowNoTerminal[year].operatingExpenses = modelData.costs[year].operatingExpenses.total + 
+                                                             modelData.costs[year].fixedCosts.total;
+        } else {
+            const businessParams = getBusinessParams();
+            let operatingFactor = 1;
+            if (year === 2025) {
+                operatingFactor = 6 / 12;
+            }
+            
+            economicFlowNoTerminal[year].operatingExpenses = (economicFlowNoTerminal[year].revenues * businessParams.marketingPct + 
+                                                             economicFlowNoTerminal[year].revenues * 0.08 + 
+                                                             (year >= 2026 ? businessParams.salesSalary || 50000 : 0)) * operatingFactor + 
+                                                             120000 * Math.pow(1.035, year - 2025) * operatingFactor;
+        }
+        
+        // EBITDA
+        economicFlowNoTerminal[year].ebitda = economicFlowNoTerminal[year].grossProfit - economicFlowNoTerminal[year].operatingExpenses;
+        
+        // Depreciación
+        if (modelData.depreciation && modelData.depreciation.schedule) {
+            const totalDepreciationYear = modelData.depreciation.schedule
+                .filter(item => !item.concepto.includes('TOTAL'))
+                .reduce((sum, item) => sum + (item[year] || 0), 0);
+            economicFlowNoTerminal[year].depreciation = totalDepreciationYear;
+        } else {
+            let accumulatedCapex = 0;
+            if (modelData.investments) {
+                for (let y = 2025; y <= year; y++) {
+                    if (modelData.investments[y]) {
+                        accumulatedCapex += modelData.investments[y].total || 0;
+                    }
+                }
+            }
+            economicFlowNoTerminal[year].depreciation = accumulatedCapex / 5;
+        }
+        
+        // EBIT y impuestos
+        economicFlowNoTerminal[year].ebit = economicFlowNoTerminal[year].ebitda - economicFlowNoTerminal[year].depreciation;
+        economicFlowNoTerminal[year].taxes = Math.max(0, economicFlowNoTerminal[year].ebit * params.taxRate);
+        economicFlowNoTerminal[year].nopat = economicFlowNoTerminal[year].ebit - economicFlowNoTerminal[year].taxes;
+        
+        // CAPEX
+        if (modelData.investments && modelData.investments[year]) {
+            economicFlowNoTerminal[year].capex = modelData.investments[year].total || 0;
+        } else {
+            economicFlowNoTerminal[year].capex = 0;
+        }
+        
+        // Working Capital
+        if (modelData.workingCapital && modelData.workingCapital[year]) {
+            economicFlowNoTerminal[year].deltaWC = modelData.workingCapital[year].deltaWC || 0;
+        } else {
+            const previousRevenue = year > 2025 && modelData.revenues && modelData.revenues[year-1] ? 
+                Object.values(modelData.revenues[year-1]).reduce((sum, market) => sum + (market.netRevenue || 0), 0) : 0;
+            const currentRevenue = economicFlowNoTerminal[year].revenues;
+            const revenueGrowth = currentRevenue - previousRevenue;
+            economicFlowNoTerminal[year].deltaWC = revenueGrowth * 0.15;
+        }
+        
+        // IMPORTANTE: NO VALOR TERMINAL en esta versión
+        economicFlowNoTerminal[year].residualValue = 0;
+        
+        // Free Cash Flow (SIN valor terminal)
+        economicFlowNoTerminal[year].fcf = economicFlowNoTerminal[year].nopat + economicFlowNoTerminal[year].depreciation - 
+                                          economicFlowNoTerminal[year].capex - economicFlowNoTerminal[year].deltaWC;
+        
+        // Debug del FCF final (sin valor terminal)
+        if (year === 2030) {
+            console.log('🔍 FCF Final 2030 - SIN VALOR TERMINAL:');
+            console.log(`  NOPAT: ${economicFlowNoTerminal[year].nopat}`);
+            console.log(`  Depreciación: ${economicFlowNoTerminal[year].depreciation}`);
+            console.log(`  CAPEX: ${economicFlowNoTerminal[year].capex}`);
+            console.log(`  ΔWC: ${economicFlowNoTerminal[year].deltaWC}`);
+            console.log(`  Valor Terminal: ${economicFlowNoTerminal[year].residualValue} (SIEMPRE 0)`);
+            console.log(`  FCF Final: $${economicFlowNoTerminal[year].fcf.toFixed(0)}`);
+        }
+    }
+    
+    // Calcular VAN y TIR SIN valor terminal
+    const cashFlowsNoTerminal = Object.keys(economicFlowNoTerminal)
+        .filter(year => parseInt(year) >= 2025)
+        .map(year => economicFlowNoTerminal[year].fcf);
+    
+    const npvNoTerminal = calculateNPV(cashFlowsNoTerminal, params.wacc);
+    const irrNoTerminal = calculateIRR(cashFlowsNoTerminal);
+    
+    console.log('🔍 Cálculo VAN y TIR - SIN VALOR TERMINAL:');
+    console.log(`  WACC: ${(params.wacc * 100).toFixed(1)}%`);
+    console.log(`  Flujos de caja:`, cashFlowsNoTerminal.map(fcf => `$${fcf.toFixed(0)}`));
+    console.log(`  VAN: $${npvNoTerminal.toFixed(0)}`);
+    console.log(`  TIR: ${(irrNoTerminal * 100).toFixed(1)}%`);
+    
+    economicFlowNoTerminal.metrics = { 
+        npv: npvNoTerminal, 
+        irr: irrNoTerminal, 
+        wacc: params.wacc,
+        hasTerminalValue: false 
+    };
+    
+    // Guardar en modelData
+    modelData.economicCashFlowNoTerminal = economicFlowNoTerminal;
+    
+    // COMPARACIÓN: Mostrar diferencia entre CON y SIN valor terminal
+    const economicFlowWithTerminal = modelData.economicCashFlow;
+    if (economicFlowWithTerminal && economicFlowWithTerminal.metrics) {
+        console.log('📊 COMPARACIÓN - CON vs SIN VALOR TERMINAL:');
+        console.log(`  VAN CON valor terminal: $${economicFlowWithTerminal.metrics.npv.toFixed(0)}`);
+        console.log(`  VAN SIN valor terminal: $${npvNoTerminal.toFixed(0)}`);
+        console.log(`  Diferencia (valor terminal): $${(economicFlowWithTerminal.metrics.npv - npvNoTerminal).toFixed(0)}`);
+        console.log(`  % del VAN que viene del valor terminal: ${((economicFlowWithTerminal.metrics.npv - npvNoTerminal) / economicFlowWithTerminal.metrics.npv * 100).toFixed(1)}%`);
+        
+        if (economicFlowWithTerminal.metrics.irr) {
+            console.log(`  TIR CON valor terminal: ${(economicFlowWithTerminal.metrics.irr * 100).toFixed(1)}%`);
+            console.log(`  TIR SIN valor terminal: ${(irrNoTerminal * 100).toFixed(1)}%`);
+        }
+    }
+    
+    return economicFlowNoTerminal;
 }
 
 function calculateFinancialCashFlow() {
@@ -461,15 +677,18 @@ function calculateFinancialCashFlow() {
 }
 
 function updateEconomicFlowTable(economicFlow) {
+    console.log('🔄 Actualizando tabla flujo económico...');
     const tbody = document.getElementById('economicFlowBody');
     if (!tbody) {
         console.warn('⚠️ Tabla flujo económico no encontrada');
         return;
     }
     
+    // Limpiar tabla completamente
     tbody.innerHTML = '';
+    console.log('🧹 Tabla limpiada');
     
-    // Header
+    // Header principal
     const headerRow = tbody.insertRow();
     headerRow.className = 'category-header';
     headerRow.insertCell(0).innerHTML = 'FLUJO DE CAJA ECONÓMICO';
@@ -479,6 +698,17 @@ function updateEconomicFlowTable(economicFlow) {
     headerRow.insertCell(4).innerHTML = '2028';
     headerRow.insertCell(5).innerHTML = '2029';
     headerRow.insertCell(6).innerHTML = '2030';
+    
+    // Subheader para distinguir versiones
+    const subHeaderRow = tbody.insertRow();
+    subHeaderRow.className = 'sub-header';
+    subHeaderRow.insertCell(0).innerHTML = '<strong>CON VALOR TERMINAL</strong>';
+    subHeaderRow.insertCell(1).innerHTML = '';
+    subHeaderRow.insertCell(2).innerHTML = '';
+    subHeaderRow.insertCell(3).innerHTML = '';
+    subHeaderRow.insertCell(4).innerHTML = '';
+    subHeaderRow.insertCell(5).innerHTML = '';
+    subHeaderRow.insertCell(6).innerHTML = '';
     
     const metrics = [
         { key: 'revenues', label: 'Ingresos', format: 'currency' },
@@ -496,6 +726,7 @@ function updateEconomicFlowTable(economicFlow) {
         { key: 'fcf', label: 'Flujo Libre', format: 'currency', highlight: true }
     ];
     
+    console.log('📊 Agregando métricas CON valor terminal...');
     metrics.forEach(metric => {
         const row = tbody.insertRow();
         if (metric.highlight) row.className = 'total-row';
@@ -512,6 +743,7 @@ function updateEconomicFlowTable(economicFlow) {
             else if (metric.highlight && value > 0) cell.style.color = '#28a745';
         }
     });
+    console.log(`✅ Agregadas ${metrics.length} filas CON valor terminal`);
     
     // Métricas finales
     if (economicFlow.metrics) {
@@ -572,12 +804,187 @@ function updateEconomicFlowTable(economicFlow) {
             economicFCFElement.innerHTML = `$${(avgFCF/1000000).toFixed(2)}M`;
         }
     }
+    
+    // ============================================================================
+    // SECCIÓN SIN VALOR TERMINAL
+    // ============================================================================
+    
+    // Separador visual
+    const separatorRow = tbody.insertRow();
+    separatorRow.className = 'separator-row';
+    separatorRow.insertCell(0).innerHTML = '<hr style="border: 1px solid #ddd; margin: 10px 0;">';
+    separatorRow.insertCell(1).innerHTML = '';
+    separatorRow.insertCell(2).innerHTML = '';
+    separatorRow.insertCell(3).innerHTML = '';
+    separatorRow.insertCell(4).innerHTML = '';
+    separatorRow.insertCell(5).innerHTML = '';
+    separatorRow.insertCell(6).innerHTML = '';
+    
+    // Subheader para versión SIN valor terminal
+    const noTerminalHeaderRow = tbody.insertRow();
+    noTerminalHeaderRow.className = 'sub-header no-terminal';
+    noTerminalHeaderRow.insertCell(0).innerHTML = '<strong>SIN VALOR TERMINAL</strong>';
+    noTerminalHeaderRow.insertCell(1).innerHTML = '';
+    noTerminalHeaderRow.insertCell(2).innerHTML = '';
+    noTerminalHeaderRow.insertCell(3).innerHTML = '';
+    noTerminalHeaderRow.insertCell(4).innerHTML = '';
+    noTerminalHeaderRow.insertCell(5).innerHTML = '';
+    noTerminalHeaderRow.insertCell(6).innerHTML = '';
+    
+    // Obtener datos SIN valor terminal
+    const economicFlowNoTerminal = modelData.economicCashFlowNoTerminal;
+    
+    if (economicFlowNoTerminal) {
+        console.log('📊 Agregando métricas SIN valor terminal...');
+        
+        // Solo mostrar las métricas más importantes para la comparación
+        const comparisonMetrics = [
+            { key: 'residualValue', label: 'Valor Residual', format: 'currency', highlight: true },
+            { key: 'fcf', label: 'Flujo Libre', format: 'currency', highlight: true }
+        ];
+        
+        comparisonMetrics.forEach(metric => {
+            const row = tbody.insertRow();
+            if (metric.highlight) row.className = 'total-row no-terminal';
+            else row.className = 'subcategory no-terminal';
+            
+            row.insertCell(0).innerHTML = metric.label;
+            
+            for (let year = 2025; year <= 2030; year++) {
+                const value = economicFlowNoTerminal[year] ? economicFlowNoTerminal[year][metric.key] : 0;
+                const cell = row.insertCell(year - 2024);
+                
+                cell.innerHTML = `$${(value/1000).toFixed(0)}K`;
+                if (value < 0) cell.style.color = '#dc3545';
+                else if (metric.highlight && value > 0) cell.style.color = '#28a745';
+            }
+        });
+        console.log(`✅ Agregadas ${comparisonMetrics.length} filas de comparación SIN valor terminal`);
+        
+        // Métricas finales SIN valor terminal
+        if (economicFlowNoTerminal.metrics) {
+            const npvRow = tbody.insertRow();
+            npvRow.className = 'category-header no-terminal';
+            npvRow.insertCell(0).innerHTML = 'VAN Económico (Sin Valor Terminal)';
+            npvRow.insertCell(1).innerHTML = '';
+            npvRow.insertCell(2).innerHTML = '';
+            npvRow.insertCell(3).innerHTML = '';
+            npvRow.insertCell(4).innerHTML = '';
+            npvRow.insertCell(5).innerHTML = '';
+            const npvCell = npvRow.insertCell(6);
+            npvCell.innerHTML = `$${(economicFlowNoTerminal.metrics.npv/1000).toFixed(0)}K`;
+            npvCell.style.fontWeight = 'bold';
+            npvCell.style.color = economicFlowNoTerminal.metrics.npv > 0 ? '#28a745' : '#dc3545';
+            
+            const irrRow = tbody.insertRow();
+            irrRow.className = 'category-header no-terminal';
+            irrRow.insertCell(0).innerHTML = 'TIR Económica (Sin Valor Terminal)';
+            irrRow.insertCell(1).innerHTML = '';
+            irrRow.insertCell(2).innerHTML = '';
+            irrRow.insertCell(3).innerHTML = '';
+            irrRow.insertCell(4).innerHTML = '';
+            irrRow.insertCell(5).innerHTML = '';
+            const irrCell = irrRow.insertCell(6);
+            irrCell.innerHTML = `${(economicFlowNoTerminal.metrics.irr * 100).toFixed(1)}%`;
+            irrCell.style.fontWeight = 'bold';
+            irrCell.style.color = economicFlowNoTerminal.metrics.irr > economicFlowNoTerminal.metrics.wacc ? '#28a745' : '#dc3545';
+            
+            // COMPARACIÓN: Mostrar diferencia
+            if (economicFlow.metrics) {
+                const difference = economicFlow.metrics.npv - economicFlowNoTerminal.metrics.npv;
+                const percentage = economicFlowNoTerminal.metrics.npv !== 0 ? 
+                    (difference / Math.abs(economicFlowNoTerminal.metrics.npv)) * 100 : 0;
+                
+                const comparisonRow = tbody.insertRow();
+                comparisonRow.className = 'comparison-row';
+                comparisonRow.insertCell(0).innerHTML = '<strong>DIFERENCIA (Valor Terminal)</strong>';
+                comparisonRow.insertCell(1).innerHTML = '';
+                comparisonRow.insertCell(2).innerHTML = '';
+                comparisonRow.insertCell(3).innerHTML = '';
+                comparisonRow.insertCell(4).innerHTML = '';
+                comparisonRow.insertCell(5).innerHTML = '';
+                const diffCell = comparisonRow.insertCell(6);
+                diffCell.innerHTML = `$${(difference/1000).toFixed(0)}K (${percentage.toFixed(1)}%)`;
+                diffCell.style.fontWeight = 'bold';
+                diffCell.style.color = '#007bff';
+            }
+         }
+     }
+     
+     console.log('✅ Tabla flujo económico actualizada con ambas versiones');
+    
+    // Verificación final
+    const finalRowCount = tbody.rows.length;
+    console.log(`📊 Verificación final: ${finalRowCount} filas en la tabla`);
+    
+    // Verificar que la tabla sea visible
+    const tableContainerDebug = document.querySelector('#economicFlow .table-container');
+    if (tableContainerDebug) {
+        console.log('✅ Contenedor de tabla encontrado');
+        console.log('📏 Dimensiones del contenedor:', tableContainerDebug.offsetWidth, 'x', tableContainerDebug.offsetHeight);
+    } else {
+        console.warn('⚠️ Contenedor de tabla no encontrado');
+    }
+    
+    // Debug adicional: verificar estructura HTML
+    console.log('🔍 Debug estructura HTML:');
+    console.log('  economicFlow existe:', !!document.getElementById('economicFlow'));
+    console.log('  economicFlowTable existe:', !!document.getElementById('economicFlowTable'));
+    console.log('  economicFlowBody existe:', !!document.getElementById('economicFlowBody'));
+    
+    // Verificar si la tabla tiene contenido visible
+    const table = document.getElementById('economicFlowTable');
+    if (table) {
+        console.log('  Tabla display:', window.getComputedStyle(table).display);
+        console.log('  Tabla visibility:', window.getComputedStyle(table).visibility);
+        console.log('  Tabla height:', window.getComputedStyle(table).height);
+        console.log('  Tabla width:', window.getComputedStyle(table).width);
+    }
+    
+    // Forzar visibilidad de la tabla
+    console.log('🔧 Forzando visibilidad de la tabla...');
+    const economicFlowDiv = document.getElementById('economicFlow');
+    if (economicFlowDiv) {
+        economicFlowDiv.classList.remove('hidden');
+        economicFlowDiv.style.display = 'block';
+        console.log('✅ Div economicFlow ahora visible');
+    }
+    
+    const tableContainerForce = document.querySelector('#economicFlow .table-container');
+    if (tableContainerForce) {
+        tableContainerForce.style.display = 'block';
+        tableContainerForce.style.visibility = 'visible';
+        tableContainerForce.style.opacity = '1';
+        console.log('✅ Contenedor de tabla forzado a visible');
+    }
+    
+    if (table) {
+        table.style.display = 'table';
+        table.style.visibility = 'visible';
+        table.style.opacity = '1';
+        console.log('✅ Tabla forzada a visible');
+    }
+    
+    // Verificar contenido de la tabla
+    const tbodyDebug = document.getElementById('economicFlowBody');
+    if (tbodyDebug) {
+        console.log('📊 Filas en tbody:', tbodyDebug.rows.length);
+        for (let i = 0; i < Math.min(3, tbodyDebug.rows.length); i++) {
+            console.log(`  Fila ${i}:`, tbodyDebug.rows[i].textContent.substring(0, 100));
+        }
+    }
 }
+
+// Exportar funciones al scope global
+window.calculateEconomicCashFlow = calculateEconomicCashFlow;
+window.calculateEconomicCashFlowWithoutTerminal = calculateEconomicCashFlowWithoutTerminal;
+window.calculateFinancialCashFlow = calculateFinancialCashFlow;
+window.updateEconomicFlowTable = updateEconomicFlowTable;
+window.updateFinancialFlowTable = updateFinancialFlowTable;
 
 function updateFinancialFlowTable(financialFlow) {
     const tbody = document.getElementById('financialFlowBody');
     if (!tbody) {
-        console.warn('⚠️ Tabla flujo financiero no encontrada');
         return;
     }
     
@@ -671,6 +1078,142 @@ function updateFinancialFlowTable(financialFlow) {
             financialWACCLabel.innerHTML = `VAN Financiero (Ke ${(financialFlow.metrics.equityCost * 100).toFixed(1)}%)`;
         }
     }
+    
+    // Forzar visibilidad de la tabla financiera
+    const financialFlowDiv = document.getElementById('financialFlow');
+    if (financialFlowDiv) {
+        financialFlowDiv.classList.remove('hidden');
+        financialFlowDiv.style.display = 'block';
+    }
+    
+    const tableContainer = document.querySelector('#financialFlow .table-container');
+    if (tableContainer) {
+        tableContainer.style.display = 'block';
+        tableContainer.style.visibility = 'visible';
+        tableContainer.style.opacity = '1';
+    }
+    
+    const table = document.getElementById('financialFlowTable');
+    if (table) {
+        table.style.display = 'table';
+        table.style.visibility = 'visible';
+        table.style.opacity = '1';
+    }
+    
+    // ============================================================================
+    // SECCIÓN SIN VALOR TERMINAL (COMPARACIÓN)
+    // ============================================================================
+    
+    // Separador visual
+    const separatorRow = tbody.insertRow();
+    separatorRow.className = 'separator-row';
+    separatorRow.insertCell(0).innerHTML = '<hr style="border: 1px solid #ddd; margin: 10px 0;">';
+    separatorRow.insertCell(1).innerHTML = '';
+    separatorRow.insertCell(2).innerHTML = '';
+    separatorRow.insertCell(3).innerHTML = '';
+    separatorRow.insertCell(4).innerHTML = '';
+    separatorRow.insertCell(5).innerHTML = '';
+    separatorRow.insertCell(6).innerHTML = '';
+    
+    // Subheader para versión SIN valor terminal
+    const noTerminalHeaderRow = tbody.insertRow();
+    noTerminalHeaderRow.className = 'sub-header no-terminal';
+    noTerminalHeaderRow.insertCell(0).innerHTML = '<strong>COMPARACIÓN: SIN VALOR TERMINAL</strong>';
+    noTerminalHeaderRow.insertCell(1).innerHTML = '';
+    noTerminalHeaderRow.insertCell(2).innerHTML = '';
+    noTerminalHeaderRow.insertCell(3).innerHTML = '';
+    noTerminalHeaderRow.insertCell(4).innerHTML = '';
+    noTerminalHeaderRow.insertCell(5).innerHTML = '';
+    noTerminalHeaderRow.insertCell(6).innerHTML = '';
+    
+    // Solo mostrar las métricas más importantes para la comparación financiera
+    const comparisonMetrics = [
+        { key: 'residualValue', label: 'Valor Residual', format: 'currency', highlight: true },
+        { key: 'fcfe', label: 'FCFE', format: 'currency', highlight: true }
+    ];
+    
+    comparisonMetrics.forEach(metric => {
+        const row = tbody.insertRow();
+        if (metric.highlight) row.className = 'total-row no-terminal';
+        else row.className = 'subcategory no-terminal';
+        
+        row.insertCell(0).innerHTML = metric.label;
+        
+        for (let year = 2025; year <= 2030; year++) {
+            // Para la comparación, usar FCFE sin valor terminal
+            let value = 0;
+            if (financialFlow[year]) {
+                if (metric.key === 'residualValue') {
+                    value = 0; // Siempre 0 sin valor terminal
+                } else if (metric.key === 'fcfe') {
+                    value = financialFlow[year].fcfeWithoutTerminal || financialFlow[year].fcfe;
+                } else {
+                    value = financialFlow[year][metric.key] || 0;
+                }
+            }
+            
+            const cell = row.insertCell(year - 2024);
+            cell.innerHTML = `$${(value/1000).toFixed(0)}K`;
+            if (value < 0) cell.style.color = '#dc3545';
+            else if (metric.highlight && value > 0) cell.style.color = '#28a745';
+        }
+    });
+    
+    // Métricas finales SIN valor terminal
+    if (financialFlow.metrics) {
+        // Calcular VAN sin valor terminal
+        const equityCashFlowsOperational = Object.keys(financialFlow)
+            .filter(year => parseInt(year) >= 2025)
+            .map(year => financialFlow[year].fcfeWithoutTerminal || financialFlow[year].fcfe);
+        
+        const equityNPVOperational = calculateNPV(equityCashFlowsOperational, financialFlow.metrics.equityCost);
+        
+        const npvRow = tbody.insertRow();
+        npvRow.className = 'category-header no-terminal';
+        npvRow.insertCell(0).innerHTML = 'VAN del Equity (Sin Valor Terminal)';
+        npvRow.insertCell(1).innerHTML = '';
+        npvRow.insertCell(2).innerHTML = '';
+        npvRow.insertCell(3).innerHTML = '';
+        npvRow.insertCell(4).innerHTML = '';
+        npvRow.insertCell(5).innerHTML = '';
+        const npvCell = npvRow.insertCell(6);
+        npvCell.innerHTML = `$${(equityNPVOperational/1000).toFixed(0)}K`;
+        npvCell.style.fontWeight = 'bold';
+        npvCell.style.color = equityNPVOperational > 0 ? '#28a745' : '#dc3545';
+        
+        const irrRow = tbody.insertRow();
+        irrRow.className = 'category-header no-terminal';
+        irrRow.insertCell(0).innerHTML = 'TIR del Proyecto (Sin Valor Terminal)';
+        irrRow.insertCell(1).innerHTML = '';
+        irrRow.insertCell(2).innerHTML = '';
+        irrRow.insertCell(3).innerHTML = '';
+        irrRow.insertCell(4).innerHTML = '';
+        irrRow.insertCell(5).innerHTML = '';
+        const irrCell = irrRow.insertCell(6);
+        const irrWithoutTerminal = calculateIRR(equityCashFlowsOperational);
+        irrCell.innerHTML = `${(irrWithoutTerminal * 100).toFixed(1)}%`;
+        irrCell.style.fontWeight = 'bold';
+        irrCell.style.color = irrWithoutTerminal > financialFlow.metrics.equityCost ? '#28a745' : '#dc3545';
+        
+        // Agregar fila de diferencia
+        const difference = financialFlow.metrics.equityNPV - equityNPVOperational;
+        const percentage = equityNPVOperational !== 0 ? 
+            (difference / Math.abs(equityNPVOperational)) * 100 : 0;
+        
+        const differenceRow = tbody.insertRow();
+        differenceRow.className = 'comparison-row';
+        differenceRow.insertCell(0).innerHTML = 'DIFERENCIA (Valor Terminal)';
+        differenceRow.insertCell(1).innerHTML = '';
+        differenceRow.insertCell(2).innerHTML = '';
+        differenceRow.insertCell(3).innerHTML = '';
+        differenceRow.insertCell(4).innerHTML = '';
+        differenceRow.insertCell(5).innerHTML = '';
+        const differenceCell = differenceRow.insertCell(6);
+        differenceCell.innerHTML = `$${(difference/1000).toFixed(0)}K (${percentage.toFixed(1)}%)`;
+        differenceCell.style.fontWeight = 'bold';
+        differenceCell.style.color = difference > 0 ? '#28a745' : '#dc3545';
+    }
+    
 }
 
 // Funciones auxiliares para cálculos financieros

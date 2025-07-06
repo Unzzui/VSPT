@@ -54,6 +54,42 @@ const SENSITIVITY_SCENARIOS = {
     }
 };
 
+// Configuración para análisis de variables críticas
+const CRITICAL_VARIABLES = {
+    wacc: {
+        name: 'WACC',
+        baseValue: 0.08,
+        variations: [-2, -1, 0, 1, 2], // Puntos porcentuales
+        unit: 'pp',
+        description: 'Costo Promedio Ponderado de Capital',
+        impactLevel: 'Alto'
+    },
+    growth: {
+        name: 'Crecimiento',
+        baseValue: 0.45, // 45% promedio anual (refleja patrón decreciente real)
+        variations: [-50, -25, 0, 25, 50], // Porcentajes
+        unit: '%',
+        description: 'Tasa de crecimiento promedio del tráfico',
+        impactLevel: 'Alto'
+    },
+    prices: {
+        name: 'Precios',
+        baseValue: 1.0,
+        variations: [-30, -15, 0, 15, 30], // Porcentajes
+        unit: '%',
+        description: 'Variación en precios promedio',
+        impactLevel: 'Alto'
+    },
+    costs: {
+        name: 'Costos',
+        baseValue: 1.0,
+        variations: [-20, -10, 0, 10, 20], // Porcentajes
+        unit: '%',
+        description: 'Variación en costos operativos',
+        impactLevel: 'Alto'
+    }
+};
+
 function updateSensitivity() {
 
     
@@ -70,9 +106,28 @@ function updateSensitivity() {
         // Ejecutar análisis de escenarios
         const scenarioResults = executeSensitivityAnalysis(baseMetrics);
         
+        // Generar matriz de sensibilidad para variables críticas
+        const sensitivityMatrix = generateSensitivityMatrix(baseMetrics);
+        
+        // Evaluar riesgos clave
+        const keyRisks = evaluateKeyRisks(sensitivityMatrix);
+        
+        // Identificar escenarios viables
+        const viableScenarios = identifyViableScenarios(sensitivityMatrix);
+        
         // Actualizar tabla y métricas
         updateSensitivityDisplay(scenarioResults);
         updateSensitivityBanners(scenarioResults);
+        
+        // Actualizar matriz de sensibilidad
+        updateSensitivityMatrix(sensitivityMatrix);
+        
+        // Actualizar análisis de riesgos
+        updateRiskAnalysis(keyRisks, viableScenarios);
+        
+        // Generar interpretación de resultados
+        const interpretation = interpretSensitivityResults(sensitivityMatrix, keyRisks, viableScenarios);
+        updateInterpretation(interpretation);
         
         // Guardar en modelData
         if (typeof modelData === 'undefined') {
@@ -81,6 +136,10 @@ function updateSensitivity() {
         
         modelData.sensitivity = {
             scenarios: scenarioResults,
+            matrix: sensitivityMatrix,
+            risks: keyRisks,
+            viableScenarios: viableScenarios,
+            interpretation: interpretation,
             timestamp: new Date().toISOString()
         };
         
@@ -175,10 +234,10 @@ function getBaseScenarioMetrics() {
         console.warn('⚠️ Usando datos de respaldo para análisis de sensibilidad');
         return {
             revenue2030: 12500000,      // $12.5M
-            economicNPV: 2500000,       // $2.5M
-            financialNPV: 1700000,      // $1.7M
-            economicIRR: 15.8,          // 15.8%
-            financialIRR: 22.3,         // 22.3%
+            economicNPV: 3500000,       // $3.5M (más realista)
+            financialNPV: 2200000,      // $2.2M
+            economicIRR: 16.5,          // 16.5% (más realista)
+            financialIRR: 18.2,         // 18.2% (más realista)
             ebitda2030: 3200000         // $3.2M
         };
     }
@@ -1717,4 +1776,1166 @@ function updateNPVExplanation(wacc, ke) {
     } catch (error) {
         console.error('❌ Error actualizando explicación de VAN:', error);
     }
+}
+
+// Función para generar matriz de sensibilidad
+function generateSensitivityMatrix(baseMetrics) {
+    const matrix = {
+        wacc: {},
+        growth: {},
+        prices: {},
+        costs: {}
+    };
+    
+    // Generar matriz para WACC
+    CRITICAL_VARIABLES.wacc.variations.forEach(variation => {
+        const newWACC = CRITICAL_VARIABLES.wacc.baseValue + (variation / 100);
+        const npvImpact = calculateWACCImpact(baseMetrics, newWACC);
+        const irrImpact = calculateWACCIRRImpact(baseMetrics, newWACC);
+        
+        matrix.wacc[variation] = {
+            wacc: newWACC,
+            npv: npvImpact,
+            irr: irrImpact,
+            npvChange: npvImpact - baseMetrics.economicNPV,
+            irrChange: irrImpact - baseMetrics.economicIRR
+        };
+    });
+    
+    // Generar matriz para Crecimiento
+    CRITICAL_VARIABLES.growth.variations.forEach(variation => {
+        const growthFactor = 1 + (variation / 100);
+        const npvImpact = calculateGrowthImpact(baseMetrics, growthFactor);
+        const irrImpact = calculateGrowthIRRImpact(baseMetrics, growthFactor);
+        
+        matrix.growth[variation] = {
+            growth: CRITICAL_VARIABLES.growth.baseValue * growthFactor,
+            npv: npvImpact,
+            irr: irrImpact,
+            npvChange: npvImpact - baseMetrics.economicNPV,
+            irrChange: irrImpact - baseMetrics.economicIRR
+        };
+    });
+    
+    // Generar matriz para Precios
+    CRITICAL_VARIABLES.prices.variations.forEach(variation => {
+        const priceFactor = 1 + (variation / 100);
+        const npvImpact = calculatePriceImpact(baseMetrics, priceFactor);
+        const irrImpact = calculatePriceIRRImpact(baseMetrics, priceFactor);
+        
+        matrix.prices[variation] = {
+            priceFactor: priceFactor,
+            npv: npvImpact,
+            irr: irrImpact,
+            npvChange: npvImpact - baseMetrics.economicNPV,
+            irrChange: irrImpact - baseMetrics.economicIRR
+        };
+    });
+    
+    // Generar matriz para Costos
+    CRITICAL_VARIABLES.costs.variations.forEach(variation => {
+        const costFactor = 1 + (variation / 100);
+        const npvImpact = calculateCostImpact(baseMetrics, costFactor);
+        const irrImpact = calculateCostIRRImpact(baseMetrics, costFactor);
+        
+        matrix.costs[variation] = {
+            costFactor: costFactor,
+            npv: npvImpact,
+            irr: irrImpact,
+            npvChange: npvImpact - baseMetrics.economicNPV,
+            irrChange: irrImpact - baseMetrics.economicIRR
+        };
+    });
+    
+    return matrix;
+}
+
+// Funciones de cálculo de impacto para WACC
+function calculateWACCImpact(baseMetrics, newWACC) {
+    // Calcular VAN real con nuevo WACC usando flujos de caja del modelo
+    if (!modelData.economicCashFlow) {
+        return baseMetrics.economicNPV; // Fallback si no hay datos
+    }
+    
+    // Obtener flujos de caja reales del modelo
+    const cashFlows = [];
+    for (let year = 2025; year <= 2030; year++) {
+        if (modelData.economicCashFlow[year] && typeof modelData.economicCashFlow[year].fcf !== 'undefined') {
+            cashFlows.push(modelData.economicCashFlow[year].fcf);
+        }
+    }
+    
+    if (cashFlows.length === 0) {
+        return baseMetrics.economicNPV;
+    }
+    
+    // Primero calcular el VAN base con WACC original para verificar consistencia
+    const baseWACC = CRITICAL_VARIABLES.wacc.baseValue; // Ya está en decimal (0.08)
+    let baseNPV = 0;
+    cashFlows.forEach((fcf, index) => {
+        const period = index + 1;
+        const discountFactor = Math.pow(1 + baseWACC, period);
+        baseNPV += fcf / discountFactor;
+    });
+    
+    // Recalcular VAN con nuevo WACC
+    const newWACCDecimal = newWACC; // Ya está en decimal
+    let newNPV = 0;
+    
+    // Debug para verificar cálculo
+    console.log(`🔍 Calculando VAN con WACC ${(newWACC*100).toFixed(1)}%:`);
+    console.log(`  VAN base del modelo: $${(baseMetrics.economicNPV/1000000).toFixed(2)}M`);
+    console.log(`  VAN base recalculado: $${(baseNPV/1000000).toFixed(2)}M`);
+    console.log(`  Flujos de caja:`, cashFlows.map(f => `$${(f/1000).toFixed(0)}K`));
+    console.log(`  WACC base: ${(baseWACC*100).toFixed(1)}%, WACC nuevo: ${(newWACC*100).toFixed(1)}%`);
+    
+    cashFlows.forEach((fcf, index) => {
+        const period = index + 1;
+        const discountFactor = Math.pow(1 + newWACCDecimal, period);
+        const presentValue = fcf / discountFactor;
+        newNPV += presentValue;
+        
+        console.log(`  Año ${2025 + index}: FCF=$${(fcf/1000).toFixed(0)}K, Factor=${discountFactor.toFixed(3)}, PV=$${(presentValue/1000).toFixed(0)}K`);
+    });
+    
+    console.log(`  VAN final: $${(newNPV/1000000).toFixed(2)}M`);
+    console.log(`  Diferencia vs base recalculado: $${((newNPV - baseNPV)/1000000).toFixed(2)}M`);
+    
+    // Si es el WACC base (0.08), actualizar el VAN base para consistencia
+    if (Math.abs(newWACC - CRITICAL_VARIABLES.wacc.baseValue) < 0.001) {
+        console.log(`✅ Actualizando VAN base a: $${(newNPV/1000000).toFixed(2)}M`);
+        baseMetrics.economicNPV = newNPV;
+    }
+    
+    return newNPV;
+}
+
+function calculateWACCIRRImpact(baseMetrics, newWACC) {
+    // Simular impacto en TIR económica
+    const baseIRR = baseMetrics.economicIRR;
+    const waccChange = newWACC - CRITICAL_VARIABLES.wacc.baseValue;
+    // Sensibilidad moderada en TIR
+    const irrSensitivity = -baseIRR * 0.5; // Sensibilidad más realista
+    return Math.max(0, baseIRR + (irrSensitivity * waccChange));
+}
+
+// Funciones de cálculo de impacto para Crecimiento
+function calculateGrowthImpact(baseMetrics, growthFactor) {
+    // Recalcular VAN con nuevo factor de crecimiento
+    try {
+        // Simular nuevo modelo con factor de crecimiento modificado
+        const modifiedParams = getBusinessParams();
+        
+        // Aplicar factor de crecimiento a los parámetros de tráfico
+        const originalTrafficGrowthPattern = modifiedParams.trafficGrowthPattern || [1.00, 0.80, 0.60, 0.40, 0.20];
+        const modifiedTrafficGrowthPattern = originalTrafficGrowthPattern.map(rate => rate * growthFactor);
+        
+        // Calcular nuevos ingresos con crecimiento modificado
+        const newRevenue2030 = calculateModifiedRevenue2030(modifiedParams, modifiedTrafficGrowthPattern);
+        
+        // Estimar nuevo VAN basado en la proporción de cambio en ingresos
+        const originalRevenue2030 = baseMetrics.revenue2030 || 1;
+        const revenueChangeRatio = originalRevenue2030 > 0 ? newRevenue2030 / originalRevenue2030 : 1;
+        
+        // El VAN cambia proporcionalmente al cambio en ingresos (simplificación)
+        const newNPV = baseMetrics.economicNPV * revenueChangeRatio;
+        
+        return newNPV;
+    } catch (error) {
+        console.warn('Error calculando impacto de crecimiento:', error);
+        return baseMetrics.economicNPV;
+    }
+}
+
+function calculateGrowthIRRImpact(baseMetrics, growthFactor) {
+    // Simular impacto en TIR por cambio en crecimiento
+    const baseIRR = baseMetrics.economicIRR;
+    const growthChange = growthFactor - 1;
+    // Sensibilidad más realista en TIR
+    const irrSensitivity = baseIRR * 0.6; // Sensibilidad positiva más moderada
+    return baseIRR + (irrSensitivity * growthChange);
+}
+
+// Funciones de cálculo de impacto para Precios
+function calculatePriceImpact(baseMetrics, priceFactor) {
+    // Recalcular VAN con nuevo factor de precios
+    try {
+        // Los precios afectan directamente los ingresos de TODOS los años
+        const originalRevenue2030 = baseMetrics.revenue2030 || 1;
+        
+        // Estimar ingresos totales del proyecto (2025-2030)
+        // Aproximación: Revenue 2030 representa ~40% del total del proyecto
+        const totalProjectRevenue = originalRevenue2030 / 0.4; // Revenue total estimado
+        const revenueChange = totalProjectRevenue * (priceFactor - 1);
+        
+        // Calcular impacto en VAN con margen neto más realista
+        const financialParams = getFinancialParams();
+        const cogsPct = financialParams.cogsPct || 0.54; // 54% COGS
+        const opexPct = 0.30; // 30% gastos operativos
+        const netMargin = 1 - cogsPct - opexPct; // Margen neto real
+        
+        // Factor de descuento promedio para flujos 2025-2030
+        const wacc = financialParams.wacc || 0.08;
+        const avgDiscountFactor = 0.65; // Factor promedio para flujos futuros
+        
+        const npvImpact = revenueChange * netMargin * avgDiscountFactor;
+        const newNPV = baseMetrics.economicNPV + npvImpact;
+        
+        console.log(`🔍 Impacto Precios ${priceFactor}x:`);
+        console.log(`  Revenue change: $${(revenueChange/1000000).toFixed(2)}M`);
+        console.log(`  Net margin: ${(netMargin*100).toFixed(1)}%`);
+        console.log(`  NPV impact: $${(npvImpact/1000000).toFixed(2)}M`);
+        console.log(`  New NPV: $${(newNPV/1000000).toFixed(2)}M`);
+        
+        return newNPV;
+    } catch (error) {
+        console.warn('Error calculando impacto de precios:', error);
+        return baseMetrics.economicNPV;
+    }
+}
+
+function calculatePriceIRRImpact(baseMetrics, priceFactor) {
+    // Simular impacto en TIR por cambio en precios
+    const baseIRR = baseMetrics.economicIRR;
+    const priceChange = priceFactor - 1;
+    // Sensibilidad alta pero realista en TIR
+    const irrSensitivity = baseIRR * 0.8; // Alta sensibilidad a precios
+    return baseIRR + (irrSensitivity * priceChange);
+}
+
+// Funciones de cálculo de impacto para Costos
+function calculateCostImpact(baseMetrics, costFactor) {
+    // Recalcular VAN con nuevo factor de costos
+    try {
+        // Los costos afectan negativamente el VAN de TODO el proyecto
+        const originalRevenue2030 = baseMetrics.revenue2030 || 1;
+        
+        // Estimar ingresos totales del proyecto (2025-2030)
+        const totalProjectRevenue = originalRevenue2030 / 0.4; // Revenue total estimado
+        
+        // Estimar costos base como % de ingresos (basado en el modelo)
+        const financialParams = getFinancialParams();
+        const cogsPct = financialParams.cogsPct || 0.54; // 54% COGS
+        const opexPct = 0.30; // 30% gastos operativos
+        const totalCostPct = cogsPct + opexPct;
+        
+        const originalTotalCosts = totalProjectRevenue * totalCostPct;
+        const newTotalCosts = originalTotalCosts * costFactor;
+        const costChange = newTotalCosts - originalTotalCosts;
+        
+        // Impacto negativo en VAN por aumento de costos
+        const avgDiscountFactor = 0.65; // Factor de descuento promedio
+        const npvImpact = -costChange * avgDiscountFactor; // Negativo porque aumentan costos
+        
+        const newNPV = baseMetrics.economicNPV + npvImpact;
+        
+        console.log(`🔍 Impacto Costos ${costFactor}x:`);
+        console.log(`  Cost change: $${(costChange/1000000).toFixed(2)}M`);
+        console.log(`  Cost %: ${(totalCostPct*100).toFixed(1)}%`);
+        console.log(`  NPV impact: $${(npvImpact/1000000).toFixed(2)}M`);
+        console.log(`  New NPV: $${(newNPV/1000000).toFixed(2)}M`);
+        
+        return newNPV;
+    } catch (error) {
+        console.warn('Error calculando impacto de costos:', error);
+        return baseMetrics.economicNPV;
+    }
+}
+
+function calculateCostIRRImpact(baseMetrics, costFactor) {
+    // Simular impacto en TIR por cambio en costos
+    const baseIRR = baseMetrics.economicIRR;
+    const costChange = costFactor - 1;
+    // Sensibilidad negativa realista en TIR
+    const irrSensitivity = -baseIRR * 0.6; // Sensibilidad negativa
+    return Math.max(0, baseIRR + (irrSensitivity * costChange));
+}
+
+// Función para evaluar riesgos clave
+function evaluateKeyRisks(sensitivityMatrix) {
+    const risks = {
+        critical: [],
+        moderate: [],
+        low: []
+    };
+    
+    // Obtener métricas base para comparación
+    const baseMetrics = getBaseScenarioMetrics();
+    
+    // Analizar sensibilidad de WACC
+    const waccSensitivity = Math.abs(sensitivityMatrix.wacc[2].npvChange - sensitivityMatrix.wacc[-2].npvChange) / 2;
+    if (waccSensitivity > baseMetrics.economicNPV * 0.3) {
+        risks.critical.push({
+            factor: 'WACC',
+            description: 'Alta sensibilidad a cambios en la tasa de descuento',
+            impact: 'Variaciones de ±2pp pueden cambiar el VAN en más del 30%',
+            mitigation: 'Monitorear tasas de interés y estructura de capital'
+        });
+    }
+    
+    // Analizar sensibilidad de Crecimiento
+    const growthSensitivity = Math.abs(sensitivityMatrix.growth[50].npvChange - sensitivityMatrix.growth[-50].npvChange) / 2;
+    if (growthSensitivity > baseMetrics.economicNPV * 0.4) {
+        risks.critical.push({
+            factor: 'Crecimiento',
+            description: 'Alta sensibilidad a variaciones en el crecimiento',
+            impact: 'Variaciones de ±50% pueden cambiar el VAN en más del 40%',
+            mitigation: 'Implementar estrategias de marketing y expansión robustas'
+        });
+    }
+    
+    // Analizar sensibilidad de Precios
+    const priceSensitivity = Math.abs(sensitivityMatrix.prices[30].npvChange - sensitivityMatrix.prices[-30].npvChange) / 2;
+    if (priceSensitivity > baseMetrics.economicNPV * 0.35) {
+        risks.critical.push({
+            factor: 'Precios',
+            description: 'Alta sensibilidad a cambios en precios',
+            impact: 'Variaciones de ±30% pueden cambiar el VAN en más del 35%',
+            mitigation: 'Desarrollar estrategias de pricing dinámico'
+        });
+    }
+    
+    // Analizar sensibilidad de Costos
+    const costSensitivity = Math.abs(sensitivityMatrix.costs[20].npvChange - sensitivityMatrix.costs[-20].npvChange) / 2;
+    if (costSensitivity > baseMetrics.economicNPV * 0.20) { // Umbral más bajo para capturar costos
+        risks.moderate.push({
+            factor: 'Costos',
+            description: 'Sensibilidad moderada a cambios en costos',
+            impact: 'Variaciones de ±20% pueden cambiar el VAN en más del 20%',
+            mitigation: 'Implementar controles de costos y eficiencias operativas'
+        });
+    }
+    
+    return risks;
+}
+
+// Función para identificar escenarios viables
+function identifyViableScenarios(sensitivityMatrix) {
+    const viableScenarios = {
+        optimistic: [],
+        base: [],
+        conservative: [],
+        stress: []
+    };
+    
+    // Escenario Optimista: VAN > 0 y TIR > 15%
+    Object.keys(sensitivityMatrix).forEach(variable => {
+        Object.keys(sensitivityMatrix[variable]).forEach(variation => {
+            const scenario = sensitivityMatrix[variable][variation];
+            if (scenario.npv > 0 && scenario.irr > 15) {
+                viableScenarios.optimistic.push({
+                    variable: variable,
+                    variation: variation,
+                    npv: scenario.npv,
+                    irr: scenario.irr
+                });
+            }
+        });
+    });
+    
+    // Escenario Base: VAN > 0 y TIR > 10%
+    Object.keys(sensitivityMatrix).forEach(variable => {
+        Object.keys(sensitivityMatrix[variable]).forEach(variation => {
+            const scenario = sensitivityMatrix[variable][variation];
+            if (scenario.npv > 0 && scenario.irr > 10 && scenario.irr <= 15) {
+                viableScenarios.base.push({
+                    variable: variable,
+                    variation: variation,
+                    npv: scenario.npv,
+                    irr: scenario.irr
+                });
+            }
+        });
+    });
+    
+    // Escenario Conservador: VAN > 0 y TIR > 8%
+    Object.keys(sensitivityMatrix).forEach(variable => {
+        Object.keys(sensitivityMatrix[variable]).forEach(variation => {
+            const scenario = sensitivityMatrix[variable][variation];
+            if (scenario.npv > 0 && scenario.irr > 8 && scenario.irr <= 10) {
+                viableScenarios.conservative.push({
+                    variable: variable,
+                    variation: variation,
+                    npv: scenario.npv,
+                    irr: scenario.irr
+                });
+            }
+        });
+    });
+    
+    // Escenario Stress: VAN > 0 y TIR > 5%
+    Object.keys(sensitivityMatrix).forEach(variable => {
+        Object.keys(sensitivityMatrix[variable]).forEach(variation => {
+            const scenario = sensitivityMatrix[variable][variation];
+            if (scenario.npv > 0 && scenario.irr > 5 && scenario.irr <= 8) {
+                viableScenarios.stress.push({
+                    variable: variable,
+                    variation: variation,
+                    npv: scenario.npv,
+                    irr: scenario.irr
+                });
+            }
+        });
+    });
+    
+    return viableScenarios;
+}
+
+// Función para actualizar la matriz de sensibilidad en la UI
+function updateSensitivityMatrix(sensitivityMatrix) {
+    try {
+        // Actualizar matriz de WACC
+        updateWACCMatrix(sensitivityMatrix.wacc);
+        
+        // Actualizar matriz de Crecimiento
+        updateGrowthMatrix(sensitivityMatrix.growth);
+        
+        // Actualizar matriz de Precios
+        updatePricesMatrix(sensitivityMatrix.prices);
+        
+        // Actualizar matriz de Costos
+        updateCostsMatrix(sensitivityMatrix.costs);
+        
+        console.log('✅ Matriz de sensibilidad actualizada');
+    } catch (error) {
+        console.error('❌ Error actualizando matriz de sensibilidad:', error);
+    }
+}
+
+// Función para actualizar matriz de WACC
+function updateWACCMatrix(waccMatrix) {
+    const matrixContainer = document.getElementById('wacc-matrix');
+    if (!matrixContainer) return;
+    
+    let html = `
+        <div class="matrix-header bg-blue-50 p-3 rounded-t-lg">
+            <h5 class="font-bold text-blue-900">Matriz de Sensibilidad - WACC</h5>
+            <p class="text-sm text-blue-700">Impacto en VAN y TIR por variación en puntos porcentuales</p>
+        </div>
+        <div class="matrix-content p-4">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="text-left p-2">Variación (pp)</th>
+                        <th class="text-center p-2">WACC</th>
+                        <th class="text-center p-2">VAN ($M)</th>
+                        <th class="text-center p-2">TIR (%)</th>
+                        <th class="text-center p-2">Δ VAN</th>
+                        <th class="text-center p-2">Δ TIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    Object.keys(waccMatrix).forEach(variation => {
+        const scenario = waccMatrix[variation];
+        const npvColor = scenario.npvChange >= 0 ? 'text-green-600' : 'text-red-600';
+        const irrColor = scenario.irrChange >= 0 ? 'text-green-600' : 'text-red-600';
+        
+        html += `
+            <tr class="border-b border-gray-200">
+                <td class="p-2 font-medium">${variation > 0 ? '+' : ''}${variation}</td>
+                <td class="p-2 text-center">${(scenario.wacc * 100).toFixed(1)}%</td>
+                <td class="p-2 text-center font-bold">${(scenario.npv / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center font-bold">${scenario.irr.toFixed(1)}</td>
+                <td class="p-2 text-center ${npvColor}">${scenario.npvChange >= 0 ? '+' : ''}${(scenario.npvChange / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center ${irrColor}">${scenario.irrChange >= 0 ? '+' : ''}${scenario.irrChange.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    matrixContainer.innerHTML = html;
+}
+
+// Función para actualizar matriz de Crecimiento
+function updateGrowthMatrix(growthMatrix) {
+    const matrixContainer = document.getElementById('growth-matrix');
+    if (!matrixContainer) return;
+    
+    let html = `
+        <div class="matrix-header bg-green-50 p-3 rounded-t-lg">
+            <h5 class="font-bold text-green-900">Matriz de Sensibilidad - Crecimiento</h5>
+            <p class="text-sm text-green-700">Impacto en VAN y TIR por variación en tasa de crecimiento</p>
+        </div>
+        <div class="matrix-content p-4">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="text-left p-2">Variación (%)</th>
+                        <th class="text-center p-2">Crecimiento</th>
+                        <th class="text-center p-2">VAN ($M)</th>
+                        <th class="text-center p-2">TIR (%)</th>
+                        <th class="text-center p-2">Δ VAN</th>
+                        <th class="text-center p-2">Δ TIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    Object.keys(growthMatrix).forEach(variation => {
+        const scenario = growthMatrix[variation];
+        const npvColor = scenario.npvChange >= 0 ? 'text-green-600' : 'text-red-600';
+        const irrColor = scenario.irrChange >= 0 ? 'text-green-600' : 'text-red-600';
+        
+        html += `
+            <tr class="border-b border-gray-200">
+                <td class="p-2 font-medium">${variation > 0 ? '+' : ''}${variation}</td>
+                <td class="p-2 text-center">${(scenario.growth * 100).toFixed(1)}%</td>
+                <td class="p-2 text-center font-bold">${(scenario.npv / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center font-bold">${scenario.irr.toFixed(1)}</td>
+                <td class="p-2 text-center ${npvColor}">${scenario.npvChange >= 0 ? '+' : ''}${(scenario.npvChange / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center ${irrColor}">${scenario.irrChange >= 0 ? '+' : ''}${scenario.irrChange.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    matrixContainer.innerHTML = html;
+}
+
+// Función para actualizar matriz de Precios
+function updatePricesMatrix(pricesMatrix) {
+    const matrixContainer = document.getElementById('prices-matrix');
+    if (!matrixContainer) return;
+    
+    let html = `
+        <div class="matrix-header bg-purple-50 p-3 rounded-t-lg">
+            <h5 class="font-bold text-purple-900">Matriz de Sensibilidad - Precios</h5>
+            <p class="text-sm text-purple-700">Impacto en VAN y TIR por variación en precios promedio</p>
+        </div>
+        <div class="matrix-content p-4">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="text-left p-2">Variación (%)</th>
+                        <th class="text-center p-2">Factor Precio</th>
+                        <th class="text-center p-2">VAN ($M)</th>
+                        <th class="text-center p-2">TIR (%)</th>
+                        <th class="text-center p-2">Δ VAN</th>
+                        <th class="text-center p-2">Δ TIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    Object.keys(pricesMatrix).forEach(variation => {
+        const scenario = pricesMatrix[variation];
+        const npvColor = scenario.npvChange >= 0 ? 'text-green-600' : 'text-red-600';
+        const irrColor = scenario.irrChange >= 0 ? 'text-green-600' : 'text-red-600';
+        
+        html += `
+            <tr class="border-b border-gray-200">
+                <td class="p-2 font-medium">${variation > 0 ? '+' : ''}${variation}</td>
+                <td class="p-2 text-center">${scenario.priceFactor.toFixed(2)}x</td>
+                <td class="p-2 text-center font-bold">${(scenario.npv / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center font-bold">${scenario.irr.toFixed(1)}</td>
+                <td class="p-2 text-center ${npvColor}">${scenario.npvChange >= 0 ? '+' : ''}${(scenario.npvChange / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center ${irrColor}">${scenario.irrChange >= 0 ? '+' : ''}${scenario.irrChange.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    matrixContainer.innerHTML = html;
+}
+
+// Función para actualizar matriz de Costos
+function updateCostsMatrix(costsMatrix) {
+    const matrixContainer = document.getElementById('costs-matrix');
+    if (!matrixContainer) return;
+    
+    let html = `
+        <div class="matrix-header bg-orange-50 p-3 rounded-t-lg">
+            <h5 class="font-bold text-orange-900">Matriz de Sensibilidad - Costos</h5>
+            <p class="text-sm text-orange-700">Impacto en VAN y TIR por variación en costos operativos</p>
+        </div>
+        <div class="matrix-content p-4">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="text-left p-2">Variación (%)</th>
+                        <th class="text-center p-2">Factor Costo</th>
+                        <th class="text-center p-2">VAN ($M)</th>
+                        <th class="text-center p-2">TIR (%)</th>
+                        <th class="text-center p-2">Δ VAN</th>
+                        <th class="text-center p-2">Δ TIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    Object.keys(costsMatrix).forEach(variation => {
+        const scenario = costsMatrix[variation];
+        const npvColor = scenario.npvChange >= 0 ? 'text-green-600' : 'text-red-600';
+        const irrColor = scenario.irrChange >= 0 ? 'text-green-600' : 'text-red-600';
+        
+        html += `
+            <tr class="border-b border-gray-200">
+                <td class="p-2 font-medium">${variation > 0 ? '+' : ''}${variation}</td>
+                <td class="p-2 text-center">${scenario.costFactor.toFixed(2)}x</td>
+                <td class="p-2 text-center font-bold">${(scenario.npv / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center font-bold">${scenario.irr.toFixed(1)}</td>
+                <td class="p-2 text-center ${npvColor}">${scenario.npvChange >= 0 ? '+' : ''}${(scenario.npvChange / 1000000).toFixed(2)}</td>
+                <td class="p-2 text-center ${irrColor}">${scenario.irrChange >= 0 ? '+' : ''}${scenario.irrChange.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    matrixContainer.innerHTML = html;
+}
+
+// Función para actualizar análisis de riesgos
+function updateRiskAnalysis(keyRisks, viableScenarios) {
+    try {
+        // Actualizar riesgos críticos
+        updateCriticalRisks(keyRisks.critical);
+        
+        // Actualizar riesgos moderados
+        updateModerateRisks(keyRisks.moderate);
+        
+        // Actualizar escenarios viables
+        updateViableScenarios(viableScenarios);
+        
+        console.log('✅ Análisis de riesgos actualizado');
+    } catch (error) {
+        console.error('❌ Error actualizando análisis de riesgos:', error);
+    }
+}
+
+// Función para actualizar riesgos críticos
+function updateCriticalRisks(criticalRisks) {
+    const container = document.getElementById('critical-risks');
+    if (!container) return;
+    
+    if (criticalRisks.length === 0) {
+        container.innerHTML = `
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                    <span class="text-green-800 font-medium">No se identificaron riesgos críticos</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="space-y-3">';
+    criticalRisks.forEach(risk => {
+        html += `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h6 class="font-bold text-red-900 mb-2">${risk.factor}</h6>
+                        <p class="text-red-800 text-sm mb-2">${risk.description}</p>
+                        <p class="text-red-700 text-sm mb-2"><strong>Impacto:</strong> ${risk.impact}</p>
+                        <p class="text-red-700 text-sm"><strong>Mitigación:</strong> ${risk.mitigation}</p>
+                    </div>
+                    <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">Crítico</span>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Función para actualizar riesgos moderados
+function updateModerateRisks(moderateRisks) {
+    const container = document.getElementById('moderate-risks');
+    if (!container) return;
+    
+    if (moderateRisks.length === 0) {
+        container.innerHTML = `
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                    <span class="text-green-800 font-medium">No se identificaron riesgos moderados</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="space-y-3">';
+    moderateRisks.forEach(risk => {
+        html += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h6 class="font-bold text-yellow-900 mb-2">${risk.factor}</h6>
+                        <p class="text-yellow-800 text-sm mb-2">${risk.description}</p>
+                        <p class="text-yellow-700 text-sm mb-2"><strong>Impacto:</strong> ${risk.impact}</p>
+                        <p class="text-yellow-700 text-sm"><strong>Mitigación:</strong> ${risk.mitigation}</p>
+                    </div>
+                    <span class="bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded-full">Moderado</span>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Función para actualizar escenarios viables
+function updateViableScenarios(viableScenarios) {
+    const container = document.getElementById('viable-scenarios');
+    if (!container) return;
+    
+    let html = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h6 class="font-bold text-green-900 mb-2">Optimista</h6>
+                <p class="text-green-800 text-sm mb-2">VAN > 0, TIR > 15%</p>
+                <p class="text-green-700 font-bold">${viableScenarios.optimistic.length} escenarios</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h6 class="font-bold text-blue-900 mb-2">Base</h6>
+                <p class="text-blue-800 text-sm mb-2">VAN > 0, TIR 10-15%</p>
+                <p class="text-blue-700 font-bold">${viableScenarios.base.length} escenarios</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h6 class="font-bold text-yellow-900 mb-2">Conservador</h6>
+                <p class="text-yellow-800 text-sm mb-2">VAN > 0, TIR 8-10%</p>
+                <p class="text-yellow-700 font-bold">${viableScenarios.conservative.length} escenarios</p>
+            </div>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h6 class="font-bold text-orange-900 mb-2">Stress</h6>
+                <p class="text-orange-800 text-sm mb-2">VAN > 0, TIR 5-8%</p>
+                <p class="text-orange-700 font-bold">${viableScenarios.stress.length} escenarios</p>
+            </div>
+        </div>
+    `;
+    
+    // Agregar detalles de escenarios más relevantes
+    if (viableScenarios.optimistic.length > 0) {
+        html += `
+            <div class="mt-4">
+                <h6 class="font-bold text-gray-800 mb-2">Escenarios Optimistas Destacados:</h6>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        `;
+        
+        viableScenarios.optimistic.slice(0, 4).forEach(scenario => {
+            html += `
+                <div class="bg-green-50 border border-green-200 rounded p-3">
+                    <p class="text-sm"><strong>${scenario.variable}:</strong> ${scenario.variation > 0 ? '+' : ''}${scenario.variation}%</p>
+                    <p class="text-sm">VAN: $${(scenario.npv / 1000000).toFixed(2)}M, TIR: ${scenario.irr.toFixed(1)}%</p>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+// Función para interpretar resultados del análisis de sensibilidad
+function interpretSensitivityResults(sensitivityMatrix, keyRisks, viableScenarios) {
+    const interpretation = {
+        criticalInsights: [],
+        recommendations: [],
+        riskMitigation: [],
+        opportunities: []
+    };
+    
+    // Obtener métricas base para comparación
+    const baseMetrics = getBaseScenarioMetrics();
+    
+    // Analizar sensibilidad de WACC
+    const waccRange = Math.abs(sensitivityMatrix.wacc[2].npvChange - sensitivityMatrix.wacc[-2].npvChange);
+    const waccSensitivity = waccRange / (baseMetrics.economicNPV * 4) * 100; // Porcentaje de cambio
+    
+    if (waccSensitivity > 15) {
+        interpretation.criticalInsights.push({
+            factor: 'WACC',
+            insight: `Alta sensibilidad a cambios en tasa de descuento (${waccSensitivity.toFixed(1)}% por ±2pp)`,
+            impact: 'Variaciones en tasas de interés pueden afectar significativamente la viabilidad del proyecto',
+            priority: 'Alta'
+        });
+        
+        interpretation.recommendations.push({
+            category: 'Financiero',
+            action: 'Implementar estrategias de cobertura de tasas de interés',
+            benefit: 'Reducir exposición a fluctuaciones en costos de capital'
+        });
+    }
+    
+    // Analizar sensibilidad de Crecimiento
+    const growthRange = Math.abs(sensitivityMatrix.growth[50].npvChange - sensitivityMatrix.growth[-50].npvChange);
+    const growthSensitivity = growthRange / (baseMetrics.economicNPV * 2) * 100;
+    
+    if (growthSensitivity > 40) {
+        interpretation.criticalInsights.push({
+            factor: 'Crecimiento',
+            insight: `Sensibilidad crítica al crecimiento (${growthSensitivity.toFixed(1)}% por ±50%)`,
+            impact: 'El éxito del proyecto depende fuertemente de la capacidad de crecimiento',
+            priority: 'Crítica'
+        });
+        
+        interpretation.recommendations.push({
+            category: 'Operacional',
+            action: 'Desarrollar estrategias de marketing y expansión robustas',
+            benefit: 'Asegurar crecimiento sostenible y mitigar riesgos de estancamiento'
+        });
+    }
+    
+    // Analizar sensibilidad de Precios
+    const priceRange = Math.abs(sensitivityMatrix.prices[30].npvChange - sensitivityMatrix.prices[-30].npvChange);
+    const priceSensitivity = priceRange / (baseMetrics.economicNPV * 2) * 100;
+    
+    if (priceSensitivity > 30) {
+        interpretation.criticalInsights.push({
+            factor: 'Precios',
+            insight: `Alta sensibilidad a cambios en precios (${priceSensitivity.toFixed(1)}% por ±30%)`,
+            impact: 'La estrategia de pricing es fundamental para la rentabilidad',
+            priority: 'Alta'
+        });
+        
+        interpretation.recommendations.push({
+            category: 'Comercial',
+            action: 'Implementar estrategias de pricing dinámico y diferenciación',
+            benefit: 'Maximizar márgenes y mantener competitividad'
+        });
+    }
+    
+    // Analizar escenarios viables
+    const totalViableScenarios = viableScenarios.optimistic.length + viableScenarios.base.length + 
+                                viableScenarios.conservative.length + viableScenarios.stress.length;
+    
+    if (totalViableScenarios > 15) {
+        interpretation.opportunities.push({
+            type: 'Robustez del Proyecto',
+            description: `${totalViableScenarios} escenarios viables identificados`,
+            confidence: 'Alta confianza en la viabilidad del proyecto'
+        });
+    } else if (totalViableScenarios > 5) {
+        interpretation.opportunities.push({
+            type: 'Viabilidad Moderada',
+            description: `${totalViableScenarios} escenarios viables identificados`,
+            confidence: 'Moderada confianza, requiere monitoreo continuo'
+        });
+    } else {
+        interpretation.riskMitigation.push({
+            type: 'Riesgo de Viabilidad',
+            description: 'Pocos escenarios viables identificados',
+            action: 'Revisar supuestos y considerar ajustes al modelo'
+        });
+    }
+    
+    // Analizar distribución de riesgos
+    const criticalRiskCount = keyRisks.critical.length;
+    const moderateRiskCount = keyRisks.moderate.length;
+    
+    if (criticalRiskCount > 2) {
+        interpretation.riskMitigation.push({
+            type: 'Múltiples Riesgos Críticos',
+            description: `${criticalRiskCount} factores críticos identificados`,
+            action: 'Implementar plan de mitigación integral'
+        });
+    }
+    
+    return interpretation;
+}
+
+// Función para actualizar interpretación en la UI
+function updateInterpretation(interpretation) {
+    const container = document.getElementById('sensitivity-interpretation');
+    if (!container) return;
+    
+    let html = `
+        <div class="interpretation-container bg-white rounded-lg border border-gray-200 shadow-lg p-6">
+            <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+                Interpretación de Resultados
+            </h4>
+    `;
+    
+    // Insights Críticos
+    if (interpretation.criticalInsights.length > 0) {
+        html += `
+            <div class="mb-6">
+                <h5 class="font-bold text-red-800 mb-3">Insights Críticos</h5>
+                <div class="space-y-3">
+        `;
+        
+        interpretation.criticalInsights.forEach(insight => {
+            const priorityColor = insight.priority === 'Crítica' ? 'bg-red-100 border-red-300' : 'bg-orange-100 border-orange-300';
+            html += `
+                <div class="p-3 rounded-lg border ${priorityColor}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h6 class="font-bold text-gray-900">${insight.factor}</h6>
+                            <p class="text-sm text-gray-700 mt-1">${insight.insight}</p>
+                            <p class="text-sm text-gray-600 mt-1"><strong>Impacto:</strong> ${insight.impact}</p>
+                        </div>
+                        <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">${insight.priority}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // Recomendaciones
+    if (interpretation.recommendations.length > 0) {
+        html += `
+            <div class="mb-6">
+                <h5 class="font-bold text-blue-800 mb-3">Recomendaciones Estratégicas</h5>
+                <div class="space-y-3">
+        `;
+        
+        interpretation.recommendations.forEach(rec => {
+            html += `
+                <div class="p-3 rounded-lg border border-blue-200 bg-blue-50">
+                    <div class="flex items-start">
+                        <div class="flex-1">
+                            <h6 class="font-bold text-blue-900">${rec.category}</h6>
+                            <p class="text-sm text-blue-800 mt-1"><strong>Acción:</strong> ${rec.action}</p>
+                            <p class="text-sm text-blue-700 mt-1"><strong>Beneficio:</strong> ${rec.benefit}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // Oportunidades
+    if (interpretation.opportunities.length > 0) {
+        html += `
+            <div class="mb-6">
+                <h5 class="font-bold text-green-800 mb-3">Oportunidades Identificadas</h5>
+                <div class="space-y-3">
+        `;
+        
+        interpretation.opportunities.forEach(opp => {
+            html += `
+                <div class="p-3 rounded-lg border border-green-200 bg-green-50">
+                    <h6 class="font-bold text-green-900">${opp.type}</h6>
+                    <p class="text-sm text-green-800 mt-1">${opp.description}</p>
+                    <p class="text-sm text-green-700 mt-1"><strong>Confianza:</strong> ${opp.confidence}</p>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // Mitigación de Riesgos
+    if (interpretation.riskMitigation.length > 0) {
+        html += `
+            <div class="mb-6">
+                <h5 class="font-bold text-orange-800 mb-3">Mitigación de Riesgos</h5>
+                <div class="space-y-3">
+        `;
+        
+        interpretation.riskMitigation.forEach(risk => {
+            html += `
+                <div class="p-3 rounded-lg border border-orange-200 bg-orange-50">
+                    <h6 class="font-bold text-orange-900">${risk.type}</h6>
+                    <p class="text-sm text-orange-800 mt-1">${risk.description}</p>
+                    <p class="text-sm text-orange-700 mt-1"><strong>Acción:</strong> ${risk.action}</p>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    html += `
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Función para calcular revenue 2030 realista basado en el modelo real
+function calculateRealisticRevenue2030(params) {
+    // Usar exactamente la misma lógica que revenues.js
+    const yearIndex = 5; // 2030 es año 5 desde 2025
+    
+    // Tráfico con patrón de crecimiento decreciente real
+    const trafficGrowthPattern = params.trafficGrowthPattern || [1.00, 0.80, 0.60, 0.40, 0.20];
+    let cumulativeTraffic = params.initialTraffic;
+    
+    for (let i = 1; i <= yearIndex; i++) {
+        const currentGrowthRate = trafficGrowthPattern[Math.min(i - 1, trafficGrowthPattern.length - 1)];
+        cumulativeTraffic *= (1 + currentGrowthRate);
+    }
+    
+    // Conversión con patrón de mejora decreciente real
+    const conversionGrowthPattern = params.conversionGrowthPattern || [0.40, 0.25, 0.15, 0.10, 0.05];
+    let cumulativeConversion = params.initialConversion;
+    
+    for (let i = 1; i <= yearIndex; i++) {
+        const currentGrowthRate = conversionGrowthPattern[Math.min(i - 1, conversionGrowthPattern.length - 1)];
+        cumulativeConversion *= (1 + currentGrowthRate);
+    }
+    cumulativeConversion = Math.min(cumulativeConversion, 0.08); // Máximo 8%
+    
+    // Ticket con crecimiento premium (8% anual desde 2026)
+    const ticketSize = params.avgTicket * Math.pow(1.08, Math.max(0, yearIndex - 1));
+    
+    // Calcular por mercado usando distribución real
+    let totalRevenue = 0;
+    if (typeof marketDistribution !== 'undefined') {
+        Object.keys(marketDistribution).forEach(market => {
+            const marketData = marketDistribution[market];
+            const marketTraffic = cumulativeTraffic * marketData.weight * 12; // 12 meses
+            const orders = marketTraffic * cumulativeConversion;
+            const localPrice = ticketSize * marketData.premium;
+            const netRevenue = orders * localPrice;
+            totalRevenue += netRevenue;
+        });
+    } else {
+        // Fallback si marketDistribution no está disponible
+        const monthlyOrders = cumulativeTraffic * cumulativeConversion;
+        totalRevenue = monthlyOrders * ticketSize * 12; // 12 meses
+    }
+    
+    return totalRevenue;
+}
+
+// Función para calcular VAN realista basado en flujos proyectados
+function calculateRealisticNPV(revenue2030, financialParams) {
+    // Estimar flujos de caja simplificados para 2026-2030
+    const years = [2026, 2027, 2028, 2029, 2030];
+    const cashFlows = [];
+    const wacc = financialParams.wacc || 0.08;
+    
+    // Proyectar ingresos con crecimiento realista
+    const revenue2025 = revenue2030 * 0.15; // Aproximadamente 15% del revenue 2030
+    
+    years.forEach((year, index) => {
+        // Crecimiento de ingresos más realista (decreciente)
+        const growthRates = [0.8, 0.6, 0.4, 0.2, 0.1]; // Decreciente año a año
+        const yearRevenue = index === 0 ? revenue2025 : 
+            revenue2025 * Math.pow(1 + growthRates[Math.min(index, growthRates.length - 1)], index + 1);
+        
+        // Costos como % de ingresos (más realista)
+        const cogs = yearRevenue * (financialParams.cogsPct || 0.54); // 54% COGS
+        const opex = yearRevenue * 0.35; // 35% gastos operativos
+        
+        // EBITDA
+        const ebitda = yearRevenue - cogs - opex;
+        
+        // Depreciación estimada (5% de CAPEX total por año)
+        const depreciation = 565000 * 0.2; // 20% anual (5 años vida útil)
+        
+        // EBIT e impuestos
+        const ebit = ebitda - depreciation;
+        const taxes = Math.max(0, ebit * (financialParams.taxRate || 0.27));
+        
+        // NOPAT
+        const nopat = ebit - taxes;
+        
+        // CAPEX (principalmente en primeros años)
+        const capex = index === 0 ? 200000 : (index === 1 ? 100000 : 50000);
+        
+        // Working Capital (15% del crecimiento de ingresos)
+        const deltaWC = index === 0 ? yearRevenue * 0.15 : 
+            (yearRevenue - (index > 0 ? revenue2025 * Math.pow(1 + growthRates[index-1], index) : 0)) * 0.15;
+        
+        // FCF
+        const fcf = nopat + depreciation - capex - deltaWC;
+        cashFlows.push(fcf);
+    });
+    
+    // Agregar valor terminal en 2030
+    const terminalGrowth = 0.02; // 2% crecimiento perpetuo
+    const lastFCF = cashFlows[cashFlows.length - 1];
+    const terminalValue = lastFCF * (1 + terminalGrowth) / (wacc - terminalGrowth);
+    cashFlows[cashFlows.length - 1] += terminalValue;
+    
+    // Calcular VAN
+    let npv = 0;
+    cashFlows.forEach((fcf, index) => {
+        npv += fcf / Math.pow(1 + wacc, index + 1);
+    });
+    
+    return npv;
+}
+
+// Función auxiliar para calcular revenue 2030 con patrón de crecimiento modificado
+function calculateModifiedRevenue2030(params, modifiedTrafficGrowthPattern) {
+    const yearIndex = 5; // 2030 es año 5 desde 2025
+    
+    // Calcular tráfico acumulativo con patrón modificado
+    let cumulativeTraffic = params.initialTraffic;
+    for (let i = 1; i <= yearIndex; i++) {
+        const currentGrowthRate = modifiedTrafficGrowthPattern[Math.min(i - 1, modifiedTrafficGrowthPattern.length - 1)];
+        cumulativeTraffic *= (1 + currentGrowthRate);
+    }
+    
+    // Conversión con patrón original (no modificado)
+    const conversionGrowthPattern = params.conversionGrowthPattern || [0.40, 0.25, 0.15, 0.10, 0.05];
+    let cumulativeConversion = params.initialConversion;
+    for (let i = 1; i <= yearIndex; i++) {
+        const currentGrowthRate = conversionGrowthPattern[Math.min(i - 1, conversionGrowthPattern.length - 1)];
+        cumulativeConversion *= (1 + currentGrowthRate);
+    }
+    cumulativeConversion = Math.min(cumulativeConversion, 0.08); // Máximo 8%
+    
+    // Ticket con crecimiento premium original
+    const ticketSize = params.avgTicket * Math.pow(1.08, Math.max(0, yearIndex - 1));
+    
+    // Calcular por mercado
+    let totalRevenue = 0;
+    if (typeof marketDistribution !== 'undefined') {
+        Object.keys(marketDistribution).forEach(market => {
+            const marketData = marketDistribution[market];
+            const marketTraffic = cumulativeTraffic * marketData.weight * 12; // 12 meses
+            const orders = marketTraffic * cumulativeConversion;
+            const localPrice = ticketSize * marketData.premium;
+            const netRevenue = orders * localPrice;
+            totalRevenue += netRevenue;
+        });
+    } else {
+        // Fallback
+        const monthlyOrders = cumulativeTraffic * cumulativeConversion;
+        totalRevenue = monthlyOrders * ticketSize * 12;
+    }
+    
+    return totalRevenue;
 }

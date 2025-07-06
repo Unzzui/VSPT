@@ -924,6 +924,7 @@
         <!-- Tab 7: Flujo Económico -->
         <div id="economicFlow" class="content hidden px-6 py-8">
             <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Flujo de Caja Económico</h2>
+ 
             
             <div class="metrics-grid">
                 <div class="metric-cards">
@@ -968,6 +969,7 @@
         <div id="financialFlow" class="content hidden px-6 py-8">
             <h2 class="text-2xl lg:text-3xl font-bold text-white-800 mb-8">Flujo de Caja Financiero</h2>
             
+
             <div class="metrics-grid">
                 <div class="metric-cards">
                     <div class="metric-value" id="financialNPV">$0M</div>
@@ -1356,6 +1358,84 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Matriz de Sensibilidad para Variables Críticas -->
+            <div class="sensitivity-matrix-section mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-table"></i> Matriz de Sensibilidad - Variables Críticas</h3>
+                
+                <!-- Matriz WACC -->
+                <div class="matrix-container bg-white rounded-lg border border-gray-200 shadow-lg mb-6">
+                    <div id="wacc-matrix">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Matriz Crecimiento -->
+                <div class="matrix-container bg-white rounded-lg border border-gray-200 shadow-lg mb-6">
+                    <div id="growth-matrix">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Matriz Precios -->
+                <div class="matrix-container bg-white rounded-lg border border-gray-200 shadow-lg mb-6">
+                    <div id="prices-matrix">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Matriz Costos -->
+                <div class="matrix-container bg-white rounded-lg border border-gray-200 shadow-lg mb-6">
+                    <div id="costs-matrix">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis de Riesgos Clave -->
+            <div class="key-risks-analysis mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-exclamation-triangle"></i> Análisis de Riesgos Clave</h3>
+                
+                <!-- Riesgos Críticos -->
+                <div class="risk-section mb-6">
+                    <h4 class="text-lg font-bold text-red-800 mb-4 flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>
+                        Riesgos Críticos
+                    </h4>
+                    <div id="critical-risks">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Riesgos Moderados -->
+                <div class="risk-section mb-6">
+                    <h4 class="text-lg font-bold text-yellow-800 mb-4 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                        Riesgos Moderados
+                    </h4>
+                    <div id="moderate-risks">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escenarios Viables -->
+            <div class="viable-scenarios-section mb-8">
+                <h3 class="text-xl font-semibold mb-6"><i class="fas fa-chart-line"></i> Escenarios Viables</h3>
+                
+                <div class="scenarios-container bg-white rounded-lg border border-gray-200 shadow-lg p-6">
+                    <div id="viable-scenarios">
+                        <!-- Contenido generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interpretación de Resultados -->
+            <div class="interpretation-section mb-8">
+                <div id="sensitivity-interpretation">
+                    <!-- Contenido generado dinámicamente -->
                 </div>
             </div>
 
