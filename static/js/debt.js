@@ -7,9 +7,9 @@ function calculateDebtStructure() {
     
     const params = getFinancialParams();
     
-    // CAPEX OPTIMIZADO - Reducido de $800K a $565K (-29.4%)
-    const optimizedCapex = 565000; // CAPEX optimizado base (sin inventario)
-    const totalCapex = optimizedCapex; // CAPEX total (inventario va en Working Capital)
+    // CAPEX ACTUALIZADO - Aumentado de $565K a $850K (+50.4%)
+    const updatedCapex = 850000; // CAPEX actualizado total
+    const totalCapex = updatedCapex; // CAPEX total (inventario va en Working Capital)
     
     const debtAmount = totalCapex * params.debtRatio;
     const equityAmount = totalCapex * params.equityRatio;
@@ -251,11 +251,11 @@ function debugDebt() {
     const params = getFinancialParams();
 
     
-    const optimizedCapex = 565000; // CAPEX optimizado
+    const updatedCapex = 850000; // CAPEX actualizado
     const originalCapex = 800000; // CAPEX original
-    const totalCapex = optimizedCapex; // Sin inventario (va en Working Capital)
+    const totalCapex = updatedCapex; // Sin inventario (va en Working Capital)
     const debtAmount = totalCapex * params.debtRatio;
-    const savings = originalCapex - optimizedCapex;
+    const savings = originalCapex - updatedCapex;
     
 
     
@@ -270,7 +270,7 @@ function debugDebt() {
     
     return {
         params,
-        optimizedCapex,
+        updatedCapex,
         originalCapex,
         savings,
         totalCapex,

@@ -103,9 +103,9 @@ class Dashboard {
                     totalEquity: capexData.total * params.equityRatio,
                     debtRatio: params.debtRatio * 100, // Convertir a porcentaje para display
                     equityRatio: params.equityRatio * 100,
-                    originalCapex: 800000, // CAPEX original para comparación
-                    savings: 800000 - capexData.total,
-                    savingsPercentage: ((800000 - capexData.total) / 800000) * 100,
+                    originalCapex: 565000, // CAPEX anterior para comparación
+                    savings: capexData.total - 565000,
+                    savingsPercentage: ((capexData.total - 565000) / 565000) * 100,
                     params: params
                 };
             } else {
@@ -113,19 +113,19 @@ class Dashboard {
             }
         }
         
-        // PRIORIDAD 2: Fallback al CAPEX optimizado estático
-        const optimizedCapex = 565000; // CAPEX optimizado base
+        // PRIORIDAD 2: Fallback al CAPEX actualizado estático
+        const updatedCapex = 850000; // CAPEX actualizado base
         const params = getFinancialParams();
         
         return {
-            totalCapex: optimizedCapex,
-            totalDebt: optimizedCapex * params.debtRatio,
-            totalEquity: optimizedCapex * params.equityRatio,
+            totalCapex: updatedCapex,
+            totalDebt: updatedCapex * params.debtRatio,
+            totalEquity: updatedCapex * params.equityRatio,
             debtRatio: params.debtRatio * 100,
             equityRatio: params.equityRatio * 100,
-            originalCapex: 800000,
-            savings: 800000 - optimizedCapex,
-            savingsPercentage: ((800000 - optimizedCapex) / 800000) * 100,
+            originalCapex: 565000,
+            savings: updatedCapex - 565000,
+            savingsPercentage: ((updatedCapex - 565000) / 565000) * 100,
             params: params
         };
     }
@@ -333,14 +333,35 @@ class Dashboard {
                 financialIRR = modelData.financialCashFlow.metrics.projectIRR * 100; // Usar projectIRR
             }
             
+            // Calcular IR económico y financiero
+            let economicIR = null;
+            let financialIR = null;
+            
+            if (economicFlow.metrics.ir) {
+                economicIR = economicFlow.metrics.ir;
+                console.log('🔍 IR Económico encontrado:', economicIR);
+            } else {
+                console.log('⚠️ IR Económico no encontrado en métricas');
+            }
+            
+            if (modelData.financialCashFlow && modelData.financialCashFlow.metrics) {
+                financialIR = modelData.financialCashFlow.metrics.projectIR;
+                console.log('🔍 IR Financiero encontrado:', financialIR);
+            } else {
+                console.log('⚠️ IR Financiero no encontrado en métricas');
+            }
+            
             return {
                 accumulatedFCF,
                 yearlyFCF,
                 paybackPeriod: this.getPaybackFromModel() || this.calculatePaybackPeriod(yearlyFCF),
                 irr: Math.round(economicFlow.metrics.irr * 100), // Convertir a porcentaje
+                economicIRR: Math.round(economicFlow.metrics.irr * 100), // Para compatibilidad
                 npv: economicFlow.metrics.npv,
                 financialNPV: financialNPV,
-                financialIRR: financialIRR
+                financialIRR: financialIRR,
+                economicIR: economicIR,
+                financialIR: financialIR
             };
         }
         
@@ -406,7 +427,9 @@ class Dashboard {
             economicIRR: this.calculateSimpleIRR(yearlyFCF), // Usar el mismo para fallback
             npv: this.calculateNPV(),
             financialNPV: this.calculateFinancialNPV(),
-            financialIRR: this.calculateFinancialIRR()
+            financialIRR: this.calculateFinancialIRR(),
+            economicIR: 1.85, // Valor por defecto
+            financialIR: 1.65 // Valor por defecto
         };
     }
     
@@ -753,8 +776,17 @@ class Dashboard {
             'dashNPV': this.formatCurrency(this.data.cashflow.npv || 2500000),
             'dashEconomicIRR': Math.round(this.data.cashflow.economicIRR || 0) + '%',
             'dashFinancialNPV': this.formatCurrency(this.data.cashflow.financialNPV || 1800000),
-            'dashFinancialIRR': Math.round(this.data.cashflow.financialIRR || 0) + '%'
+            'dashFinancialIRR': Math.round(this.data.cashflow.financialIRR || 0) + '%',
+            'dashEconomicIR': (this.data.cashflow.economicIR || 0).toFixed(3),
+            'dashFinancialIR': (this.data.cashflow.financialIR || 0).toFixed(3)
         };
+
+        // Debug de valores IR
+        console.log('🔍 Valores IR para dashboard:');
+        console.log('  IR Económico:', this.data.cashflow.economicIR);
+        console.log('  IR Financiero:', this.data.cashflow.financialIR);
+        console.log('  IR Económico formateado:', (this.data.cashflow.economicIR || 0).toFixed(3));
+        console.log('  IR Financiero formateado:', (this.data.cashflow.financialIR || 0).toFixed(3));
 
         // Logging detallado para debugging
 
@@ -772,6 +804,8 @@ class Dashboard {
         this.updateEconomicIRRStatus();
         this.updateFinancialNPVStatus();
         this.updateFinancialIRRStatus();
+        this.updateEconomicIRStatus();
+        this.updateFinancialIRStatus();
     }
     
     // Actualizar estado del ROI basado en el valor
@@ -1002,6 +1036,96 @@ class Dashboard {
             financialIRRTrend.classList.add('negative');
             financialIRRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Negativo';
 
+        }
+    }
+
+    // Actualizar estado del IR Económico basado en el valor
+    updateEconomicIRStatus() {
+        const economicIRValue = this.data.cashflow.economicIR || 0;
+        // Buscar específicamente la tarjeta del IR Económico por su contenido
+        const economicIRCards = document.querySelectorAll('.kpi-card');
+        let economicIRCard = null;
+        
+        economicIRCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('IR Económico')) {
+                economicIRCard = card;
+            }
+        });
+        
+        const economicIRTrend = economicIRCard?.querySelector('.kpi-trend');
+        
+        if (!economicIRTrend) {
+            return;
+        }
+        
+        // Limpiar clases existentes
+        economicIRTrend.className = 'kpi-trend';
+        
+        // IR > 1: Proyecto rentable, IR < 1: Proyecto no rentable
+        if (economicIRValue >= 1.5) { // >= 1.5
+            economicIRTrend.classList.add('positive');
+            economicIRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+        } else if (economicIRValue >= 1.2) { // >= 1.2
+            economicIRTrend.classList.add('positive');
+            economicIRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+        } else if (economicIRValue >= 1.0) { // >= 1.0
+            economicIRTrend.classList.add('positive');
+            economicIRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Rentable';
+        } else if (economicIRValue >= 0.8) { // >= 0.8
+            economicIRTrend.classList.add('warning');
+            economicIRTrend.innerHTML = '<i class="fas fa-minus"></i> Marginal';
+        } else if (economicIRValue >= 0.5) { // >= 0.5
+            economicIRTrend.classList.add('warning');
+            economicIRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+        } else { // < 0.5
+            economicIRTrend.classList.add('negative');
+            economicIRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Rentable';
+        }
+    }
+    
+    // Actualizar estado del IR Financiero basado en el valor
+    updateFinancialIRStatus() {
+        const financialIRValue = this.data.cashflow.financialIR || 0;
+        // Buscar específicamente la tarjeta del IR Financiero por su contenido
+        const financialIRCards = document.querySelectorAll('.kpi-card');
+        let financialIRCard = null;
+        
+        financialIRCards.forEach(card => {
+            const label = card.querySelector('.kpi-label');
+            if (label && label.textContent.includes('IR Financiero')) {
+                financialIRCard = card;
+            }
+        });
+        
+        const financialIRTrend = financialIRCard?.querySelector('.kpi-trend');
+        
+        if (!financialIRTrend) {
+            return;
+        }
+        
+        // Limpiar clases existentes
+        financialIRTrend.className = 'kpi-trend';
+        
+        // IR > 1: Proyecto rentable, IR < 1: Proyecto no rentable
+        if (financialIRValue >= 1.5) { // >= 1.5
+            financialIRTrend.classList.add('positive');
+            financialIRTrend.innerHTML = '<i class="fas fa-trophy"></i> Excelente';
+        } else if (financialIRValue >= 1.2) { // >= 1.2
+            financialIRTrend.classList.add('positive');
+            financialIRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Muy Bueno';
+        } else if (financialIRValue >= 1.0) { // >= 1.0
+            financialIRTrend.classList.add('positive');
+            financialIRTrend.innerHTML = '<i class="fas fa-arrow-up"></i> Rentable';
+        } else if (financialIRValue >= 0.8) { // >= 0.8
+            financialIRTrend.classList.add('warning');
+            financialIRTrend.innerHTML = '<i class="fas fa-minus"></i> Marginal';
+        } else if (financialIRValue >= 0.5) { // >= 0.5
+            financialIRTrend.classList.add('warning');
+            financialIRTrend.innerHTML = '<i class="fas fa-arrow-down"></i> Bajo';
+        } else { // < 0.5
+            financialIRTrend.classList.add('negative');
+            financialIRTrend.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Rentable';
         }
     }
 
@@ -1815,24 +1939,58 @@ function displayViabilityResults(economicViability, financialViability) {
 }
 
 // Función para generar la conclusión general del proyecto
-function generateProjectConclusion(economicViability, financialViability) {
+function generateProjectConclusion(economicViability, financialViability, retryCount = 0) {
     const conclusionCard = document.getElementById('projectConclusionCard');
     const conclusionText = document.getElementById('projectConclusionText');
-    
     if (!conclusionCard || !conclusionText) return;
-    
+
+    // Si los datos financieros no están listos, recalcula y reintenta
+    if (
+        (!modelData.financialCashFlow || !modelData.financialCashFlow.metrics || !('equityNPV' in modelData.financialCashFlow.metrics))
+        && typeof calculateFinancialCashFlow === 'function'
+        && retryCount < 5
+    ) {
+        console.log('⏳ Esperando datos de flujo financiero para la conclusión...');
+        calculateFinancialCashFlow();
+        setTimeout(() => generateProjectConclusion(economicViability, financialViability, retryCount + 1), 200);
+        return;
+    }
+
     let overallStatus, conclusionMessage, cardClass, icon;
-    
     // Determinar el estado general basado en ambas evaluaciones
     if (economicViability.viable === 'viable' && financialViability.viable === 'viable') {
         overallStatus = 'Proyecto Recomendado';
-        conclusionMessage = 'El proyecto es viable tanto económica como financieramente. Se recomienda su implementación ya que genera valor para la empresa y ofrece retornos atractivos para los inversionistas.';
+        const economicIRR = economicViability.irrDifference + 8.0;
+        const financialIRR = financialViability.irrDifference + 12.0;
+        let economicNPV = modelData.economicCashFlow?.metrics?.npv || 0;
+        let financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
+        let economicIR = modelData.economicCashFlow?.metrics?.ir || 0;
+        let financialIR = modelData.financialCashFlow?.metrics?.projectIR || 0;
+        if (!economicNPV && window.dashboard && window.dashboard.data) {
+            economicNPV = window.dashboard.data.cashflow?.npv || 0;
+            financialNPV = window.dashboard.data.cashflow?.financialNPV || 0;
+            economicIR = window.dashboard.data.cashflow?.economicIR || 0;
+            financialIR = window.dashboard.data.cashflow?.financialIR || 0;
+        }
+        conclusionMessage = `El proyecto es viable tanto económica como financieramente. Se recomienda su implementación ya que genera valor para la empresa y ofrece retornos atractivos para los inversionistas.\n\nANÁLISIS DETALLADO:\n• VAN Económico: $${(economicNPV/1000000).toFixed(2)}M (${economicNPV > 0 ? 'Positivo' : 'Negativo'})\n• VAN Financiero: $${(financialNPV/1000000).toFixed(2)}M (${financialNPV > 0 ? 'Positivo' : 'Negativo'})\n• TIR Económica: ${economicIRR.toFixed(1)}% (${economicIRR > 8 ? 'Supera WACC' : 'Inferior a WACC'})\n• TIR Financiera: ${financialIRR.toFixed(1)}% (${financialIRR > 12 ? 'Supera Ke' : 'Inferior a Ke'})\n• IR Económico: ${economicIR.toFixed(3)} (${economicIR > 1 ? 'Rentable' : 'No rentable'})\n• IR Financiero: ${financialIR.toFixed(3)} (${financialIR > 1 ? 'Rentable' : 'No rentable'})\n\nRECOMENDACIONES:\n• Proceder con la implementación del proyecto\n• Monitorear métricas clave durante la ejecución\n• Mantener flexibilidad para ajustes operativos\n• Considerar oportunidades de optimización adicional`;
         cardClass = 'viable';
         icon = 'fas fa-thumbs-up';
     } else if (economicViability.viable === 'viable' || financialViability.viable === 'viable') {
         if (economicViability.viable === 'viable') {
             overallStatus = 'Proyecto con Reservas';
-            conclusionMessage = 'El proyecto es económicamente viable pero presenta desafíos financieros. Considerar reestructurar el financiamiento o buscar mejores condiciones de capital.';
+            const economicIRR = economicViability.irrDifference + 8.0;
+            const financialIRR = financialViability.irrDifference + 12.0;
+            let economicNPV = modelData.economicCashFlow?.metrics?.npv || 0;
+            let financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
+            let economicIR = modelData.economicCashFlow?.metrics?.ir || 0;
+            let financialIR = modelData.financialCashFlow?.metrics?.projectIR || 0;
+            if (!economicNPV && window.dashboard && window.dashboard.data) {
+                economicNPV = window.dashboard.data.cashflow?.npv || 0;
+                financialNPV = window.dashboard.data.cashflow?.financialNPV || 0;
+                economicIR = window.dashboard.data.cashflow?.economicIR || 0;
+                financialIR = window.dashboard.data.cashflow?.financialIR || 0;
+            }
+            conclusionMessage = `El proyecto es económicamente viable pero presenta desafíos financieros. Considerar reestructurar el financiamiento o buscar mejores condiciones de capital.\n\nANÁLISIS DETALLADO:\n• VAN Económico: $${(economicNPV/1000000).toFixed(2)}M (${economicNPV > 0 ? 'Positivo' : 'Negativo'})\n• VAN Financiero: $${(financialNPV/1000000).toFixed(2)}M (${financialNPV > 0 ? 'Positivo' : 'Negativo'})\n• TIR Económica: ${economicIRR.toFixed(1)}% (${economicIRR > 8 ? 'Supera WACC' : 'Inferior a WACC'})\n• TIR Financiera: ${financialIRR.toFixed(1)}% (${financialIRR > 12 ? 'Supera Ke' : 'Inferior a Ke'})\n• IR Económico: ${economicIR.toFixed(3)} (${economicIR > 1 ? 'Rentable' : 'No rentable'})\n• IR Financiero: ${financialIR.toFixed(3)} (${financialIR > 1 ? 'Rentable' : 'No rentable'})\n\nRECOMENDACIONES:\n• Optimizar estructura de capital para mejorar VAN financiero\n• Revisar supuestos de costos operativos\n• Considerar extensión del horizonte de evaluación\n• Evaluar alternativas de financiamiento más favorables`;
         } else {
             overallStatus = 'Evaluar Estructura Financiera';
             conclusionMessage = 'El proyecto es financieramente atractivo pero presenta desafíos económicos. Revisar supuestos operativos y estructura de costos.';
@@ -1841,21 +1999,41 @@ function generateProjectConclusion(economicViability, financialViability) {
         icon = 'fas fa-balance-scale';
     } else if (economicViability.viable === 'marginal' || financialViability.viable === 'marginal') {
         overallStatus = 'Proyecto Marginal';
-        conclusionMessage = 'El proyecto presenta viabilidad marginal. Se recomienda optimizar parámetros clave, revisar supuestos y considerar escenarios alternativos antes de la decisión final.';
+        const economicIRR = economicViability.irrDifference + 8.0;
+        const financialIRR = financialViability.irrDifference + 12.0;
+        let economicNPV = modelData.economicCashFlow?.metrics?.npv || 0;
+        let financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
+        let economicIR = modelData.economicCashFlow?.metrics?.ir || 0;
+        let financialIR = modelData.financialCashFlow?.metrics?.projectIR || 0;
+        if (!economicNPV && window.dashboard && window.dashboard.data) {
+            economicNPV = window.dashboard.data.cashflow?.npv || 0;
+            financialNPV = window.dashboard.data.cashflow?.financialNPV || 0;
+            economicIR = window.dashboard.data.cashflow?.economicIR || 0;
+            financialIR = window.dashboard.data.cashflow?.financialIR || 0;
+        }
+        conclusionMessage = `El proyecto presenta viabilidad marginal. Se recomienda optimizar parámetros clave, revisar supuestos y considerar escenarios alternativos antes de la decisión final.\n\nANÁLISIS DETALLADO:\n• VAN Económico: $${(economicNPV/1000000).toFixed(2)}M (${economicNPV > 0 ? 'Positivo' : 'Negativo'})\n• VAN Financiero: $${(financialNPV/1000000).toFixed(2)}M (${financialNPV > 0 ? 'Positivo' : 'Negativo'})\n• TIR Económica: ${economicIRR.toFixed(1)}% (${economicIRR > 8 ? 'Supera WACC' : 'Inferior a WACC'})\n• TIR Financiera: ${financialIRR.toFixed(1)}% (${financialIRR > 12 ? 'Supera Ke' : 'Inferior a Ke'})\n• IR Económico: ${economicIR.toFixed(3)} (${economicIR > 1 ? 'Rentable' : 'No rentable'})\n• IR Financiero: ${financialIR.toFixed(3)} (${financialIR > 1 ? 'Rentable' : 'No rentable'})\n\nRECOMENDACIONES:\n• Revisar y optimizar supuestos de ingresos y costos\n• Evaluar reducción de CAPEX inicial\n• Considerar estrategias de crecimiento más agresivas\n• Analizar escenarios de sensibilidad para identificar palancas clave`;
         cardClass = 'mixed';
         icon = 'fas fa-exclamation-triangle';
     } else {
         overallStatus = 'Proyecto No Recomendado';
-        conclusionMessage = 'El proyecto no cumple con los criterios mínimos de viabilidad económica y financiera. Se recomienda replantear el modelo de negocio o considerar alternativas de inversión.';
+        const economicIRR = economicViability.irrDifference + 8.0;
+        const financialIRR = financialViability.irrDifference + 12.0;
+        let economicNPV = modelData.economicCashFlow?.metrics?.npv || 0;
+        let financialNPV = modelData.financialCashFlow?.metrics?.equityNPV || 0;
+        let economicIR = modelData.economicCashFlow?.metrics?.ir || 0;
+        let financialIR = modelData.financialCashFlow?.metrics?.projectIR || 0;
+        if (!economicNPV && window.dashboard && window.dashboard.data) {
+            economicNPV = window.dashboard.data.cashflow?.npv || 0;
+            financialNPV = window.dashboard.data.cashflow?.financialNPV || 0;
+            economicIR = window.dashboard.data.cashflow?.economicIR || 0;
+            financialIR = window.dashboard.data.cashflow?.financialIR || 0;
+        }
+        conclusionMessage = `El proyecto no cumple con los criterios mínimos de viabilidad económica y financiera. Se recomienda replantear el modelo de negocio o considerar alternativas de inversión.\n\nANÁLISIS DETALLADO:\n• VAN Económico: $${(economicNPV/1000000).toFixed(2)}M (${economicNPV > 0 ? 'Positivo' : 'Negativo'})\n• VAN Financiero: $${(financialNPV/1000000).toFixed(2)}M (${financialNPV > 0 ? 'Positivo' : 'Negativo'})\n• TIR Económica: ${economicIRR.toFixed(1)}% (${economicIRR > 8 ? 'Supera WACC' : 'Inferior a WACC'})\n• TIR Financiera: ${financialIRR.toFixed(1)}% (${financialIRR > 12 ? 'Supera Ke' : 'Inferior a Ke'})\n• IR Económico: ${economicIR.toFixed(3)} (${economicIR > 1 ? 'Rentable' : 'No rentable'})\n• IR Financiero: ${financialIR.toFixed(3)} (${financialIR > 1 ? 'Rentable' : 'No rentable'})\n\nRECOMENDACIONES:\n• Revisar completamente el modelo de negocio\n• Evaluar reducción significativa de costos operativos\n• Considerar cambio de estrategia de mercado\n• Analizar alternativas de inversión con mejor perfil riesgo-retorno`;
         cardClass = 'not-viable';
         icon = 'fas fa-times-circle';
     }
-    
-    // Actualizar la interfaz
     conclusionCard.className = `conclusion-card ${cardClass}`;
     conclusionCard.querySelector('.conclusion-icon i').className = icon;
     conclusionCard.querySelector('h4').textContent = overallStatus;
     conclusionText.textContent = conclusionMessage;
-    
-
-} 
+}

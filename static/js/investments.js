@@ -5,7 +5,7 @@
 function calculateProgressiveCapex() {
     try {
         const params = getFinancialParams();
-        const totalCapex = 565000; // $565K optimizado total
+        const totalCapex = 850000; // $850K actualizado total
         
         const investments = {
             totalCapex: totalCapex,
@@ -70,28 +70,56 @@ function updateCapexTable(investments) {
     headerRow.insertCell(4).innerHTML = '2028 (5%)';
     headerRow.insertCell(5).innerHTML = 'TOTAL';
     
-    // Desglose detallado del CAPEX por componentes (SIN inventario - va en Working Capital)
+    // Desglose detallado del CAPEX por componentes actualizado
     const capexComponents = {
         2025: {
-            'Plataforma Digital Core': 120000,
-            'Desarrollo Web Base': 80000,
-            'Configuración SEO/SEM': 35000,
-            'Setup México y Certificaciones': 60000,
-            'Base Legal y Compliance': 20000
+            'Tecnología - Shopify Plus': 30000,
+            'Tecnología - Desarrollo Custom': 100000,
+            'Tecnología - Integraciones API': 125000,
+            'Tecnología - Infraestructura IT': 45000,
+            'Legal - México COFEPRIS': 20000,
+            'Legal - México Permisos Importación': 12500,
+            'Legal - México Estructura Legal': 25000,
+            'Legal - México Compliance Tributario': 20000,
+            'Legal - Chile SAG': 7500,
+            'Legal - Chile E-commerce': 12500,
+            'Legal - Chile SII': 10000,
+            'Personal - Gerente E-commerce': 50000,
+            'Personal - Marketing Specialist': 40000,
+            'Personal - Operations Support': 30000,
+            'Marketing - Google Ads México': 60000,
+            'Marketing - Facebook/Instagram': 40000,
+            'Marketing - Content/SEO': 30000,
+            'Marketing - Influencer Partnerships': 20000,
+            'Operaciones - 3PL Setup': 30000,
+            'Operaciones - Sistemas Tracking': 20000,
+            'Operaciones - Inventory Management': 15000,
+            'Contingencia': 30000
         },
         2026: {
-            'Expansión Internacional': 40000,
-            'Expansión Mercado México': 55000,
-            'Desarrollo Almacenes': 25000,
-            'Mejoras de Plataforma': 15000
+            'Legal Ongoing - México': 25000,
+            'Legal Ongoing - Chile': 15000,
+            'Marketing - Expansión Digital': 50000,
+            'Marketing - Content Creation': 25000,
+            'Operaciones - Optimización Logística': 20000,
+            'Tecnología - Upgrades Plataforma': 40000,
+            'Personal - Expansión Equipo': 35000,
+            'Contingencia': 15000
         },
         2027: {
-            'Upgrades Tecnológicos': 60000,
-            'Optimización de Plataforma': 40000
+            'Tecnología - Mejoras Avanzadas': 60000,
+            'Marketing - Campañas Premium': 45000,
+            'Operaciones - Automatización': 30000,
+            'Legal - Compliance Avanzado': 20000,
+            'Personal - Especialistas': 25000,
+            'Contingencia': 10000
         },
         2028: {
-            'Optimizaciones Finales': 15000,
-            'Contingencia y Ajustes': 5000
+            'Tecnología - Optimizaciones Finales': 30000,
+            'Marketing - Consolidación': 20000,
+            'Operaciones - Eficiencia': 15000,
+            'Legal - Mantenimiento': 10000,
+            'Contingencia': 5000
         }
     };
     
@@ -123,10 +151,16 @@ function updateCapexTable(investments) {
             cell.innerHTML = amount > 0 ? `$${(amount/1000).toFixed(0)}K` : '-';
             if (amount > 0) {
                 cell.style.fontWeight = 'bold';
-                if (component.includes('Setup') || component.includes('Expansión')) {
+                if (component.includes('Legal') || component.includes('Compliance')) {
                     cell.style.color = '#007bff';
-                } else if (component.includes('Digital') || component.includes('Tecnológicos')) {
+                } else if (component.includes('Tecnología') || component.includes('Desarrollo')) {
                     cell.style.color = '#28a745';
+                } else if (component.includes('Marketing') || component.includes('Content')) {
+                    cell.style.color = '#ffc107';
+                } else if (component.includes('Personal') || component.includes('Gerente')) {
+                    cell.style.color = '#dc3545';
+                } else if (component.includes('Operaciones') || component.includes('3PL')) {
+                    cell.style.color = '#6f42c1';
                 }
             }
         }
@@ -287,7 +321,7 @@ function getAccumulatedCapex(currentYear) {
     for (let year = 2025; year <= currentYear; year++) {
         const capexData = capexDistribution[year];
         if (capexData) {
-            accumulated += 565000 * capexData.pct;
+            accumulated += 850000 * capexData.pct;
         }
     }
     return accumulated;

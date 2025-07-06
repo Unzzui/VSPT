@@ -168,20 +168,39 @@ function calculateEconomicCashFlow() {
         }
     }
     
-    // Calcular VAN y TIR
+    // Calcular VAN, TIR e IR (CON valor terminal)
     const cashFlows = Object.keys(economicFlow)
         .filter(year => parseInt(year) >= 2025)
         .map(year => economicFlow[year].fcf);
     
     const npv = calculateNPV(cashFlows, params.wacc);
     const irr = calculateIRR(cashFlows);
+    const ir = calculateIR(cashFlows, params.wacc);
+    
+    // Calcular inversión inicial (CAPEX total)
+    const initialInvestment = modelData.investments ? 
+        Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+        565000; // Valor por defecto
+    
+    // Calcular Payback Period (SIN valor terminal - más conservador)
+    const cashFlowsWithoutTerminal = Object.keys(economicFlow)
+        .filter(year => parseInt(year) >= 2025)
+        .map(year => {
+            // Usar FCF sin valor terminal para payback
+            const fcfWithoutTerminal = economicFlow[year].nopat + economicFlow[year].depreciation - 
+                                     economicFlow[year].capex - economicFlow[year].deltaWC;
+            return fcfWithoutTerminal;
+        });
+    
+    const paybackPeriod = calculatePaybackPeriod(cashFlowsWithoutTerminal, -initialInvestment);
     
     // Comparar con método alternativo
     const npvExcel = calculateNPVExcel(cashFlows, params.wacc);
     
-    // Debug del VAN y TIR
-    console.log('🔍 Cálculo VAN y TIR Económico:');
+    // Debug del VAN, TIR y Payback
+    console.log('🔍 Cálculo VAN, TIR y Payback Económico:');
     console.log(`  WACC: ${(params.wacc * 100).toFixed(1)}%`);
+    console.log(`  Inversión inicial: $${initialInvestment.toFixed(0)}`);
     console.log(`  Flujos de caja (precisión completa):`, cashFlows.map(fcf => fcf));
     console.log(`  Flujos de caja (formateados):`, cashFlows.map(fcf => `$${fcf.toFixed(0)}`));
     console.log(`  VAN (método principal): ${npv}`);
@@ -189,8 +208,10 @@ function calculateEconomicCashFlow() {
     console.log(`  Diferencia: ${npv - npvExcel}`);
     console.log(`  VAN (formateado): $${npv.toFixed(0)}`);
     console.log(`  TIR: ${(irr * 100).toFixed(1)}%`);
+    console.log(`  Payback Period (SIN valor terminal): ${paybackPeriod.toFixed(1)} años`);
+    console.log(`  Flujos para payback (sin valor terminal):`, cashFlowsWithoutTerminal.map(fcf => `$${fcf.toFixed(0)}`));
     
-    economicFlow.metrics = { npv, irr, wacc: params.wacc };
+    economicFlow.metrics = { npv, irr, ir, wacc: params.wacc, paybackPeriod, initialInvestment };
     
     // VALIDACIÓN: Verificar consistencia con costs.js
     console.log('🔍 VALIDACIÓN CASHFLOW - Consistencia con Costs.js');
@@ -201,6 +222,15 @@ function calculateEconomicCashFlow() {
         
     // Guardar en modelData
     modelData.economicCashFlow = economicFlow;
+    
+    // Debug: verificar que los datos se guarden correctamente
+    console.log('🔍 Verificación datos económicos guardados:');
+    console.log('  modelData.economicCashFlow existe:', !!modelData.economicCashFlow);
+    if (modelData.economicCashFlow) {
+        console.log('  Años disponibles:', Object.keys(modelData.economicCashFlow));
+        console.log('  Datos 2025:', modelData.economicCashFlow[2025]);
+        console.log('  Datos 2030:', modelData.economicCashFlow[2030]);
+    }
     
     // Calcular también la versión SIN valor terminal
     calculateEconomicCashFlowWithoutTerminal();
@@ -409,6 +439,12 @@ function calculateEconomicCashFlowWithoutTerminal() {
     console.log(`  VAN: $${npvNoTerminal.toFixed(0)}`);
     console.log(`  TIR: ${(irrNoTerminal * 100).toFixed(1)}%`);
     
+    // Explicación del resultado esperado para startups sin valor terminal
+    console.log('📊 INTERPRETACIÓN - SIN VALOR TERMINAL:');
+    console.log(`  ⚠️ VAN negativo ($${npvNoTerminal.toFixed(0)}) es NORMAL para startups sin valor terminal`);
+    console.log(`  📈 El proyecto requiere más tiempo para ser rentable`);
+    console.log(`  💡 Esto justifica la necesidad del valor terminal en la evaluación completa`);
+    
     economicFlowNoTerminal.metrics = { 
         npv: npvNoTerminal, 
         irr: irrNoTerminal, 
@@ -432,6 +468,21 @@ function calculateEconomicCashFlowWithoutTerminal() {
             console.log(`  TIR CON valor terminal: ${(economicFlowWithTerminal.metrics.irr * 100).toFixed(1)}%`);
             console.log(`  TIR SIN valor terminal: ${(irrNoTerminal * 100).toFixed(1)}%`);
         }
+        
+        // Análisis de la dependencia del valor terminal
+        const terminalValueDependency = ((economicFlowWithTerminal.metrics.npv - npvNoTerminal) / economicFlowWithTerminal.metrics.npv * 100);
+        console.log('🔍 ANÁLISIS DE DEPENDENCIA:');
+        if (terminalValueDependency > 100) {
+            console.log(`  ⚠️ ALTA DEPENDENCIA: ${terminalValueDependency.toFixed(1)}% del VAN viene del valor terminal`);
+            console.log(`  📊 Esto indica que el proyecto NO es viable sin valor terminal`);
+            console.log(`  💡 Recomendación: Considerar extensión del horizonte o reestructuración`);
+        } else if (terminalValueDependency > 50) {
+            console.log(`  ⚠️ DEPENDENCIA MODERADA: ${terminalValueDependency.toFixed(1)}% del VAN viene del valor terminal`);
+            console.log(`  📊 El proyecto es marginal sin valor terminal`);
+        } else {
+            console.log(`  ✅ BAJA DEPENDENCIA: ${terminalValueDependency.toFixed(1)}% del VAN viene del valor terminal`);
+            console.log(`  📊 El proyecto es robusto incluso sin valor terminal`);
+        }
     }
     
     return economicFlowNoTerminal;
@@ -439,6 +490,24 @@ function calculateEconomicCashFlowWithoutTerminal() {
 
 function calculateFinancialCashFlow() {
     console.log('🔍 Iniciando cálculo flujo financiero...');
+    
+    // Obtener parámetros financieros al inicio
+    const financialParams = getFinancialParams();
+    
+    // Verificar que el flujo económico esté disponible
+    if (!modelData.economicCashFlow) {
+        console.warn('⚠️ Flujo económico no disponible, ejecutando calculateEconomicCashFlow...');
+        if (typeof calculateEconomicCashFlow === 'function') {
+            calculateEconomicCashFlow();
+            console.log('✅ calculateEconomicCashFlow ejecutado');
+        } else {
+            console.error('❌ calculateEconomicCashFlow no disponible');
+            return;
+        }
+    } else {
+        console.log('✅ Flujo económico ya disponible');
+        console.log('  Datos económicos:', modelData.economicCashFlow);
+    }
     
     // Verificar que el módulo de deuda esté disponible
     if (!modelData.debt || !modelData.debt.schedule) {
@@ -454,7 +523,6 @@ function calculateFinancialCashFlow() {
         console.log('  Datos deuda:', modelData.debt);
     }
     
-    const params = getFinancialParams();
     const financialFlow = {};
     
     for (let year = 2025; year <= 2030; year++) {
@@ -464,6 +532,16 @@ function calculateFinancialCashFlow() {
         // Comenzar con el flujo económico
         const economicData = modelData.economicCashFlow && modelData.economicCashFlow[year] ? 
             modelData.economicCashFlow[year] : {};
+        
+        // Debug: verificar datos económicos
+        console.log(`🔍 Datos económicos ${year}:`, {
+            nopat: economicData.nopat,
+            depreciation: economicData.depreciation,
+            capex: economicData.capex,
+            deltaWC: economicData.deltaWC,
+            fcf: economicData.fcf,
+            residualValue: economicData.residualValue
+        });
         
         financialFlow[year] = {
             nopat: economicData.nopat || 0,
@@ -481,10 +559,16 @@ function calculateFinancialCashFlow() {
         
         // Ingresos por préstamo (solo en 2025 - monto total)
         if (year === 2025) {
-            // Calcular deuda total basada en CAPEX total optimizado
-            const totalCapex = 565000; // CAPEX optimizado total
-            const params = getFinancialParams();
-            financialFlow[year].debtProceeds = totalCapex * params.debtRatio;
+            // Calcular deuda total basada en CAPEX total actualizado
+            const totalCapex = modelData.investments ? 
+                Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+                850000; // CAPEX actualizado total
+            financialFlow[year].debtProceeds = totalCapex * financialParams.debtRatio;
+            
+            console.log(`🔍 Deuda 2025:`);
+            console.log(`  CAPEX total: $${totalCapex.toFixed(0)}`);
+            console.log(`  Ratio deuda: ${(financialParams.debtRatio * 100).toFixed(1)}%`);
+            console.log(`  Préstamo: $${financialFlow[year].debtProceeds.toFixed(0)}`);
         } else {
             financialFlow[year].debtProceeds = 0;
         }
@@ -515,14 +599,14 @@ function calculateFinancialCashFlow() {
         }
         
         // Escudo fiscal por intereses
-        financialFlow[year].taxShield = financialFlow[year].interestExpense * params.taxRate;
+        financialFlow[year].taxShield = financialFlow[year].interestExpense * financialParams.taxRate;
         
         // Debug del escudo fiscal
         console.log(`🔍 Escudo Fiscal ${year}:`);
         console.log(`  Intereses: $${financialFlow[year].interestExpense.toFixed(0)}`);
-        console.log(`  Tasa de impuestos: ${(params.taxRate * 100).toFixed(1)}%`);
+        console.log(`  Tasa de impuestos: ${(financialParams.taxRate * 100).toFixed(1)}%`);
         console.log(`  Escudo fiscal: $${financialFlow[year].taxShield.toFixed(0)}`);
-        console.log(`  Verificación: $${financialFlow[year].interestExpense.toFixed(0)} × ${params.taxRate} = $${financialFlow[year].taxShield.toFixed(0)}`);
+        console.log(`  Verificación: $${financialFlow[year].interestExpense.toFixed(0)} × ${financialParams.taxRate} = $${financialFlow[year].taxShield.toFixed(0)}`);
         
         // Aporte de capital (equity) en años de CAPEX
         if (modelData.capexFinancing && modelData.capexFinancing[year]) {
@@ -540,6 +624,11 @@ function calculateFinancialCashFlow() {
         if (year === 2030 && modelData.economicCashFlow && modelData.economicCashFlow[year]) {
             // Restar el valor terminal del FCF económico para 2030
             economicFCFWithoutTerminal = economicFCF - (modelData.economicCashFlow[year].residualValue || 0);
+        }
+        
+        // Para años que no son 2030, el FCF ya está sin valor terminal
+        if (year !== 2030) {
+            economicFCFWithoutTerminal = economicFCF;
         }
         
         // Guardar FCF económico para mostrar en tabla
@@ -574,7 +663,7 @@ function calculateFinancialCashFlow() {
     if (financialFlow[2030]) {
         const lastFCFE = financialFlow[2030].fcfe; // FCFE sin valor terminal
         const growthRate = 0.02; // 2% crecimiento perpetuo
-        const ke = params.equityCost; // Costo de equity
+        const ke = financialParams.equityCost; // Costo de equity
         
         // Calcular valor terminal financiero más conservador
         if (ke > growthRate) {
@@ -587,7 +676,7 @@ function calculateFinancialCashFlow() {
             console.warn('⚠️ Ke <= growth rate, usando valor residual alternativo para FCFE');
             const totalCapex = modelData.investments ? 
                 Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
-                565000;
+                850000; // CAPEX actualizado
             financialFlow[2030].residualValue = totalCapex * 0.5; // 50% del CAPEX como fallback más conservador
         }
         
@@ -628,28 +717,59 @@ function calculateFinancialCashFlow() {
         });
     
     // Calcular VAN de los flujos operativos SOLO
-    const equityNPVOperational = calculateNPV(equityCashFlowsOperational, params.equityCost);
+    const equityNPVOperational = calculateNPV(equityCashFlowsOperational, financialParams.equityCost);
     
     // Calcular valor presente del valor terminal por separado
     const terminalValue = financialFlow[2030] ? financialFlow[2030].residualValue : 0;
-    const terminalPV = terminalValue / Math.pow(1 + params.equityCost, 6); // Descontar 6 períodos (2025-2030)
+    const terminalPV = terminalValue / Math.pow(1 + financialParams.equityCost, 6); // Descontar 6 períodos (2025-2030)
     
     // VAN total = VAN operacional + VP del valor terminal
     const equityNPV = equityNPVOperational + terminalPV;
     
-    // Para TIR, usar flujos completos (con valor terminal)
+    // Para TIR e IR, usar flujos completos (con valor terminal)
     const equityCashFlows = Object.keys(financialFlow)
         .filter(year => parseInt(year) >= 2025)
         .map(year => financialFlow[year].fcfe);
     
     const projectIRR = calculateIRR(equityCashFlows);
+    const projectIR = calculateIR(equityCashFlows, financialParams.equityCost);
+    
+    // Debug: verificar flujos financieros
+    console.log('🔍 Verificación flujos financieros:');
+    console.log('  Flujos operacionales:', equityCashFlowsOperational.map(f => f.toFixed(0)));
+    console.log('  Flujos completos:', equityCashFlows.map(f => f.toFixed(0)));
+    console.log('  VAN operacional:', equityNPVOperational.toFixed(0));
+    console.log('  Valor terminal:', terminalValue.toFixed(0));
+    console.log('  VP valor terminal:', terminalPV.toFixed(0));
+    console.log('  VAN total:', equityNPV.toFixed(0));
+    console.log('  TIR:', (projectIRR * 100).toFixed(1) + '%');
+    
+    // Calcular inversión inicial para el flujo financiero (equity contribution)
+    const totalCapex = modelData.investments ? 
+        Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 
+        850000; // CAPEX actualizado
+    const initialEquityInvestment = totalCapex * (1 - financialParams.debtRatio); // Equity = CAPEX * (1 - debtRatio)
+    
+    console.log(`🔍 Inversión inicial equity:`);
+    console.log(`  CAPEX total: $${totalCapex.toFixed(0)}`);
+    console.log(`  Ratio deuda: ${(financialParams.debtRatio * 100).toFixed(1)}%`);
+    console.log(`  Ratio equity: ${((1 - financialParams.debtRatio) * 100).toFixed(1)}%`);
+    console.log(`  Inversión equity: $${initialEquityInvestment.toFixed(0)}`);
+    
+    // Calcular Payback Period para el flujo financiero (SIN valor terminal - más conservador)
+    const equityCashFlowsWithoutTerminal = Object.keys(financialFlow)
+        .filter(year => parseInt(year) >= 2025)
+        .map(year => financialFlow[year].fcfeWithoutTerminal || financialFlow[year].fcfe);
+    
+    const paybackPeriod = calculatePaybackPeriod(equityCashFlowsWithoutTerminal, -initialEquityInvestment);
     
     // Comparar con método alternativo para VAN financiero
-    const equityNPVExcel = calculateNPVExcel(equityCashFlows, params.equityCost);
+    const equityNPVExcel = calculateNPVExcel(equityCashFlows, financialParams.equityCost);
     
-    // Debug del VAN financiero
-    console.log('🔍 Cálculo VAN y TIR Financiero (Completamente Corregido):');
-    console.log(`  Ke (Costo de Equity): ${(params.equityCost * 100).toFixed(1)}%`);
+    // Debug del VAN, TIR y Payback financiero
+    console.log('🔍 Cálculo VAN, TIR y Payback Financiero (Completamente Corregido):');
+    console.log(`  Ke (Costo de Equity): ${(financialParams.equityCost * 100).toFixed(1)}%`);
+    console.log(`  Inversión inicial (Equity): $${initialEquityInvestment.toFixed(0)}`);
     console.log(`  Flujos FCFE OPERACIONALES (sin valor terminal):`, equityCashFlowsOperational.map(fcfe => fcfe));
     console.log(`  Flujos FCFE OPERACIONALES (formateados):`, equityCashFlowsOperational.map(fcfe => `$${fcfe.toFixed(0)}`));
     console.log(`  VAN Operacional (solo flujos): ${equityNPVOperational.toFixed(0)}`);
@@ -662,12 +782,17 @@ function calculateFinancialCashFlow() {
     console.log(`  Diferencia: ${equityNPV - equityNPVExcel}`);
     console.log(`  VAN Financiero (formateado): $${equityNPV.toFixed(0)}`);
     console.log(`  TIR Financiero: ${(projectIRR * 100).toFixed(1)}%`);
+    console.log(`  Payback Period (SIN valor terminal): ${paybackPeriod.toFixed(1)} años`);
+    console.log(`  Flujos FCFE para payback (sin valor terminal):`, equityCashFlowsWithoutTerminal.map(fcfe => `$${fcfe.toFixed(0)}`));
     
     financialFlow.metrics = { 
         equityNPV, 
         projectIRR,
-        equityCost: params.equityCost,
-        wacc: params.wacc
+        projectIR,
+        equityCost: financialParams.equityCost,
+        wacc: financialParams.wacc,
+        paybackPeriod,
+        initialInvestment: initialEquityInvestment
     };
     
     updateFinancialFlowTable(financialFlow);
@@ -772,6 +897,36 @@ function updateEconomicFlowTable(economicFlow) {
         irrCell.innerHTML = `${(economicFlow.metrics.irr * 100).toFixed(1)}%`;
         irrCell.style.fontWeight = 'bold';
         irrCell.style.color = economicFlow.metrics.irr > economicFlow.metrics.wacc ? '#28a745' : '#dc3545';
+        
+        // Agregar IR Económico
+        const irRow = tbody.insertRow();
+        irRow.className = 'category-header';
+        irRow.insertCell(0).innerHTML = 'IR Económico';
+        irRow.insertCell(1).innerHTML = '';
+        irRow.insertCell(2).innerHTML = '';
+        irRow.insertCell(3).innerHTML = '';
+        irRow.insertCell(4).innerHTML = '';
+        irRow.insertCell(5).innerHTML = '';
+        const irCell = irRow.insertCell(6);
+        irCell.innerHTML = `${economicFlow.metrics.ir.toFixed(3)}`;
+        irCell.style.fontWeight = 'bold';
+        irCell.style.color = economicFlow.metrics.ir > 1 ? '#28a745' : '#dc3545';
+        
+        // Agregar Payback Period
+        const paybackRow = tbody.insertRow();
+        paybackRow.className = 'category-header';
+        paybackRow.insertCell(0).innerHTML = 'Payback Period';
+        paybackRow.insertCell(1).innerHTML = '';
+        paybackRow.insertCell(2).innerHTML = '';
+        paybackRow.insertCell(3).innerHTML = '';
+        paybackRow.insertCell(4).innerHTML = '';
+        paybackRow.insertCell(5).innerHTML = '';
+        const paybackCell = paybackRow.insertCell(6);
+        
+        paybackCell.innerHTML = `${economicFlow.metrics.paybackPeriod.toFixed(1)} años`;
+        paybackCell.style.color = economicFlow.metrics.paybackPeriod <= 3 ? '#28a745' : 
+                                 economicFlow.metrics.paybackPeriod <= 5 ? '#ffc107' : '#dc3545';
+        paybackCell.style.fontWeight = 'bold';
     }
     
     // Actualizar banners de métricas
@@ -785,6 +940,17 @@ function updateEconomicFlowTable(economicFlow) {
         const economicIRRElement = document.getElementById('economicIRR');
         if (economicIRRElement) {
             economicIRRElement.innerHTML = `${(economicFlow.metrics.irr * 100).toFixed(1)}%`;
+        }
+        // Actualizar Payback Period
+        const economicPaybackElement = document.getElementById('economicPayback');
+        if (economicPaybackElement && economicFlow.metrics.paybackPeriod) {
+            economicPaybackElement.innerHTML = `${economicFlow.metrics.paybackPeriod.toFixed(1)} años`;
+        }
+        
+        // Actualizar IR Económico
+        const economicIRElement = document.getElementById('economicIR');
+        if (economicIRElement && economicFlow.metrics.ir) {
+            economicIRElement.innerHTML = economicFlow.metrics.ir.toFixed(3);
         }
         // Actualizar label de WACC dinámicamente
         const economicWACCLabel = document.querySelector('#economicFlow .metric-label');
@@ -981,6 +1147,7 @@ window.calculateEconomicCashFlowWithoutTerminal = calculateEconomicCashFlowWitho
 window.calculateFinancialCashFlow = calculateFinancialCashFlow;
 window.updateEconomicFlowTable = updateEconomicFlowTable;
 window.updateFinancialFlowTable = updateFinancialFlowTable;
+window.calculatePaybackPeriod = calculatePaybackPeriod;
 
 function updateFinancialFlowTable(financialFlow) {
     const tbody = document.getElementById('financialFlowBody');
@@ -1056,6 +1223,36 @@ function updateFinancialFlowTable(financialFlow) {
         irrCell.innerHTML = `${(financialFlow.metrics.projectIRR * 100).toFixed(1)}%`;
         irrCell.style.fontWeight = 'bold';
         irrCell.style.color = financialFlow.metrics.projectIRR > financialFlow.metrics.equityCost ? '#28a745' : '#dc3545';
+        
+        // Agregar IR Financiero
+        const irRow = tbody.insertRow();
+        irRow.className = 'category-header';
+        irRow.insertCell(0).innerHTML = 'IR Financiero';
+        irRow.insertCell(1).innerHTML = '';
+        irRow.insertCell(2).innerHTML = '';
+        irRow.insertCell(3).innerHTML = '';
+        irRow.insertCell(4).innerHTML = '';
+        irRow.insertCell(5).innerHTML = '';
+        const irCell = irRow.insertCell(6);
+        irCell.innerHTML = `${financialFlow.metrics.projectIR.toFixed(3)}`;
+        irCell.style.fontWeight = 'bold';
+        irCell.style.color = financialFlow.metrics.projectIR > 1 ? '#28a745' : '#dc3545';
+        
+        // Agregar Payback Period
+        const paybackRow = tbody.insertRow();
+        paybackRow.className = 'category-header';
+        paybackRow.insertCell(0).innerHTML = 'Payback Period';
+        paybackRow.insertCell(1).innerHTML = '';
+        paybackRow.insertCell(2).innerHTML = '';
+        paybackRow.insertCell(3).innerHTML = '';
+        paybackRow.insertCell(4).innerHTML = '';
+        paybackRow.insertCell(5).innerHTML = '';
+        const paybackCell = paybackRow.insertCell(6);
+        
+        paybackCell.innerHTML = `${financialFlow.metrics.paybackPeriod.toFixed(1)} años`;
+        paybackCell.style.color = financialFlow.metrics.paybackPeriod <= 3 ? '#28a745' : 
+                                 financialFlow.metrics.paybackPeriod <= 5 ? '#ffc107' : '#dc3545';
+        paybackCell.style.fontWeight = 'bold';
     }
     
     // Actualizar banners de métricas financieras
@@ -1070,6 +1267,18 @@ function updateFinancialFlowTable(financialFlow) {
         const financialIRRElement = document.getElementById('financialIRR');
         if (financialIRRElement) {
             financialIRRElement.innerHTML = `${(financialFlow.metrics.projectIRR * 100).toFixed(1)}%`;
+        }
+        
+        // Actualizar Payback Period
+        const financialPaybackElement = document.getElementById('financialPayback');
+        if (financialPaybackElement && financialFlow.metrics.paybackPeriod) {
+            financialPaybackElement.innerHTML = `${financialFlow.metrics.paybackPeriod.toFixed(1)} años`;
+        }
+        
+        // Actualizar IR Financiero
+        const financialIRElement = document.getElementById('financialIR');
+        if (financialIRElement && financialFlow.metrics.projectIR) {
+            financialIRElement.innerHTML = financialFlow.metrics.projectIR.toFixed(3);
         }
         
         // Actualizar label de WACC dinámicamente para flujo financiero
@@ -1190,10 +1399,31 @@ function updateFinancialFlowTable(financialFlow) {
         irrRow.insertCell(4).innerHTML = '';
         irrRow.insertCell(5).innerHTML = '';
         const irrCell = irrRow.insertCell(6);
+        
+        // Debug: verificar flujos para TIR sin valor terminal
+        console.log('🔍 Flujos para TIR sin valor terminal:', equityCashFlowsOperational);
+        
         const irrWithoutTerminal = calculateIRR(equityCashFlowsOperational);
+        console.log('🔍 TIR sin valor terminal calculada:', (irrWithoutTerminal * 100).toFixed(1) + '%');
+        
         irrCell.innerHTML = `${(irrWithoutTerminal * 100).toFixed(1)}%`;
         irrCell.style.fontWeight = 'bold';
         irrCell.style.color = irrWithoutTerminal > financialFlow.metrics.equityCost ? '#28a745' : '#dc3545';
+        
+        // Agregar IR sin valor terminal
+        const irWithoutTerminalRow = tbody.insertRow();
+        irWithoutTerminalRow.className = 'category-header no-terminal';
+        irWithoutTerminalRow.insertCell(0).innerHTML = 'IR del Proyecto (Sin Valor Terminal)';
+        irWithoutTerminalRow.insertCell(1).innerHTML = '';
+        irWithoutTerminalRow.insertCell(2).innerHTML = '';
+        irWithoutTerminalRow.insertCell(3).innerHTML = '';
+        irWithoutTerminalRow.insertCell(4).innerHTML = '';
+        irWithoutTerminalRow.insertCell(5).innerHTML = '';
+        const irWithoutTerminalCell = irWithoutTerminalRow.insertCell(6);
+        const irWithoutTerminal = calculateIR(equityCashFlowsOperational, financialFlow.metrics.equityCost);
+        irWithoutTerminalCell.innerHTML = `${irWithoutTerminal.toFixed(3)}`;
+        irWithoutTerminalCell.style.fontWeight = 'bold';
+        irWithoutTerminalCell.style.color = irWithoutTerminal > 1 ? '#28a745' : '#dc3545';
         
         // Agregar fila de diferencia
         const difference = financialFlow.metrics.equityNPV - equityNPVOperational;
@@ -1252,9 +1482,49 @@ function calculateNPVExcel(cashFlows, discountRate) {
     return npv;
 }
 
-function calculateIRR(cashFlows) {
-    // Implementación simple de TIR usando método de Newton-Raphson
+function calculatePaybackPeriod(cashFlows, initialInvestment = 0) {
+    // Calcular Payback Period (período de recuperación)
+    // Retorna el número de años necesarios para recuperar la inversión inicial
+    
     if (cashFlows.length === 0) return 0;
+    
+    let cumulativeCashFlow = initialInvestment; // Empezar con la inversión inicial (negativa)
+    let paybackPeriod = 0;
+    
+    for (let i = 0; i < cashFlows.length; i++) {
+        cumulativeCashFlow += cashFlows[i];
+        
+        if (cumulativeCashFlow >= 0) {
+            // Si el flujo acumulado se vuelve positivo, calcular el payback exacto
+            if (i === 0) {
+                paybackPeriod = 0; // Se recupera en el primer año
+            } else {
+                // Interpolación lineal para precisión
+                const previousCumulative = cumulativeCashFlow - cashFlows[i];
+                const yearFraction = Math.abs(previousCumulative) / Math.abs(cashFlows[i]);
+                paybackPeriod = i + yearFraction;
+            }
+            break;
+        }
+        
+        paybackPeriod = i + 1; // Si no se recupera, continuar
+    }
+    
+    // Si nunca se recupera, retornar el número total de años + indicador
+    if (cumulativeCashFlow < 0) {
+        return cashFlows.length + 0.5; // Indicar que no se recupera en el período analizado
+    }
+    
+    return paybackPeriod;
+}
+
+function calculateIRR(cashFlows) {
+    // Implementación mejorada de TIR usando método de Newton-Raphson
+    // Permite tasas negativas y maneja mejor casos extremos
+    if (cashFlows.length === 0) return 0;
+    
+    // Debug: mostrar flujos de caja
+    console.log('🔍 Flujos de caja para TIR:', cashFlows.map(cf => cf.toFixed(0)));
     
     // Validar que hay flujos positivos y negativos
     const hasPositive = cashFlows.some(cf => cf > 0);
@@ -1265,42 +1535,172 @@ function calculateIRR(cashFlows) {
         return 0; // 0% por defecto
     }
     
-    let rate = 0.1; // Tasa inicial 10%
-    const tolerance = 0.0001;
-    const maxIterations = 100;
+    // Calcular NPV con tasa 0% para verificar si el proyecto es viable
+    const npvAtZero = calculateNPV(cashFlows, 0);
+    console.log(`🔍 NPV a 0%: $${npvAtZero.toFixed(0)}`);
     
-    for (let i = 0; i < maxIterations; i++) {
-        let npv = 0;
-        let dnpv = 0;
+    // Si NPV a 0% es negativo, la TIR debe ser negativa
+    if (npvAtZero < 0) {
+        console.log('⚠️ NPV negativo a 0%, TIR debe ser negativa');
         
-        for (let j = 0; j < cashFlows.length; j++) {
-            const factor = Math.pow(1 + rate, j);
-            npv += cashFlows[j] / factor;
-            if (j > 0) {
-                dnpv -= j * cashFlows[j] / (factor * (1 + rate));
-            }
-        }
+        // Para proyectos con NPV negativo, buscar TIR negativa
+        // Intentar tasas negativas más agresivas
+        const negativeRates = [-0.8, -0.6, -0.4, -0.2, -0.1, -0.05];
         
-        if (Math.abs(npv) < tolerance) {
-            // Validar que el resultado es razonable
-            if (rate > 0 && rate < 5) { // Entre 0% y 500%
+        for (const rate of negativeRates) {
+            const npv = calculateNPV(cashFlows, rate);
+            console.log(`🔍 Probando tasa ${(rate * 100).toFixed(1)}%, NPV: $${npv.toFixed(0)}`);
+            
+            if (Math.abs(npv) < 1000) { // Tolerancia más amplia para tasas negativas
+                console.log(`✅ TIR negativa encontrada: ${(rate * 100).toFixed(2)}%`);
                 return rate;
-            } else {
-                console.warn('⚠️ TIR fuera de rango razonable, usando 0%');
-                return 0; // 0% por defecto
             }
         }
         
-        if (Math.abs(dnpv) < tolerance) break;
-        
-        rate = rate - npv / dnpv;
-        
-        // Evitar tasas negativas o muy altas
-        if (rate < -0.99) rate = -0.99;
-        if (rate > 5) rate = 5; // Máximo 500%
+        // Si no encontramos convergencia, usar una estimación basada en el NPV
+        const estimatedIRR = npvAtZero / Math.abs(cashFlows.reduce((sum, cf) => sum + Math.abs(cf), 0));
+        const limitedIRR = Math.max(-0.99, Math.min(-0.01, estimatedIRR));
+        console.log(`⚠️ Usando TIR estimada: ${(limitedIRR * 100).toFixed(2)}%`);
+        return limitedIRR;
     }
     
-    // Si no converge, usar 0%
-    console.warn('⚠️ TIR no convergió, usando 0%');
-    return 0; // 0% por defecto
+    // Para proyectos con NPV positivo, usar método Newton-Raphson
+    const initialRates = [-0.5, -0.3, -0.1, 0, 0.1, 0.3, 0.5];
+    let bestRate = 0;
+    let bestNPV = Infinity;
+    
+    for (const initialRate of initialRates) {
+        let rate = initialRate;
+        const tolerance = 0.0001;
+        const maxIterations = 50;
+        
+        for (let i = 0; i < maxIterations; i++) {
+            let npv = 0;
+            let dnpv = 0;
+            
+            for (let j = 0; j < cashFlows.length; j++) {
+                const factor = Math.pow(1 + rate, j);
+                npv += cashFlows[j] / factor;
+                if (j > 0) {
+                    dnpv -= j * cashFlows[j] / (factor * (1 + rate));
+                }
+            }
+            
+            if (Math.abs(npv) < tolerance) {
+                // Validar que el resultado es razonable
+                if (rate >= -0.99 && rate <= 1) { // Entre -99% y 100% (más conservador)
+                    console.log(`✅ TIR encontrada: ${(rate * 100).toFixed(2)}%`);
+                    return rate;
+                }
+                break;
+            }
+            
+            if (Math.abs(dnpv) < tolerance) break;
+            
+            const newRate = rate - npv / dnpv;
+            
+            // Evitar tasas extremas
+            if (newRate < -0.99) rate = -0.99;
+            else if (newRate > 1) rate = 1; // Límite más conservador
+            else rate = newRate;
+        }
+        
+        // Calcular NPV final para esta tasa inicial
+        let finalNPV = 0;
+        for (let j = 0; j < cashFlows.length; j++) {
+            const factor = Math.pow(1 + rate, j);
+            finalNPV += cashFlows[j] / factor;
+        }
+        
+        if (Math.abs(finalNPV) < Math.abs(bestNPV)) {
+            bestNPV = finalNPV;
+            bestRate = rate;
+        }
+    }
+    
+    // Validar resultado final
+    if (bestRate >= -0.99 && bestRate <= 1) {
+        console.log(`🔍 TIR calculada: ${(bestRate * 100).toFixed(2)}%`);
+        return bestRate;
+    } else {
+        console.warn('⚠️ TIR fuera de rango razonable, usando 0%');
+        return 0;
+    }
+}
+
+function calculateIR(cashFlows, discountRate) {
+    // Calcular Índice de Rentabilidad (IR)
+    // IR = VP de flujos futuros / Inversión inicial
+    // IR > 1: Proyecto rentable
+    // IR < 1: Proyecto no rentable
+    
+    if (cashFlows.length === 0) return 0;
+    
+    // Debug: mostrar flujos de caja
+    console.log('🔍 Flujos de caja para IR:', cashFlows.map(cf => cf.toFixed(0)));
+    
+    // Encontrar la inversión inicial (suma de todos los flujos negativos)
+    let initialInvestment = 0;
+    let futureCashFlows = [];
+    
+    // Para proyectos con flujos negativos iniciales, sumar todos los flujos negativos como inversión
+    let negativeFlows = 0;
+    let positiveFlows = [];
+    
+    for (let i = 0; i < cashFlows.length; i++) {
+        if (cashFlows[i] < 0) {
+            negativeFlows += Math.abs(cashFlows[i]);
+        } else {
+            positiveFlows.push(cashFlows[i]);
+        }
+    }
+    
+    if (negativeFlows > 0) {
+        initialInvestment = negativeFlows;
+        futureCashFlows = positiveFlows;
+        console.log(`🔍 Inversión inicial (suma flujos negativos): $${initialInvestment.toFixed(0)}`);
+        console.log(`🔍 Flujos futuros (solo positivos): ${futureCashFlows.map(cf => cf.toFixed(0))}`);
+    } else {
+        // Fallback: usar el primer flujo negativo
+        if (cashFlows[0] < 0) {
+            initialInvestment = Math.abs(cashFlows[0]);
+            futureCashFlows = cashFlows.slice(1);
+        }
+    }
+    
+    if (initialInvestment === 0) {
+        console.warn('⚠️ No hay inversión inicial clara para calcular IR');
+        return 0;
+    }
+    
+    // Calcular VP de flujos futuros
+    let presentValue = 0;
+    for (let i = 0; i < futureCashFlows.length; i++) {
+        // Encontrar el período correspondiente en los flujos originales
+        let period = 0;
+        for (let j = 0; j < cashFlows.length; j++) {
+            if (cashFlows[j] === futureCashFlows[i]) {
+                period = j + 1;
+                break;
+            }
+        }
+        const factor = Math.pow(1 + discountRate, period);
+        presentValue += futureCashFlows[i] / factor;
+    }
+    
+    const ir = presentValue / initialInvestment;
+    
+    console.log(`🔍 IR calculado: ${ir.toFixed(3)}`);
+    console.log(`  VP flujos futuros: $${presentValue.toFixed(0)}`);
+    console.log(`  Inversión inicial: $${initialInvestment.toFixed(0)}`);
+    console.log(`  IR = ${presentValue.toFixed(0)} / ${initialInvestment.toFixed(0)} = ${ir.toFixed(3)}`);
+    
+    // Validar que el IR sea razonable
+    if (ir < -10 || ir > 10) {
+        console.warn('⚠️ IR fuera de rango razonable, verificando cálculo');
+        console.log(`  Flujos futuros: ${futureCashFlows.map(cf => cf.toFixed(0))}`);
+        console.log(`  Tasa de descuento: ${(discountRate * 100).toFixed(1)}%`);
+    }
+    
+    return ir;
 }

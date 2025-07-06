@@ -378,17 +378,17 @@ function calculateCategoryROI(category, annualBenefit) {
 
 ```javascript
 const investmentFinancing = {
-  totalCapex: 800000,
+  totalCapex: 850000,
 
   sources: {
     equity: {
-      amount: 520000, // $520K (65%)
+      amount: 425000, // $425K (50%)
       timing: "Q1 2025",
       cost: 0.12, // Ke = 12%
     },
 
     debt: {
-      amount: 280000, // $280K (35%)
+      amount: 425000, // $425K (50%)
       timing: "Q2 2025",
       cost: 0.06, // 6% interés
       term: 5, // 5 años
@@ -398,48 +398,8 @@ const investmentFinancing = {
   // Cronograma de financiamiento
   fundingSchedule: {
     "Q1 2025": 300000, // Equity inicial
-    "Q2 2025": 500000, // Equity + Debt
-    totalAvailable: 800000,
+    "Q2 2025": 550000, // Equity + Debt
+    totalAvailable: 850000,
   },
 };
 ```
-
-## Métricas de Eficiencia de Inversión
-
-### Capital Efficiency Ratios
-
-```javascript
-const capitalEfficiencyMetrics = {
-  // Revenue per $ invested
-  revenuePerCapex: function (annualRevenue, totalCapex) {
-    return annualRevenue / totalCapex;
-  },
-
-  // Asset turnover
-  assetTurnover: function (revenue, totalAssets) {
-    return revenue / totalAssets;
-  },
-
-  // CAPEX intensity
-  capexIntensity: function (capex, revenue) {
-    return capex / revenue;
-  },
-
-  // Targets
-  targets: {
-    revenuePerCapex: 2.5, // $2.50 revenue per $1 invested
-    assetTurnover: 1.5, // 1.5x asset turnover
-    capexIntensity: 0.15, // <15% of revenue
-  },
-};
-```
-
-## Referencias de Código
-
-- **Archivo principal**: `static/js/investments.js`
-- **Funciones clave**:
-  - `calculateInvestmentCashFlow()`
-  - `calculateDepreciation()`
-  - `analyzeCapexImpact()`
-  - `updateInvestmentDisplay()`
-  - `calculateCategoryROI()`

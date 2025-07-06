@@ -320,7 +320,7 @@ function getCapexForYear(year) {
         2027: 0.20,
         2028: 0.05
     };
-    const totalCapex = 800000;
+    const totalCapex = 850000;
     return (capexDistribution[year] || 0) * totalCapex;
 }
 
@@ -333,7 +333,7 @@ function getDepreciationForYear(year, financial) {
 
 function getInterestExpenseForYear(year, financial) {
     // Interés sobre deuda decreciente
-    const totalDebt = 800000 * (financial.debtRatio || 0.35);
+    const totalDebt = 850000 * (financial.debtRatio || 0.5);
     const interestRate = financial.interestRate || 0.06;
     const termYears = financial.debtTermYears || 5;
     
@@ -346,7 +346,7 @@ function getInterestExpenseForYear(year, financial) {
 
 function getPrincipalPaymentForYear(year, financial) {
     // Amortización lineal
-    const totalDebt = 800000 * (financial.debtRatio || 0.35);
+    const totalDebt = 850000 * (financial.debtRatio || 0.5);
     const termYears = financial.debtTermYears || 5;
     
     if (year < 2026 || year > 2025 + termYears) return 0;

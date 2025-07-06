@@ -1,39 +1,66 @@
-// Funciones para calcular y mostrar CAPEX optimizado
-// CAPEX OPTIMIZADO: Reducido de $800K a $565K (-29.4%)
-// Eliminaciones: Brasil ($45K), Canadá ($50K), USA ($60K), Países Adicionales ($35K)
-// Reducciones: Warehouses ($25K), Expansión Internacional ($40K)
+// Funciones para calcular y mostrar CAPEX actualizado
+// CAPEX ACTUALIZADO: Aumentado de $565K a $850K (+50.4%)
+// Distribución detallada por componentes reales
 
 function calculateOptimizedCapex() {
 
     
-    // CAPEX OPTIMIZADO - Reducido 29.4% vs original (eliminando Brasil, Canadá, USA)
-    const optimizedCapex = 565000; // CAPEX optimizado total (era 800K)
+    // CAPEX ACTUALIZADO - Aumentado 50.4% vs optimizado (componentes reales)
+    const optimizedCapex = 850000; // CAPEX actualizado total (era 565K)
     
     const progressiveCapex = {
         2025: {
-            'Plataforma Digital Core': 120000,
-            'Desarrollo Web Base': 80000,
-            'Configuración SEO/SEM': 35000,
-            'Setup México y Certificaciones': 60000,
-            'Base Legal y Compliance': 20000,
-            total: 315000 // 56% del CAPEX optimizado
+            'Tecnología - Shopify Plus': 30000,
+            'Tecnología - Desarrollo Custom': 100000,
+            'Tecnología - Integraciones API': 125000,
+            'Tecnología - Infraestructura IT': 45000,
+            'Legal - México COFEPRIS': 20000,
+            'Legal - México Permisos Importación': 12500,
+            'Legal - México Estructura Legal': 25000,
+            'Legal - México Compliance Tributario': 20000,
+            'Legal - Chile SAG': 7500,
+            'Legal - Chile E-commerce': 12500,
+            'Legal - Chile SII': 10000,
+            'Personal - Gerente E-commerce': 50000,
+            'Personal - Marketing Specialist': 40000,
+            'Personal - Operations Support': 30000,
+            'Marketing - Google Ads México': 60000,
+            'Marketing - Facebook/Instagram': 40000,
+            'Marketing - Content/SEO': 30000,
+            'Marketing - Influencer Partnerships': 20000,
+            'Operaciones - 3PL Setup': 30000,
+            'Operaciones - Sistemas Tracking': 20000,
+            'Operaciones - Inventory Management': 15000,
+            'Contingencia': 30000,
+            total: 382500 // 45% del CAPEX actualizado
         },
         2026: {
-            'Expansión Internacional': 40000, // Reducido de 80K
-            'Expansión Mercado México': 55000,
-            'Desarrollo Almacenes (Reducido)': 25000, // Reducido de 50K
-            'Mejoras de Plataforma': 15000,
-            total: 135000 // 24% del CAPEX optimizado
+            'Legal Ongoing - México': 25000,
+            'Legal Ongoing - Chile': 15000,
+            'Marketing - Expansión Digital': 50000,
+            'Marketing - Content Creation': 25000,
+            'Operaciones - Optimización Logística': 20000,
+            'Tecnología - Upgrades Plataforma': 40000,
+            'Personal - Expansión Equipo': 35000,
+            'Contingencia': 15000,
+            total: 255000 // 30% del CAPEX actualizado
         },
         2027: {
-            'Upgrades Tecnológicos': 60000,
-            'Optimización de Plataforma': 40000,
-            total: 100000 // 18% del CAPEX optimizado
+            'Tecnología - Mejoras Avanzadas': 60000,
+            'Marketing - Campañas Premium': 45000,
+            'Operaciones - Automatización': 30000,
+            'Legal - Compliance Avanzado': 20000,
+            'Personal - Especialistas': 25000,
+            'Contingencia': 10000,
+            total: 170000 // 20% del CAPEX actualizado
         },
         2028: {
-            'Optimizaciones Finales': 10000,
-            'Contingencia y Ajustes': 5000,
-            total: 15000 // 2% del CAPEX optimizado
+            'Tecnología - Optimizaciones Finales': 30000,
+            'Marketing - Consolidación': 20000,
+            'Operaciones - Eficiencia': 15000,
+            'Legal - Mantenimiento': 10000,
+            'Contingencia': 5000,
+            total: 42500 // 5% del CAPEX actualizado
         }
     };
 
@@ -96,14 +123,14 @@ function updateOptimizedCapexTable(capex, financing) {
     
     tbody.innerHTML = '';
 
-    // Encabezados para mostrar la distribución anual optimizada
+    // Encabezados para mostrar la distribución anual actualizada
     const headerRow = tbody.insertRow();
     headerRow.className = 'category-header';
     headerRow.insertCell(0).innerHTML = 'CAPEX';
-    headerRow.insertCell(1).innerHTML = '2025 (56%)';
-    headerRow.insertCell(2).innerHTML = '2026 (24%)';
-    headerRow.insertCell(3).innerHTML = '2027 (18%)';
-    headerRow.insertCell(4).innerHTML = '2028 (2%)';
+    headerRow.insertCell(1).innerHTML = '2025 (45%)';
+    headerRow.insertCell(2).innerHTML = '2026 (30%)';
+    headerRow.insertCell(3).innerHTML = '2027 (20%)';
+    headerRow.insertCell(4).innerHTML = '2028 (5%)';
     headerRow.insertCell(5).innerHTML = 'TOTAL';
 
     // Items por año
@@ -140,19 +167,19 @@ function updateOptimizedCapexTable(capex, financing) {
     }
     totalRow.insertCell(5).innerHTML = `$${(grandTotal/1000).toFixed(0)}K`;
 
-    // Agregar fila de comparación vs CAPEX original
+    // Agregar fila de comparación vs CAPEX anterior
     const comparisonRow = tbody.insertRow();
     comparisonRow.className = 'total-row';
-    comparisonRow.style.backgroundColor = '#d4edda';
-    comparisonRow.style.color = '#155724';
-    comparisonRow.insertCell(0).innerHTML = 'AHORRO vs Original (800K)';
+    comparisonRow.style.backgroundColor = '#fff3cd';
+    comparisonRow.style.color = '#856404';
+    comparisonRow.insertCell(0).innerHTML = 'INCREMENTO vs Anterior (565K)';
     comparisonRow.insertCell(1).innerHTML = '';
     comparisonRow.insertCell(2).innerHTML = '';
     comparisonRow.insertCell(3).innerHTML = '';
     comparisonRow.insertCell(4).innerHTML = '';
-    const savings = 800000 - grandTotal;
-    const savingsPercent = (savings / 800000 * 100).toFixed(1);
-    comparisonRow.insertCell(5).innerHTML = `-$${(savings/1000).toFixed(0)}K (-${savingsPercent}%)`;
+    const increase = grandTotal - 565000;
+    const increasePercent = (increase / 565000 * 100).toFixed(1);
+    comparisonRow.insertCell(5).innerHTML = `+$${(increase/1000).toFixed(0)}K (+${increasePercent}%)`;
 
     // Estructura de financiamiento
     const financeHeaderRow = tbody.insertRow();

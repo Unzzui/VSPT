@@ -95,7 +95,7 @@ const betaAnalysis = {
 ```javascript
 const debtStructure = {
   bankDebt: {
-    amount: 280000, // $280K (35% de $800K CAPEX)
+    amount: 425000, // $425K (50% de $850K CAPEX)
     rate: 0.06, // 6% tasa nominal
     term: 5, // 5 años plazo
     type: "Term Loan",
@@ -149,21 +149,21 @@ function calculateDebtSchedule(principal, rate, years) {
 
 ```javascript
 const capitalStructure = {
-  totalCapex: 800000, // $800K inversión total
+  totalCapex: 850000, // $850K inversión total
 
   equity: {
-    amount: 520000, // $520K (65%)
-    percentage: 65,
+    amount: 425000, // $425K (50%)
+    percentage: 50,
     sources: [
       { type: "Founder Investment", amount: 300000 },
-      { type: "Angel/Seed Round", amount: 220000 },
+      { type: "Angel/Seed Round", amount: 125000 },
     ],
   },
 
   debt: {
-    amount: 280000, // $280K (35%)
-    percentage: 35,
-    sources: [{ type: "Bank Term Loan", amount: 280000 }],
+    amount: 425000, // $425K (50%)
+    percentage: 50,
+    sources: [{ type: "Bank Term Loan", amount: 425000 }],
   },
 };
 ```
@@ -172,9 +172,9 @@ const capitalStructure = {
 
 ```javascript
 const targetRatios = {
-  debtToEquity: 0.54, // D/E = 35%/65% = 0.54
-  debtToAssets: 0.35, // D/A = 35%
-  equityMultiplier: 1.54, // Assets/Equity = 1/65% = 1.54
+  debtToEquity: 1.0, // D/E = 50%/50% = 1.0
+  debtToAssets: 0.5, // D/A = 50%
+  equityMultiplier: 2.0, // Assets/Equity = 1/50% = 2.0
 
   // Ratios de cobertura
   interestCoverage: {

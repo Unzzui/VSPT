@@ -10,6 +10,44 @@
 
 // Configuración de vidas útiles por tipo de activo (en años)
 const ASSET_LIVES = {
+    'Tecnología - Shopify Plus': 3,
+    'Tecnología - Desarrollo Custom': 4,
+    'Tecnología - Integraciones API': 5,
+    'Tecnología - Infraestructura IT': 5,
+    'Tecnología - Upgrades Plataforma': 3,
+    'Tecnología - Mejoras Avanzadas': 3,
+    'Tecnología - Optimizaciones Finales': 2,
+    'Legal - México COFEPRIS': 5,
+    'Legal - México Permisos Importación': 5,
+    'Legal - México Estructura Legal': 5,
+    'Legal - México Compliance Tributario': 5,
+    'Legal - Chile SAG': 5,
+    'Legal - Chile E-commerce': 5,
+    'Legal - Chile SII': 5,
+    'Legal Ongoing - México': 5,
+    'Legal Ongoing - Chile': 5,
+    'Legal - Compliance Avanzado': 5,
+    'Legal - Mantenimiento': 5,
+    'Personal - Gerente E-commerce': 0, // No se deprecia
+    'Personal - Marketing Specialist': 0, // No se deprecia
+    'Personal - Operations Support': 0, // No se deprecia
+    'Personal - Expansión Equipo': 0, // No se deprecia
+    'Personal - Especialistas': 0, // No se deprecia
+    'Marketing - Google Ads México': 2,
+    'Marketing - Facebook/Instagram': 2,
+    'Marketing - Content/SEO': 3,
+    'Marketing - Influencer Partnerships': 2,
+    'Marketing - Expansión Digital': 2,
+    'Marketing - Content Creation': 3,
+    'Marketing - Campañas Premium': 2,
+    'Marketing - Consolidación': 2,
+    'Operaciones - 3PL Setup': 7,
+    'Operaciones - Sistemas Tracking': 5,
+    'Operaciones - Inventory Management': 5,
+    'Operaciones - Optimización Logística': 5,
+    'Operaciones - Automatización': 5,
+    'Operaciones - Eficiencia': 5,
+    'Contingencia': 5, // Promedio
     'Desarrollo Web': 3,
     'Infraestructura IT': 5,
     'Plataforma E-commerce': 4,
@@ -19,8 +57,7 @@ const ASSET_LIVES = {
     'Certificaciones': 3,
     'Tecnología': 5,
     'Legal y Regulatorio': 5,
-    'Capital de Trabajo': 0, // No se deprecia
-    'Contingencias': 5 // Promedio
+    'Capital de Trabajo': 0 // No se deprecia
 };
 
 // Cálculo de depreciaciones detalladas

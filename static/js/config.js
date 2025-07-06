@@ -50,7 +50,7 @@ const defaultFinancialParams = {
     inventoryDays: 60,
 };
 
-// Distribución de CAPEX por años (total $565K optimizado)
+// Distribución de CAPEX por años (total $850K actualizado)
 const capexDistribution = {
     2025: { pct: 0.45, label: '45%' }, 
     2026: { pct: 0.30, label: '30%' }, 

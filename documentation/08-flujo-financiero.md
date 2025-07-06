@@ -297,8 +297,8 @@ function calculateFinancialNPV(financialCashFlows, ke = 0.12) {
     npv += discountedCF;
   });
 
-  // Restar inversión de patrimonio (65% del CAPEX)
-  const equityInvestment = 800000 * 0.65; // $520K
+  // Restar inversión de patrimonio (50% del CAPEX)
+  const equityInvestment = 850000 * 0.5; // $425K
   npv -= equityInvestment;
 
   return npv;
@@ -312,7 +312,7 @@ function calculateFinancialNPV(financialCashFlows, ke = 0.12) {
 ```javascript
 function calculateFinancialIRR(financialCashFlows) {
   // Incluir inversión de patrimonio como CF negativo en t=0
-  const equityInvestment = 800000 * 0.65; // $520K
+  const equityInvestment = 850000 * 0.5; // $425K
   const fullCashFlows = [-equityInvestment, ...financialCashFlows];
 
   // Usar mismo método Newton-Raphson que TIR económica

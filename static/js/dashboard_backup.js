@@ -65,26 +65,26 @@ class Dashboard {
                 totalEquity: capexData.total * params.equityRatio,
                 debtRatio: params.debtRatio * 100, // Convertir a porcentaje para display
                 equityRatio: params.equityRatio * 100,
-                originalCapex: 800000, // CAPEX original para comparación
-                savings: 800000 - capexData.total,
-                savingsPercentage: ((800000 - capexData.total) / 800000) * 100,
+                originalCapex: 565000, // CAPEX anterior para comparación
+                savings: capexData.total - 565000,
+                savingsPercentage: ((capexData.total - 565000) / 565000) * 100,
                 params: params
             };
         }
         
-        // PRIORIDAD 2: Fallback al CAPEX optimizado estático
-        const optimizedCapex = 565000; // CAPEX optimizado base
+        // PRIORIDAD 2: Fallback al CAPEX actualizado estático
+        const updatedCapex = 850000; // CAPEX actualizado base
         const params = getFinancialParams();
         
         return {
-            totalCapex: optimizedCapex,
-            totalDebt: optimizedCapex * params.debtRatio,
-            totalEquity: optimizedCapex * params.equityRatio,
+            totalCapex: updatedCapex,
+            totalDebt: updatedCapex * params.debtRatio,
+            totalEquity: updatedCapex * params.equityRatio,
             debtRatio: params.debtRatio * 100,
             equityRatio: params.equityRatio * 100,
-            originalCapex: 800000,
-            savings: 800000 - optimizedCapex,
-            savingsPercentage: ((800000 - optimizedCapex) / 800000) * 100,
+            originalCapex: 565000,
+            savings: updatedCapex - 565000,
+            savingsPercentage: ((updatedCapex - 565000) / 565000) * 100,
             params: params
         };
     }
@@ -1099,7 +1099,9 @@ class Dashboard {
                                 family: 'Montserrat',
                                 weight: '500'
                             },
-                            color: '#311333',
+                            color: '#311333'
+                        }
+                    }
                 }
             }
         });
@@ -1107,50 +1109,6 @@ class Dashboard {
         console.log('📊 Gráfico de mercados actualizado (solo Chile y México):', {
             'Chile': `${shares[0]?.toFixed(1)}%`,
             'México': `${shares[1]?.toFixed(1)}%`
-        });
-    }
-                            generateLabels: function(chart) {
-                                const data = chart.data;
-                                return data.labels.map((label, index) => ({
-                                    text: `${label}: ${data.datasets[0].data[index].toFixed(1)}%`,
-                                    fillStyle: data.datasets[0].backgroundColor[index],
-                                    strokeStyle: data.datasets[0].backgroundColor[index],
-                                    lineWidth: 0,
-                                    pointStyle: 'circle',
-                                    hidden: false,
-                                    index: index
-                                }));
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(49, 19, 51, 0.9)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        borderColor: '#9a2849',
-                        borderWidth: 2,
-                        cornerRadius: 8,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed;
-                                return `${label}: ${value.toFixed(1)}%`;
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    animateRotate: true,
-                    animateScale: true,
-                    duration: 1000,
-                    easing: 'easeOutQuart'
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'point'
-                }
-            }
         });
     }
 

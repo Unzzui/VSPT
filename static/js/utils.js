@@ -533,28 +533,56 @@ function createInvestmentsSheet() {
     ];
     
     if (modelData.investments) {
-        // Desglose detallado del CAPEX por componentes
+        // Desglose detallado del CAPEX por componentes actualizado
         const capexComponents = {
             2025: {
-                'Plataforma Digital Core': 120000,
-                'Desarrollo Web Base': 80000,
-                'Configuración SEO/SEM': 35000,
-                'Setup México y Certificaciones': 60000,
-                'Base Legal y Compliance': 20000
+                'Tecnología - Shopify Plus': 30000,
+                'Tecnología - Desarrollo Custom': 100000,
+                'Tecnología - Integraciones API': 125000,
+                'Tecnología - Infraestructura IT': 45000,
+                'Legal - México COFEPRIS': 20000,
+                'Legal - México Permisos Importación': 12500,
+                'Legal - México Estructura Legal': 25000,
+                'Legal - México Compliance Tributario': 20000,
+                'Legal - Chile SAG': 7500,
+                'Legal - Chile E-commerce': 12500,
+                'Legal - Chile SII': 10000,
+                'Personal - Gerente E-commerce': 50000,
+                'Personal - Marketing Specialist': 40000,
+                'Personal - Operations Support': 30000,
+                'Marketing - Google Ads México': 60000,
+                'Marketing - Facebook/Instagram': 40000,
+                'Marketing - Content/SEO': 30000,
+                'Marketing - Influencer Partnerships': 20000,
+                'Operaciones - 3PL Setup': 30000,
+                'Operaciones - Sistemas Tracking': 20000,
+                'Operaciones - Inventory Management': 15000,
+                'Contingencia': 30000
             },
             2026: {
-                'Expansión Internacional': 40000,
-                'Expansión Mercado México': 55000,
-                'Desarrollo Almacenes (Reducido)': 25000,
-                'Mejoras de Plataforma': 15000
+                'Legal Ongoing - México': 25000,
+                'Legal Ongoing - Chile': 15000,
+                'Marketing - Expansión Digital': 50000,
+                'Marketing - Content Creation': 25000,
+                'Operaciones - Optimización Logística': 20000,
+                'Tecnología - Upgrades Plataforma': 40000,
+                'Personal - Expansión Equipo': 35000,
+                'Contingencia': 15000
             },
             2027: {
-                'Upgrades Tecnológicos': 60000,
-                'Optimización de Plataforma': 40000
+                'Tecnología - Mejoras Avanzadas': 60000,
+                'Marketing - Campañas Premium': 45000,
+                'Operaciones - Automatización': 30000,
+                'Legal - Compliance Avanzado': 20000,
+                'Personal - Especialistas': 25000,
+                'Contingencia': 10000
             },
             2028: {
-                'Optimizaciones Finales': 10000,
-                'Contingencia y Ajustes': 5000
+                'Tecnología - Optimizaciones Finales': 30000,
+                'Marketing - Consolidación': 20000,
+                'Operaciones - Eficiencia': 15000,
+                'Legal - Mantenimiento': 10000,
+                'Contingencia': 5000
             }
         };
         
@@ -598,7 +626,7 @@ function createInvestmentsSheet() {
         data.push(capexRow);
         
         // Verificar que el total coincida con el modelo
-        const modelTotal = inv.total || 565000;
+        const modelTotal = inv.total || 850000;
         if (Math.abs(total - modelTotal) > 1000) {
             console.warn(`⚠️ Discrepancia en CAPEX: Calculado ${total}, Modelo ${modelTotal}`);
         }
@@ -997,7 +1025,7 @@ function createFinancialFlowSheet() {
 function createMetricsSheet() {
     const data = [
         ['MÉTRICAS CLAVE DEL PROYECTO', ''],
-        ['', ''],
+        ['', '', ''],
         ['INVERSIÓN', ''],
     ];
     
@@ -1021,7 +1049,7 @@ function createMetricsSheet() {
     data.push(['CAPEX Total', capexTotal]);
     data.push(['Financiamiento Deuda', debtAmount]);
     data.push(['Financiamiento Equity', equityAmount]);
-    data.push(['', '']);
+    data.push(['', '', '']);
     data.push(['RESULTADOS PROYECTADOS', '']);
     
     // Agregar métricas económicas del modelo si están disponibles
@@ -1048,7 +1076,7 @@ function createMetricsSheet() {
     
     // Agregar métricas de ingresos si están disponibles
     if (modelData.revenues) {
-        data.push(['', '']);
+        data.push(['', '', '']);
         data.push(['INGRESOS PROYECTADOS', '']);
         
         // Revenue 2025 (solo Chile, 6 meses)
