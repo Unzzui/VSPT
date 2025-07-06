@@ -103,9 +103,9 @@ class Dashboard {
                     totalEquity: capexData.total * params.equityRatio,
                     debtRatio: params.debtRatio * 100, // Convertir a porcentaje para display
                     equityRatio: params.equityRatio * 100,
-                    originalCapex: 565000, // CAPEX anterior para comparación
-                    savings: capexData.total - 565000,
-                    savingsPercentage: ((capexData.total - 565000) / 565000) * 100,
+                            originalCapex: 800000, // CAPEX anterior para comparación
+        savings: capexData.total - 800000,
+        savingsPercentage: ((capexData.total - 800000) / 800000) * 100,
                     params: params
                 };
             } else {
@@ -123,9 +123,9 @@ class Dashboard {
             totalEquity: updatedCapex * params.equityRatio,
             debtRatio: params.debtRatio * 100,
             equityRatio: params.equityRatio * 100,
-            originalCapex: 565000,
-            savings: updatedCapex - 565000,
-            savingsPercentage: ((updatedCapex - 565000) / 565000) * 100,
+                    originalCapex: 800000,
+        savings: updatedCapex - 800000,
+        savingsPercentage: ((updatedCapex - 800000) / 800000) * 100,
             params: params
         };
     }
@@ -392,7 +392,7 @@ class Dashboard {
             const ebitda = grossProfit - operatingExpenses;
             
             // Depreciación simplificada usando CAPEX optimizado
-            const optimizedCapex = this.data.capex?.totalCapex || 565000;
+            const optimizedCapex = this.data.capex?.totalCapex || 850000;
             const depreciation = optimizedCapex / params.depreciationYears; // CAPEX optimizado / años
             const ebit = ebitda - depreciation;
             const taxes = Math.max(0, ebit * params.taxRate);
@@ -435,13 +435,13 @@ class Dashboard {
     
     // Calcular período de payback real
     calculatePaybackPeriod(yearlyFCF) {
-        let cumulativeFCF = -800000; // Empezamos con la inversión inicial negativa
+        let cumulativeFCF = -850000; // Empezamos con la inversión inicial negativa
         
         // Agregar CAPEX de cada año (negativo)
         for (let year = 2025; year <= 2028; year++) {
             const capexData = capexDistribution[year];
             if (capexData) {
-                cumulativeFCF -= 800000 * capexData.pct;
+                cumulativeFCF -= 850000 * capexData.pct;
             }
         }
         
@@ -540,7 +540,7 @@ class Dashboard {
     
     // Calcular IRR simplificado
     calculateSimpleIRR(yearlyFCF) {
-        const totalCapex = 800000;
+        const totalCapex = 850000;
         const totalFCF = Object.values(yearlyFCF).reduce((sum, fcf) => sum + fcf, 0);
         const years = 5;
         
@@ -553,7 +553,7 @@ class Dashboard {
     // Calcular NPV (Valor Actual Neto) - Económico
     calculateNPV() {
         const discountRate = 0.12; // 12% tasa de descuento (WACC típico)
-        const initialInvestment = this.data.capex?.totalCapex || 800000;
+        const initialInvestment = this.data.capex?.totalCapex || 850000;
         const yearlyFCF = this.data.cashflow?.yearlyFCF || {};
         
         let npv = -initialInvestment; // Inversión inicial negativa
@@ -699,10 +699,10 @@ class Dashboard {
     setDefaultData() {
         this.data = {
             capex: {
-                totalCapex: 565000, // CAPEX optimizado
-                totalDebt: 565000 * 0.35, // 35% deuda
-                totalEquity: 565000 * 0.65, // 65% equity
-                originalCapex: 800000,
+                            totalCapex: 850000, // CAPEX optimizado
+            totalDebt: 850000 * 0.5, // 35% deuda
+            totalEquity: 850000 * 0.5, // 65% equity
+            originalCapex: 800000,
                 savings: 235000,
                 savingsPercentage: 29.4,
                 debtRatio: 35,

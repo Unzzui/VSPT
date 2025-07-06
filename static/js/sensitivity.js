@@ -807,7 +807,7 @@ class SensitivityAnalysis {
         const cashFlows = [];
         
         // CAPEX inicial (antes de 2025)
-        const initialCapex = -800000; // $800K
+        const initialCapex = -850000; // $850K
         
         years.forEach((year, index) => {
             const yearIndex = index; // 2025 = año 0, 2026 = año 1, etc.
@@ -1482,7 +1482,7 @@ function getBaseMetricsFromModel() {
         revenue2030: revenue2030,
         ebitda2030: ebitda2030,
         totalCapex: modelData.investments ? 
-            Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 565000
+            Object.values(modelData.investments).reduce((sum, yearData) => sum + (yearData.total || 0), 0) : 850000
     };
 }
 
@@ -2861,7 +2861,7 @@ function calculateRealisticNPV(revenue2030, financialParams) {
         const ebitda = yearRevenue - cogs - opex;
         
         // Depreciación estimada (5% de CAPEX total por año)
-        const depreciation = 565000 * 0.2; // 20% anual (5 años vida útil)
+        const depreciation = 850000 * 0.2; // 20% anual (5 años vida útil)
         
         // EBIT e impuestos
         const ebit = ebitda - depreciation;
@@ -2870,8 +2870,8 @@ function calculateRealisticNPV(revenue2030, financialParams) {
         // NOPAT
         const nopat = ebit - taxes;
         
-        // CAPEX (principalmente en primeros años)
-        const capex = index === 0 ? 200000 : (index === 1 ? 100000 : 50000);
+        // CAPEX (principalmente en primeros años - actualizado a 850k total)
+        const capex = index === 0 ? 400000 : (index === 1 ? 250000 : 100000);
         
         // Working Capital (15% del crecimiento de ingresos)
         const deltaWC = index === 0 ? yearRevenue * 0.15 : 

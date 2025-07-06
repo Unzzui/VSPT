@@ -18,7 +18,7 @@ function updateImpactMetrics() {
             economicIRR: 0,
             financialIRR: 0,
             revenue2030: 0,
-            totalCapex: 565000
+            totalCapex: 850000
         };
         
         // Obtener métricas económicas
@@ -42,7 +42,7 @@ function updateImpactMetrics() {
         
         // Obtener CAPEX total
         if (modelData.investments) {
-            metrics.cumulativeInvestment = modelData.investments.totalCapex || 565000;
+            metrics.cumulativeInvestment = modelData.investments.totalCapex || 850000;
         }
         
         // Actualizar elementos en la interfaz
@@ -65,7 +65,7 @@ function updatePerformanceIndicators() {
         
         // Calcular ROI
         if (modelData.economicCashFlow && modelData.economicCashFlow.metrics) {
-            const totalInvestment = 565000;
+            const totalInvestment = 850000;
             const npv = modelData.economicCashFlow.metrics.npv || 0;
             indicators.roi = totalInvestment > 0 ? (npv / totalInvestment) * 100 : 0;
         }
@@ -892,12 +892,12 @@ function createDebtSheet() {
         
         // Información del préstamo optimizado
         data.push([
-            `CAPEX Optimizado: $${(565000/1000).toFixed(0)}K (era $800K, -29.4%)`,
+            `CAPEX Optimizado: $${(850000/1000).toFixed(0)}K (era $800K, +6.3%)`,
             `Monto Deuda: $${(debt.debtAmount/1000).toFixed(0)}K`,
             `Tasa: ${(debt.interestRate*100).toFixed(1)}%`,
             `Plazo: ${debt.termYears} años`,
             `Cuota Mensual: $${debt.schedule[2025]?.monthlyPayment?.toFixed(0) || 0}`,
-            `Ahorro en Deuda: $${((800000 - 565000) * (debt.debtAmount/debt.totalCapex) / 1000).toFixed(0)}K`
+            `Incremento en Deuda: $${((850000 - 800000) * (debt.debtAmount/debt.totalCapex) / 1000).toFixed(0)}K`
         ]);
         data.push([]);
         
@@ -1030,7 +1030,7 @@ function createMetricsSheet() {
     ];
     
     // Crear los datos de métricas usando la misma lógica que createMetricsSheet
-    const capexTotal = modelData.investments?.totalCapex || 565000;
+            const capexTotal = modelData.investments?.totalCapex || 850000;
     const debtRatio = getFinancialParams()?.debtRatio || 0.5;
     const debtAmount = Math.round(capexTotal * debtRatio);
     const equityAmount = capexTotal - debtAmount;
@@ -1190,7 +1190,7 @@ function createSensitivitySheet() {
 function updateMetricsDisplay() {
     try {
         // Crear los datos de métricas usando la misma lógica que createMetricsSheet
-        const capexTotal = modelData.investments?.totalCapex || 565000;
+        const capexTotal = modelData.investments?.totalCapex || 850000;
         const debtRatio = getFinancialParams()?.debtRatio || 0.5;
         const debtAmount = Math.round(capexTotal * debtRatio);
         const equityAmount = capexTotal - debtAmount;
